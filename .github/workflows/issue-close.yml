@@ -1,0 +1,89 @@
+# develop 머지 시 이슈 자동 Close (D-49). 세 레포 공통 — 같은 내용으로 유지한다.
+# GitHub 기본 브랜치가 main이라 develop 머지에서는 GitHub의 `Closes #` 자동 클로즈가 동작하지 않는다.
+# 닫는 조건 (모두 만족해야 한다):
+#   1) develop 대상 PR이 실제로 머지됨 (머지 없이 닫힌 PR, develop → main 릴리스 PR은 대상 아님)
+#   2) PR에 `done-verified` 라벨 (확인한 팀원이 완료 정의를 확인한 뒤 부착). 머지 후에 붙여도 그때 처리한다
+#   3) PR 마지막 커밋의 검사가 모두 성공·건너뜀 (실패·진행 중이거나 검사 결과가 없으면 닫지 않음)
+#   4) PR 본문 `Closes|Fixes|Resolves #번호` 중 이 레포 이슈만 (다른 레포 이슈·PR 번호는 건드리지 않음)
+# 이미 닫힌 이슈는 건너뛴다 → 다시 실행해도 결과가 같다.
+# 보드(Projects) Done 이동은 Projects 기본 워크플로(Item closed → Done)가 이슈 close를 보고 처리한다.
+# 보안: PR 코드를 checkout하지 않고, PR 본문은 환경변수로만 넘긴다. fork PR은 읽기 전용 토큰이라 닫지 못한다.
+name: issue-close
+on:
+  pull_request:
+    types: [closed, labeled]
+    branches: [develop]
+
+permissions:
+  issues: write
+  checks: read
+  pull-requests: read
+
+concurrency:
+  group: issue-close-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  close-issues:
+    if: >-
+      github.event.pull_request.merged == true &&
+      (github.event.action == 'closed' || github.event.label.name == 'done-verified')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 조건 확인 후 연결 이슈 닫기
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          summary() { echo "$1" >> "$GITHUB_STEP_SUMMARY"; }
+
+          # 1) done-verified 라벨: 이벤트 당시가 아니라 지금 PR의 라벨을 다시 읽는다
+          labels=$(gh api "repos/$REPO/issues/$PR/labels" -q '.[].name')
+          if ! printf '%s\n' "$labels" | grep -qx 'done-verified'; then
+            echo "::notice::done-verified 라벨이 없어 이슈를 닫지 않습니다. 완료 정의를 확인하고 라벨을 붙이면 그때 닫습니다."
+            summary "⏸ PR #$PR: \`done-verified\` 라벨 없음 → 이슈 열어 둠"
+            exit 0
+          fi
+
+          # 2) PR 마지막 커밋의 검사 결과 (이 작업 자신은 제외)
+          checks=$(gh api "repos/$REPO/commits/$HEAD_SHA/check-runs?per_page=100" --paginate \
+            -q '.check_runs[] | select(.name != "close-issues") | "\(.name)\t\(.status)\t\(.conclusion // "-")"')
+          bad=$(printf '%s\n' "$checks" | awk -F'\t' 'NF==3 && !($2=="completed" && ($3=="success" || $3=="skipped" || $3=="neutral"))')
+          if [ -z "$checks" ] || [ -n "$bad" ]; then
+            echo "::warning::검사 결과가 없거나 실패·진행 중인 검사가 있어 이슈를 닫지 않습니다."
+            printf '%s\n' "$bad"
+            summary "⛔ PR #$PR: 검사 미통과 또는 결과 없음 → 이슈 열어 둠"
+            exit 0
+          fi
+
+          # 3) 본문에서 이 레포 이슈 번호만 (HTML 주석 제거, 다른 레포 참조 제외)
+          nums=$(printf '%s' "$BODY" | perl -0pe 's/<!--.*?-->//gs' \
+            | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+' \
+            | while IFS= read -r ref; do
+                t=$(printf '%s' "$ref" | grep -oE '([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+$')
+                r=${t%#*}; n=${t##*#}
+                if [ -z "$r" ] || [ "${r,,}" = "${REPO,,}" ]; then echo "$n"; fi
+              done | sort -un || true)
+          if [ -z "$nums" ]; then
+            echo "::notice::본문에 이 레포 이슈를 가리키는 Closes #번호가 없습니다."
+            summary "ℹ PR #$PR: 닫을 이 레포 이슈 없음"
+            exit 0
+          fi
+
+          # 4) 열린 이슈만 닫는다 (PR 번호·없는 번호·이미 닫힌 이슈는 건너뜀)
+          for n in $nums; do
+            if ! info=$(gh api "repos/$REPO/issues/$n" -q '"\(.state) \(.pull_request != null)"' 2>/dev/null); then
+              echo "::warning::#$n 을(를) 찾을 수 없어 건너뜁니다."
+              continue
+            fi
+            state=${info% *}; is_pr=${info#* }
+            if [ "$is_pr" = "true" ]; then echo "#$n 은(는) PR이라 건너뜀"; continue; fi
+            if [ "$state" = "closed" ]; then summary "↩ #$n 이미 닫힘"; continue; fi
+            gh issue close "$n" --repo "$REPO" --reason completed \
+              --comment "PR #$PR 이(가) \`develop\`에 머지되고 완료 확인(\`done-verified\`)·검사 통과를 확인해 닫습니다. (issue-close, D-49)"
+            summary "✅ #$n 닫음 (PR #$PR)"
+          done
