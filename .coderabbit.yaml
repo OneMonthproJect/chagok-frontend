@@ -1,0 +1,37 @@
+# CodeRabbit 설정 (chagok-frontend) — 형상관리 소유. 정책: chagok-docs/CONTRIBUTING.md 6장 「CodeRabbit」
+# 릴리스 PR 중심 조건부 리뷰 (공식 스키마 v2: reviews.auto_review)
+#   - 일반 PR → develop       : 자동 리뷰 없음 (enabled: false)
+#   - develop → main 릴리스 PR : `release` 라벨(labeler가 자동 부착)이 붙으면 자동 리뷰 1회 (labels의 양성 항목은 enabled: false여도 리뷰를 시작함)
+#   - 추가 push               : 자동 증분 리뷰 없음 (auto_incremental_review: false). 다시 보려면 `@coderabbitai review`
+#   - 중요·복잡한 PR           : 작성자·승인자가 필요할 때 PR 댓글로 `@coderabbitai review` (`review-me` 라벨은 표시용, 로그인 가드(src/app)·API 클라이언트(src/shared/api) 변경 시 자동 부착)
+# CodeRabbit 리뷰는 머지 차단 조건이 아니다. 지적의 수정 여부는 형상관리자가 최종 판단한다.
+# 릴리스 PR에서 리뷰가 시작되지 않으면 PR 댓글로 "@coderabbitai full review"
+language: "ko-KR"
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: false
+    auto_incremental_review: false
+    drafts: false
+    base_branches:
+      - "^main$"
+    labels:
+      - "release"
+  path_filters:
+    - "!**/*.md"
+    - "!**/package-lock.json"
+  path_instructions:
+    - path: "src/features/**"
+      instructions: "다른 feature를 import하거나 상태(미확인/여유/임박/도래)를 프론트에서 계산하면 지적해 줘."
+    - path: "src/shared/**"
+      instructions: "shared는 features·pages를 import하지 않는다. 상태 표시 문구·색은 shared/ui/StatusBadge 한 곳에만 있어야 한다."
+    - path: "src/app/**"
+      instructions: "401 응답이면 로그인 화면으로 보내는지, 토큰을 콘솔·URL에 남기지 않는지 확인해 줘."
+    - path: "src/**"
+      instructions: |
+        fetch는 shared/api/client.ts에서만 부르는지(화면은 features/*/api.ts를 거침), 연결 안 된 버튼이나 빈 화면이 없는지 확인해 줘.
+        저장 버튼은 요청 중 비활성이어야 한다.
+        단, 기획 범위를 넓히는 제안(기능 추가 등)은 하지 마.

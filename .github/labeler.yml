@@ -1,0 +1,18 @@
+# actions/labeler v5 설정 — PR에 라벨 자동 부착 (chagok-frontend)
+frontend:
+  - changed-files:
+      - any-glob-to-any-file: ["src/**", "package.json", "vite.config.*", "eslint.config.*"]
+ci:
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", ".coderabbit.yaml", ".claude/settings.json", "CLAUDE.md"]
+feature:
+  - head-branch: ["^feature/"]
+fix:
+  - head-branch: ["^fix/"]
+release:
+  - base-branch: ["^main$"]
+review-me:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/app/**"
+          - "src/shared/api/**"

@@ -1,0 +1,27 @@
+# 모든 PR에서 npm ci · lint(ESLint 경계 규칙) · 빌드(타입 검사 포함). 실패하면 PR에 ❌.
+# GitHub Free 운영: ❌가 머지를 자동으로 막지 않는다 → ❌인 PR은 머지하지 않는다 (CONTRIBUTING 5장).
+name: frontend-ci
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 프로젝트 확인
+        run: |
+          for f in package.json package-lock.json; do
+            [ -f "$f" ] || { echo "::error::$f 가 없습니다."; exit 1; }
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build

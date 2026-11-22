@@ -1,0 +1,23 @@
+# 패키지 주인 → PR이 이 경로를 건드리면 주인에게 자동으로 리뷰 요청 (chagok-frontend)
+# 결정 14(구현 담당) 후 GitHub 아이디로 채우고 맨 앞 # 를 지운다. 모르는 아이디가 있으면 GitHub이 경고한다.
+# 아래 줄이 위 줄보다 우선한다. 사람 팀원 계정만 쓴다. Claude·AI 계정은 넣지 않는다.
+
+# 형상관리
+# /.github/                         @형상관리
+# /.claude/settings.json            @형상관리
+# /.coderabbit.yaml                 @형상관리
+# /CLAUDE.md                        @형상관리
+
+# 프론트 기반 (공용)
+# /package.json                     @프론트기반담당
+# /eslint.config.js                 @프론트기반담당
+# /src/app/                         @프론트기반담당
+# /src/shared/                      @프론트기반담당
+
+# 기능·화면 (feature 하나 = 주인 1명)
+# /src/features/auth/               @
+# /src/features/customer/           @
+# /src/features/maintenance/        @
+# /src/features/reservation/        @
+# /src/features/target/             @
+# /src/pages/                       @

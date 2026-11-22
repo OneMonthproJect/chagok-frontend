@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 결정·문서 이슈는 chagok-docs에
+    url: https://github.com/OneMonthproJect/chagok-docs/issues/new/choose
+    about: 명세 변경·범위 추가·P2 착수 같은 결정과 문서 작업은 chagok-docs에 이슈를 만듭니다 (OneMonthproJect를 실제 이름으로 바꿔 주세요).
