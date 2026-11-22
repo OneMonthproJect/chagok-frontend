@@ -1,6 +1,6 @@
 Closes #
 
-<!-- 제목: [#이슈번호] 이슈 제목 / 위 Closes 줄은 지우지 마세요 (develop 머지 시 이슈 자동 클로즈) -->
+<!-- 제목: [#이슈번호] 이슈 제목 (제목에는 Closes를 쓰지 않음) / 위 Closes 줄은 지우지 마세요: PR 대상은 develop. develop 머지 + done-verified 라벨 + 검사 ✅이면 issue-close가 이 레포 이슈를 닫습니다 (D-49) -->
 
 ## 기능 ID / 단계
 - 기능 ID: F-
@@ -46,6 +46,6 @@ Closes #
 - [ ] 있음 → chagok-docs `docs/etc/AI_USAGE`에 기록함 (사용한 스킬·에이전트: )
 - [ ] AI가 구현 전에 계획을 보고했고, 내가 확인한 뒤 구현했다 (`ai-rules.md` 작업 절차)
 - [ ] AI의 "완료" 보고를 실제 빌드·테스트 결과로 확인했다
-- [ ] 커밋·본문에 AI 공동 작성자 표기가 없다 (`Co-authored-by: Claude` 등)
+- [ ] 커밋·본문에 AI 공동 작성자 표기가 없다 (AI 이름을 넣은 Co-authored-by 트레일러, AI 메일 주소, AI 생성 안내 문구 — CONTRIBUTING 4장)
 
 ## 스크린샷 (화면 변경 시)

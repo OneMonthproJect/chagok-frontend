@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  issues: read       # 릴리스 PR: 커밋이 가리키는 이슈가 열려 있는지 확인 (D-49)
 jobs:
   pr-check:
     runs-on: ubuntu-latest
@@ -24,11 +25,21 @@ jobs:
           FREEZE: ${{ vars.FEATURE_FREEZE }}
         run: |
           fail=0
+          # 이슈 닫는 키워드 (D-49). 기본 브랜치가 main이라 main에 들어가는 제목·본문·커밋의 키워드는 이슈를 닫는다.
+          close_re='(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
+          # PR 제목 = Squash 커밋 제목이므로 제목에는 닫는 키워드를 쓰지 않는다
+          if printf '%s' "$TITLE" | grep -Eiq "$close_re"; then
+            echo "::error::PR 제목에 이슈 닫는 키워드(Closes·Fixes·Resolves #번호)를 쓰지 않습니다. 본문에 적어 주세요 (D-49)."; fail=1
+          fi
+
           if [ "$BASE" = "main" ]; then
             if [ "$HEAD" != "develop" ]; then
-              echo "::error::main에는 develop만 머지합니다 (릴리스 PR)."; exit 1
+              echo "::error::main에는 develop만 머지합니다 (릴리스 PR). 팀원 PR의 대상은 develop입니다 (gh pr create --base develop)."; exit 1
             fi
-            echo "릴리스 PR: 형식 검사 생략"; exit 0
+            if printf '%s' "$BODY" | grep -Eiq "$close_re"; then
+              echo "::error::릴리스 PR 본문에는 이슈 닫는 키워드를 쓰지 않습니다. 관련 이슈는 'Refs #번호' 또는 링크로 적어 주세요 (D-49)."; fail=1
+            fi
+            echo "릴리스 PR: 나머지 형식 검사 생략"; exit $fail
           fi
 
           branch_re='^(feature|fix|docs|chore)/#[0-9]+-[a-z0-9-]+$'
@@ -43,12 +54,39 @@ jobs:
 
           # 같은 레포 이슈(#12) 또는 다른 레포 이슈(OneMonthproJect/chagok-docs#12)
           if ! printf '%s' "$BODY" | grep -Eiq '(close[sd]?|fix(e[sd])?|resolve[sd]?) ([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'; then
-            echo "::error::PR 본문에 'Closes #이슈번호'가 필요합니다 (머지 시 이슈 자동 클로즈)."; fail=1
+            echo "::error::PR 본문에 'Closes #이슈번호'가 필요합니다 (이슈 연결. develop 머지 + done-verified 라벨이면 issue-close가 닫음)."; fail=1
           fi
 
           if [ "$FREEZE" = "true" ] && [[ "$HEAD" == feature/* ]]; then
             echo "::error::관문 2 기능 동결 중입니다. feature/ 브랜치 PR은 머지하지 않습니다 (fix/·docs/만 가능)."; fail=1
           fi
+          exit $fail
+
+      - name: 릴리스 커밋의 이슈 닫는 키워드 검사 (차단, D-49)
+        if: github.base_ref == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # 릴리스 머지 때 커밋 메시지의 닫는 키워드가 이슈를 닫는다. done-verified 없이 열어 둔 이슈가
+          # 의도치 않게 닫히지 않도록, 열린 이슈를 가리키는 키워드가 있으면 실패시킨다(이미 닫힌 이슈는 영향 없음).
+          close_re='(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
+          refs=$(git log --format=%B "$BASE_SHA..$HEAD_SHA" | grep -oiE "$close_re" \
+            | grep -oE '([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+$' | sort -u || true)
+          fail=0
+          for t in $refs; do
+            r=${t%#*}; n=${t##*#}; repo=${r:-$REPO}
+            if ! st=$(gh api "repos/$repo/issues/$n" -q .state 2>/dev/null); then
+              echo "::warning::$repo#$n 의 상태를 확인하지 못했습니다. 형상관리자가 직접 확인해 주세요."; continue
+            fi
+            if [ "$st" = "open" ]; then
+              echo "::error::릴리스 커밋이 열린 이슈 $repo#$n 을(를) 닫는 키워드를 담고 있습니다. 머지하면 done-verified 확인 없이 닫힙니다. 원래 PR에 done-verified를 붙여 develop 기준으로 먼저 닫히게 하거나 형상관리자가 판단해 주세요 (D-49)."
+              fail=1
+            fi
+          done
+          [ "$fail" -eq 0 ] && echo "릴리스 커밋: 열린 이슈를 닫는 키워드 없음"
           exit $fail
 
       - name: 비밀값·민감 파일 검사 (차단)
