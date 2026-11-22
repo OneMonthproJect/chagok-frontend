@@ -58,7 +58,7 @@ jobs:
           fi
 
           if [ "$FREEZE" = "true" ] && [[ "$HEAD" == feature/* ]]; then
-            echo "::error::관문 2 기능 동결 중입니다. feature/ 브랜치 PR은 머지하지 않습니다 (fix/·docs/만 가능)."; fail=1
+            echo "::error::M4 기능 동결 중입니다. feature/ 브랜치 PR은 머지하지 않습니다 (fix/·docs/만 가능)."; fail=1
           fi
           exit $fail
 
