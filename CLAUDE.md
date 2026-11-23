@@ -20,6 +20,6 @@
 - 화면 ID(S-xx)와 `pages` 파일은 09와 1:1.
 - API 모양이 08과 다르면 프론트에서 맞춰 우회하지 말고 차이를 보고한다(`chagok-contract-checker`). 08을 바꿔야 하면 `chagok-docs`에 문서 PR, 코드 PR 본문 「문서 PR」 칸에 링크.
 - 오류 처리는 `shared/api/client.ts` 한 곳에서 05 POL-120~129대로(입력값 유지, 자동 재전송 금지, 409 동시 수정 처리). 화면마다 따로 만들지 않는다.
-- 작업 절차: `ai-rules.md` 「작업 절차」(분석 → 계획 보고 → 승인 → 구현 → 검증 → 결과 보고).
-- 점검: `npm run lint && npm run build`. 못 돌렸으면 "미검증(이유)"으로 보고하고 완료라고 하지 않는다.
+- 절차·검증 범위는 `ai-rules.md` 「작업 등급」(L0~L3). 이 레포의 L2 이상: `features/*/api.ts`·`types.ts`·`mocks/`, `shared/api/client.ts`(인증·오류 처리는 L3), `app`의 로그인 가드(L3), `.github/`(L3).
+- 점검 명령: `npm run lint && npm run build`(typecheck 포함).
 - API 구현을 확인해야 하면 `../chagok-backend`를 읽기만 한다.
