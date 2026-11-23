@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { getServerHealth } from '@/shared/api/client'
+import Layout from '@/shared/ui/Layout.jsx'
 
-// 초기 세팅 확인용 화면: 백엔드가 떠 있고 DB에 연결됐는지만 보여준다. `기반` 이슈에서 S-01 로그인으로 바뀐다.
+// 임시 진입 화면: 백엔드가 떠 있고 DB에 연결됐는지만 보여 준다(요청은 client.ts를 거침).
+// S-01 로그인 화면(F-AUTH-01 화면 이슈)이 App.jsx의 로그인 경로에서 이 화면을 대신한다. 버튼·메뉴는 두지 않는다.
 export default function ServerCheck() {
   const [state, setState] = useState({ loading: true, status: null, error: null })
 
@@ -12,11 +14,10 @@ export default function ServerCheck() {
   }, [])
 
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: 24 }}>
-      <h1>차곡</h1>
+    <Layout header={<strong>차곡</strong>}>
       {state.loading && <p>백엔드 연결 확인 중…</p>}
       {state.status && <p>백엔드 상태: {state.status}</p>}
-      {state.error && <p>백엔드에 연결하지 못했습니다: {state.error}</p>}
-    </main>
+      {state.error && <p>{state.error}</p>}
+    </Layout>
   )
 }
