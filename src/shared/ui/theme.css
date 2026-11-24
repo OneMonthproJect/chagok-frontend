@@ -1,0 +1,91 @@
+/*
+ * 차곡 공통 스타일 — ⚠ 임시 (D-19 화면 상세 설계 2026-11-24 확정 전).
+ * 방향: Soft Blue Garage × Monochrome Automotive (네이비 · 파스텔 블루 · 연핑크 · 화이트 · 웜 아이보리).
+ * 색 값·타이포·여백·아이콘은 확정이 아니다. 바꿀 때는 이 파일의 변수만 고친다(컴포넌트에 색을 직접 쓰지 않음).
+ * 상태 색은 09 0장 💡(미확인 회색 / 여유 파랑 / 임박 주황 / 도래 빨강)을 따른다. 글자를 항상 함께 보인다.
+ */
+:root {
+  --color-navy: #1f2a44;
+  --color-blue-pastel: #dce8f7;
+  --color-pink-soft: #f7dde4;
+  --color-white: #ffffff;
+  --color-ivory: #faf7f0;
+  --color-border: #d9dde5;
+  --color-text: #1f2a44;
+  --color-text-muted: #5d6679;
+
+  --status-unknown-fg: #4b5563;
+  --status-unknown-bg: #eceef2;
+  --status-ahead-fg: #1d4ed8;
+  --status-ahead-bg: #e1ebfb;
+  --status-soon-fg: #b45309;
+  --status-soon-bg: #fdecd3;
+  --status-due-fg: #b91c1c;
+  --status-due-bg: #fbe0e0;
+
+  --radius: 8px;
+  --gap: 16px;
+
+  color: var(--color-text);
+  background: var(--color-ivory);
+  font-family: system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+/* Layout: 상단 영역 + 본문. 09 0장 크기: 1024px 기준 넓은·좁은 배치 (세부는 D-19) */
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.layout__header {
+  background: var(--color-navy);
+  color: var(--color-white);
+  padding: 12px var(--gap);
+}
+.layout__main {
+  flex: 1;
+  padding: var(--gap);
+}
+@media (min-width: 1024px) {
+  .layout__header,
+  .layout__main {
+    padding-left: calc(var(--gap) * 2);
+    padding-right: calc(var(--gap) * 2);
+  }
+}
+
+/* Button: 저장 중 비활성 + 진행 표시 (05 POL-120) */
+.button {
+  border: 1px solid var(--color-navy);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  background: var(--color-navy);
+  color: var(--color-white);
+  font: inherit;
+  cursor: pointer;
+}
+.button--secondary {
+  background: var(--color-white);
+  color: var(--color-navy);
+}
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* StatusBadge: 글자 + 색 (색만으로 구분하지 않음) */
+.status-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.875em;
+  font-weight: 600;
+}
+.status-badge--UNKNOWN { color: var(--status-unknown-fg); background: var(--status-unknown-bg); }
+.status-badge--AHEAD { color: var(--status-ahead-fg); background: var(--status-ahead-bg); }
+.status-badge--SOON { color: var(--status-soon-fg); background: var(--status-soon-bg); }
+.status-badge--DUE { color: var(--status-due-fg); background: var(--status-due-bg); }
