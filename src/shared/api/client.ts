@@ -179,10 +179,10 @@ export async function getServerHealth(): Promise<string> {
 }
 
 /**
- * 요청 하나의 시간 초과(밀리초). 응답 본문을 다 읽을 때까지를 센다.
- * ❓ 문서(05·08)에 정해진 값이 없어 15초를 제안값으로 둔다 — chagok-frontend#14 PR에서 확인.
+ * 요청 하나의 시간 초과(밀리초). 요청 시작부터 응답 본문 읽기 완료까지를 센다.
+ * 근거: 05 POL-125, 08 0.2 「네트워크 오류·응답 없음」 — 10초 (chagok-docs#120)
  */
-export const REQUEST_TIMEOUT_MS = 15_000
+export const REQUEST_TIMEOUT_MS = 10_000
 
 /**
  * fetch 한 번 + 본문 읽기. 응답 없음·시간 초과·본문 읽기 실패는 모두 ApiError{0, NETWORK_ERROR}로 끝낸다 (POL-125).

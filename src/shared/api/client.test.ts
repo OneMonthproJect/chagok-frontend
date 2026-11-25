@@ -179,6 +179,10 @@ describe('request — 시간 초과·본문 읽기 실패 (05 POL-125, #14)', ()
     vi.useRealTimers()
   })
 
+  it('시간 초과는 10초다 (05 POL-125, 08 0.2, chagok-docs#120)', () => {
+    expect(REQUEST_TIMEOUT_MS).toBe(10_000)
+  })
+
   it('응답이 오지 않으면 REQUEST_TIMEOUT_MS 뒤에 NETWORK_ERROR(status 0)로 끝내고 다시 보내지 않는다', async () => {
     fetchMock.mockImplementation((_url: string, init: RequestInit) => rejectOnAbort(init.signal))
     let settled = false
