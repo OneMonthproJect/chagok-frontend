@@ -76,7 +76,9 @@ describe('칸 검사 (08 06 검증과 같은 범위)', () => {
   it('연식 1980 ~ 올해+1, 주행거리 정수 0~2,000,000', () => {
     expect(validateRegisterForm({ ...FILLED, modelYear: String(YEAR + 1) }, YEAR)).toEqual({})
     expect(validateRegisterForm({ ...FILLED, modelYear: String(YEAR + 2) }, YEAR).modelYear).toBe(modelYearRangeMessage(YEAR))
-    expect(validateRegisterForm({ ...FILLED, modelYear: '1979' }, YEAR).modelYear).toBe('1980년부터 2027년까지 입력할 수 있습니다.')
+    expect(validateRegisterForm({ ...FILLED, modelYear: '1979' }, YEAR).modelYear).toBe('1980년 이후여야 합니다.')
+    expect(validateRegisterForm({ ...FILLED, modelYear: '2028' }, YEAR).modelYear).toBe('1980년부터 2027년까지 입력할 수 있습니다.')
+    expect(validateRegisterForm({ ...FILLED, modelYear: '20년' }, YEAR).modelYear).toBe(modelYearRangeMessage(YEAR))
     expect(validateRegisterForm({ ...FILLED, mileage: '40,000' }, YEAR)).toEqual({})
     expect(validateRegisterForm({ ...FILLED, mileage: '2000001' }, YEAR).mileage).toBe(M.MILEAGE_MAX)
     expect(validateRegisterForm({ ...FILLED, mileage: '12.5' }, YEAR).mileage).toBe(M.NOT_INTEGER)

@@ -63,9 +63,13 @@ const searchKey = (text: string) => text.replace(/[\s-]/g, '')
 
 /** 08 05 */
 export function mockSearchCustomers(params: CustomerSearchParams = {}): MockResponse {
+  // 쪽 나누기 오류는 서버(PageLimit)와 같은 fieldErrors
   const page = params.page ?? 0
   const requested = params.size ?? DEFAULT_SIZE
-  if (!Number.isInteger(page) || page < 0 || !Number.isInteger(requested) || requested <= 0) return invalid()
+  if (!Number.isInteger(page)) return invalid([{ field: 'page', reason: '형식이 올바르지 않습니다.' }])
+  if (!Number.isInteger(requested)) return invalid([{ field: 'size', reason: '형식이 올바르지 않습니다.' }])
+  if (page < 0) return invalid([{ field: 'page', reason: '0 이상이어야 합니다.' }])
+  if (requested <= 0) return invalid([{ field: 'size', reason: '1 이상이어야 합니다.' }])
   const size = Math.min(requested, MAX_SIZE)
 
   const keyword = searchKey(params.q ?? '')
@@ -100,7 +104,8 @@ function vehicleFieldErrors(vehicle: Partial<VehicleInput> | null | undefined, p
 
   const currentYear = new Date().getFullYear()
   const modelYear = vehicle?.modelYear
-  if (modelYear != null && (modelYear < MIN_MODEL_YEAR || modelYear > currentYear + 1)) {
+  if (modelYear != null && modelYear < MIN_MODEL_YEAR) errors.push({ field: `${prefix}modelYear`, reason: M.MODEL_YEAR_MIN })
+  else if (modelYear != null && modelYear > currentYear + 1) {
     errors.push({ field: `${prefix}modelYear`, reason: modelYearRangeMessage(currentYear) })
   }
   const mileage = vehicle?.mileage
@@ -143,11 +148,11 @@ export function mockGetCustomer(customerId: number): MockResponse {
   return ok(detail)
 }
 
-/** 08 08 — 없는 고객·다른 정비소 고객이면 404 (X17) */
+/** 08 08 — 서버처럼 본문 검증(400)이 먼저, 그다음 없는 고객·다른 정비소 고객이면 404 (X17) */
 export function mockAddVehicle(customerId: number, body: VehicleInput): MockResponse {
-  if (!CUSTOMERS.some((c) => c.customerId === customerId)) return notFound()
   const errors = vehicleFieldErrors(body, '')
   if (errors.length > 0) return invalid(errors)
+  if (!CUSTOMERS.some((c) => c.customerId === customerId)) return notFound()
   return ok({ customerId, vehicleId: NEXT_VEHICLE_ID })
 }
 

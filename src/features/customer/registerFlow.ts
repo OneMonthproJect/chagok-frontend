@@ -29,6 +29,7 @@ export const REGISTER_MESSAGES = {
   PHONE_LENGTH: '9~20자로 입력해 주세요.',
   PLATE_MAX: '20자 이하로 입력해 주세요.',
   MODEL_MAX: '50자 이하로 입력해 주세요.',
+  MODEL_YEAR_MIN: '1980년 이후여야 합니다.',
   MILEAGE_MIN: '0 이상이어야 합니다.',
   MILEAGE_MAX: '2,000,000 이하여야 합니다.',
   NOT_INTEGER: '숫자만 입력해 주세요.',
@@ -114,8 +115,10 @@ export function validateRegisterForm(form: RegisterForm, currentYear: number): R
   if (!model) errors.model = M.REQUIRED
   else if (model.length > 50) errors.model = M.MODEL_MAX
 
+  // 서버와 같은 문구: 하한은 "1980년 이후여야 합니다.", 상한·정수 아님은 범위 문구
   const modelYear = parseOptionalInt(form.modelYear)
-  if (modelYear !== null && (Number.isNaN(modelYear) || modelYear < MIN_MODEL_YEAR || modelYear > currentYear + 1)) {
+  if (modelYear !== null && !Number.isNaN(modelYear) && modelYear < MIN_MODEL_YEAR) errors.modelYear = M.MODEL_YEAR_MIN
+  else if (modelYear !== null && (Number.isNaN(modelYear) || modelYear > currentYear + 1)) {
     errors.modelYear = modelYearRangeMessage(currentYear)
   }
 

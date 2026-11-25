@@ -152,7 +152,12 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     const second = parse<CustomerSearchResponse>(mockSearchCustomers({ page: 1, size: 4 }))
     expect(second.items.map((c) => c.customerId)).toEqual([6, 5, 4, 3])
     expect(second.totalPages).toBe(3)
-    expect(() => parse(mockSearchCustomers({ page: -1 }))).toThrowError(expect.objectContaining({ code: 'INVALID_INPUT' }))
+    expect(() => parse(mockSearchCustomers({ page: -1 }))).toThrowError(
+      expect.objectContaining({ code: 'INVALID_INPUT', fieldErrors: [{ field: 'page', reason: '0 이상이어야 합니다.' }] }),
+    )
+    expect(() => parse(mockSearchCustomers({ size: 0 }))).toThrowError(
+      expect.objectContaining({ fieldErrors: [{ field: 'size', reason: '1 이상이어야 합니다.' }] }),
+    )
   })
 
   it('06 차종 누락은 400 + vehicle.model (D-58)', () => {
@@ -170,7 +175,10 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
   it('06 연식·주행거리 범위 밖은 400 (08 0.1)', async () => {
     const body = { ...NEW_CUSTOMER, vehicle: { ...NEW_CUSTOMER.vehicle, modelYear: 1979, mileage: 2_000_001 } }
     const error = await caught(Promise.resolve().then(() => parse(mockCreateCustomer(body))))
-    expect(error.fieldErrors.map((f) => f.field)).toEqual(['vehicle.modelYear', 'vehicle.mileage'])
+    expect(error.fieldErrors).toEqual([
+      { field: 'vehicle.modelYear', reason: '1980년 이후여야 합니다.' },
+      { field: 'vehicle.mileage', reason: '2,000,000 이하여야 합니다.' },
+    ])
   })
 
   it('07 오세훈은 08 예시 그대로, 다른 A 고객은 07 7.2 값', () => {
@@ -199,5 +207,11 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
       expect.objectContaining({ fieldErrors: [{ field: 'model', reason: '필수 입력입니다.' }] }),
     )
     expect(parse(mockAddVehicle(10, NEW_CUSTOMER.vehicle))).toEqual({ customerId: 10, vehicleId: 13 })
+  })
+
+  it('08 차량 추가: 서버처럼 본문 검증(400)이 404보다 먼저', () => {
+    expect(() => parse(mockAddVehicle(11, { ...NEW_CUSTOMER.vehicle, model: '' }))).toThrowError(
+      expect.objectContaining({ code: 'INVALID_INPUT' }),
+    )
   })
 })
