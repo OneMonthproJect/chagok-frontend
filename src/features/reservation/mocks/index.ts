@@ -1,6 +1,7 @@
 // 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 15~19의 사본이며 계약의 기준은 08이다.
 // 값은 07 7.1~7.3 시드(seed.json). 예약 날짜는 오늘(서울) 기준으로 계산하고, 바뀐 상태는 메모리에만 둔다(새로 고치면 처음으로).
-// 패널(17)의 정비 이력·점검 주기는 단순화: 최근 방문 없음, 항목 상태 모두 미확인. 실제 값은 백엔드 연결로 확인한다.
+// 패널(17)의 최근 방문·총 방문 수는 07 7.2 기록(seed.json visits, #26)으로 만든다(11 모양, 최신순 2회, 외부만 있는 방문은 세지 않음 POL-45).
+// LIMIT: 점검 주기(itemStatuses)는 단순화 — 항목 상태 모두 미확인. 상태 판정은 서버(cycle)의 일이라 Mock에서 계산하지 않는다. 실제 값은 백엔드 연결로 확인한다.
 // api.ts만 동적 import()로 부른다. 화면·pages는 import하지 않는다.
 
 import type { MockResponse } from '@/shared/api/client'
@@ -13,6 +14,8 @@ import type {
   ReservationPeriodQuery,
   ReservationStatus,
   ReservationUpdateRequest,
+  RecentVisit,
+  VisitRecord,
 } from '../types'
 import seed from './seed.json'
 
@@ -142,12 +145,45 @@ export function mockCreateReservation(body: ReservationCreateRequest): MockRespo
   return ok({ reservationId: created.reservationId, status: created.status, reservedAt: created.reservedAt, vehicleId: created.vehicleId, version: 0 })
 }
 
-/** 08 17 (정비 이력·점검 주기는 단순화, 위 주석) */
+/** 오늘에서 months 개월 + days 일 (달 끝은 그 달 마지막 날로) */
+function shiftDate(today: string, months: number, days: number): string {
+  const [y, m, d] = today.split('-').map(Number)
+  const first = new Date(Date.UTC(y, m - 1 + months, 1))
+  const lastDay = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate()
+  const date = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), Math.min(d, lastDay)))
+  return addDays(date.toISOString().slice(0, 10), days)
+}
+
+/** 차량의 방문 이력 (11 모양, visitDate 내림차순 · 같으면 나중 방문 먼저) */
+function visitsOf(vehicleId: number): RecentVisit[] {
+  const today = todaySeoul()
+  return seed.visits
+    .map((v, index) => ({ v, index, visitDate: shiftDate(today, v.monthOffset, v.dayOffset) }))
+    .filter(({ v }) => v.vehicleId === vehicleId)
+    .sort((a, b) => b.visitDate.localeCompare(a.visitDate) || b.index - a.index)
+    .map(({ v, visitDate }) => ({
+      visitKey: v.visitKey,
+      visitDate,
+      mileage: v.mileage,
+      staffName: v.staffName,
+      records: v.records.map((r) => ({
+        recordId: r.recordId,
+        itemId: r.itemId,
+        itemName: itemOf(r.itemId)?.name ?? '',
+        type: r.type as VisitRecord['type'],
+        date: visitDate,
+        memo: r.memo,
+      })),
+    }))
+}
+
+/** 08 17 (최근 방문은 07 7.2 기록, 점검 주기는 단순화 — 위 주석) */
 export function mockGetPanel(reservationId: number): MockResponse {
   const r = reservations().find((x) => x.reservationId === reservationId)
   if (!r) return notFound()
   const vehicle = vehicleOf(r.vehicleId)!
   const customer = customerOf(vehicle.customerId)!
+  const visits = visitsOf(vehicle.vehicleId)
   const panel: ReservationPanel = {
     reservation: {
       reservationId: r.reservationId,
@@ -159,8 +195,9 @@ export function mockGetPanel(reservationId: number): MockResponse {
     },
     customer: { customerId: customer.customerId, name: customer.name, phone: customer.phone, consent: customer.consent },
     vehicle: { vehicleId: vehicle.vehicleId, plateNumber: vehicle.plateNumber, model: vehicle.model, modelYear: vehicle.modelYear, latestMileage: vehicle.latestMileage },
-    recentVisits: [],
-    totalVisitCount: 0,
+    recentVisits: visits.slice(0, 2),
+    // 외부 기록만 있는 방문은 세지 않는다 (08 17, 05 POL-45)
+    totalVisitCount: visits.filter((v) => v.records.some((rec) => rec.type !== 'EXTERNAL')).length,
     itemStatuses: seed.items.map((item) => ({
       itemId: item.itemId,
       code: item.code,

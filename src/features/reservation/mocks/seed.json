@@ -38,5 +38,23 @@
     { "reservationId": 2, "dayOffset": 0, "time": "14:30:00", "status": "RESERVED", "version": 0, "vehicleId": 7, "itemIds": [], "other": true, "memo": "에어컨 냄새" },
     { "reservationId": 3, "dayOffset": 2, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 2, "itemIds": [1], "other": false, "memo": null },
     { "reservationId": 4, "dayOffset": -1, "time": "15:00:00", "status": "RESERVED", "version": 0, "vehicleId": 10, "itemIds": [6], "other": false, "memo": null }
+  ],
+  "_visitsComment": "07 7.2 기록 (패널 17의 recentVisits·totalVisitCount용). 날짜는 오늘 기준 monthOffset 개월 + dayOffset 일. visitKey·recordId는 chagok-backend db/seed와 08 17 예시와 같은 번호.",
+  "visits": [
+    { "visitKey": "5eed0000-0000-4000-8000-000000000001", "vehicleId": 1, "monthOffset": -6, "dayOffset": -7, "mileage": 40000, "staffName": "김정비", "records": [{ "recordId": 1, "itemId": 1, "type": "REPLACE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000002", "vehicleId": 1, "monthOffset": -2, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 2, "itemId": 1, "type": "INSPECT", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000003", "vehicleId": 2, "monthOffset": -6, "dayOffset": -10, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 3, "itemId": 1, "type": "REPLACE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000004", "vehicleId": 3, "monthOffset": -12, "dayOffset": 20, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 4, "itemId": 4, "type": "REPLACE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000005", "vehicleId": 4, "monthOffset": -2, "dayOffset": 0, "mileage": 45000, "staffName": "김정비", "records": [{ "recordId": 5, "itemId": 1, "type": "REPLACE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000006", "vehicleId": 6, "monthOffset": -8, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 6, "itemId": 1, "type": "REPLACE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000007", "vehicleId": 6, "monthOffset": -1, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 7, "itemId": 1, "type": "DECLINE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000008", "vehicleId": 7, "monthOffset": -13, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 8, "itemId": 3, "type": "REPLACE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000009", "vehicleId": 7, "monthOffset": -1, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 9, "itemId": 3, "type": "EXTERNAL", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000010", "vehicleId": 8, "monthOffset": -6, "dayOffset": 20, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 10, "itemId": 5, "type": "REPLACE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000011", "vehicleId": 8, "monthOffset": -2, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 11, "itemId": 5, "type": "INSPECT", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000012", "vehicleId": 9, "monthOffset": -7, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 12, "itemId": 1, "type": "REPLACE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000013", "vehicleId": 10, "monthOffset": -36, "dayOffset": 20, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 13, "itemId": 6, "type": "REPLACE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000014", "vehicleId": 10, "monthOffset": -3, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 14, "itemId": 2, "type": "REPLACE", "memo": null }, { "recordId": 15, "itemId": 3, "type": "REPLACE", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000015", "vehicleId": 10, "monthOffset": -1, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 16, "itemId": 1, "type": "REPLACE", "memo": null }] }
   ]
 }
