@@ -52,9 +52,10 @@ jobs:
             echo "::error::PR 제목은 [#이슈번호] 제목 형식이어야 합니다."; fail=1
           fi
 
-          # 같은 레포 이슈(#12) 또는 다른 레포 이슈(OneMonthproJect/chagok-docs#12)
-          if ! printf '%s' "$BODY" | grep -Eiq '(close[sd]?|fix(e[sd])?|resolve[sd]?) ([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'; then
-            echo "::error::PR 본문에 'Closes #이슈번호'가 필요합니다 (이슈 연결. develop 머지 + done-verified 라벨이면 issue-close가 닫음)."; fail=1
+          # 이슈 연결 (D-71): Closes #n = 이슈 전체를 끝내는 최종 PR, Refs #n = 일부만 끝내는 PR(이슈는 열린 채 유지).
+          # 같은 레포 이슈(#12) 또는 다른 레포 이슈(OneMonthproJect/chagok-docs#12). Refs는 issue-close가 닫지 않는다.
+          if ! printf '%s' "$BODY" | grep -Eiq '(close[sd]?|fix(e[sd])?|resolve[sd]?|\brefs?) ([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'; then
+            echo "::error::PR 본문에 이슈 연결이 필요합니다: 이슈 전체를 끝내는 PR은 'Closes #이슈번호'(develop 머지 + done-verified 라벨이면 issue-close가 닫음), 일부만 끝내는 PR은 'Refs #이슈번호'(이슈는 열린 채 유지) (D-71)."; fail=1
           fi
 
           if [ "$FREEZE" = "true" ] && [[ "$HEAD" == feature/* ]]; then

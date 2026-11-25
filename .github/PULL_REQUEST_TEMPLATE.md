@@ -1,6 +1,10 @@
 Closes #
 
-<!-- 제목: [#이슈번호] 이슈 제목 (제목에는 Closes를 쓰지 않음) / 위 Closes 줄은 지우지 마세요: PR 대상은 develop. develop 머지 + done-verified 라벨 + 검사 ✅이면 issue-close가 이 레포 이슈를 닫습니다 (D-49) -->
+<!-- 제목: [#이슈번호] 이슈 제목 (제목에는 Closes를 쓰지 않음). PR 대상은 develop. 위 줄은 PR 유형에 맞게 고칩니다 (D-71, CONTRIBUTING 5장):
+  · 이슈 전체 완료 조건을 채운 최종 PR → Closes #번호 (develop 머지 + done-verified 라벨 + 검사 ✅이면 issue-close가 이 레포 이슈를 닫음, D-49)
+  · 이슈 일부만 끝냈고 혼자 검토·머지할 수 있는 PR → Refs #번호 (머지돼도 이슈는 열림, done-verified를 붙이지 않음)
+  · PR 자체가 미완·리뷰 준비 전·필수 의존성 미충족 → Draft PR (이슈 전체가 미완이라는 이유만으로 Draft로 하지 않음)
+  PR Assignee는 비워 둡니다(인수인계·담당 변경 때만 지정). -->
 
 ## 기능 ID / 단계
 - 기능 ID: F-
@@ -20,7 +24,7 @@ Closes #
 - 실행한 테스트와 결과: (예: ./gradlew build 통과, dbTest 통과, R3·R8 추가)
 - 실행하지 못한 검증과 이유: (없으면 "없음". SKIPPED는 통과가 아님)
 
-## 완료 정의 (기능 PR — 해당 항목 모두 체크, chagok-docs 00 7장)
+## 완료 정의 (기능 PR, chagok-docs 00 7장 — Closes 최종 PR은 해당 항목 모두 체크, Refs 부분 PR은 이 PR 범위에 해당하는 항목만)
 - [ ] 화면이 실제 API와 연결되어 동작한다
 - [ ] API가 공통 응답·예외 처리 규칙을 따른다
 - [ ] 시연에 쓸 시드 데이터가 있다
