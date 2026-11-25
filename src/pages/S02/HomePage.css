@@ -51,40 +51,12 @@
 }
 .home-card__body { padding: 16px; }
 
-/* 임시 빈 상태·오류 (TODO #18: 공통 EmptyState·ErrorNotice로 교체) */
-.home-empty {
-  min-height: 300px;
-  padding: 28px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-.home-empty img { height: 120px; width: auto; }
-.home-empty p {
-  margin: 12px 0 0;
-  color: var(--ck-text-4, #626770);
-  font-size: var(--ck-fs-body, 15px);
-  font-weight: 500;
-}
+/* 빈 상태 마스코트 크기 (EmptyState illustration, 디자인 reservation-empty-state 120px) */
+.home-empty__mascot { display: block; width: auto; height: 120px; }
+
 .home-state {
   margin: 0;
   padding: 40px 0;
   color: var(--ck-text-3, #5f646d);
   text-align: center;
 }
-.home-state--error p { margin: 0; color: var(--ck-due-fg, #b42318); font-weight: 600; }
-.home-retry {
-  margin-top: 12px;
-  min-height: var(--ck-control-h-sm, 40px);
-  padding: 0 16px;
-  border: 1px solid var(--ck-border, #e4e6ea);
-  border-radius: var(--ck-radius-md, 12px);
-  background: var(--ck-surface, #fff);
-  color: var(--ck-text-1, #111318);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-.home-retry:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: 2px; }
