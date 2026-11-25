@@ -1,5 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, NETWORK_ERROR, isMockEnabled, onUnauthorized, parseResponse, request } from '@/shared/api/client'
+import {
+  ApiError,
+  DEFAULT_MESSAGES,
+  NETWORK_ERROR,
+  REQUEST_TIMEOUT_MS,
+  getServerHealth,
+  isMockEnabled,
+  onUnauthorized,
+  parseResponse,
+  request,
+} from '@/shared/api/client'
+import { createSubmitGuard } from '@/shared/lib/submitGuard'
 import { getToken, setToken } from '@/shared/lib/tokenStore'
 
 // 08 0.2 공통 응답과 05 POL-120~129 처리를 실제 fetch 없이 확인한다 (fetch·localStorage 대역)
@@ -149,6 +160,91 @@ describe('request — 오류 (05 POL-121~129, 08 0.2)', () => {
     fetchMock.mockResolvedValue(jsonResponse(500, errorBody('INTERNAL_ERROR', '오류')))
     await caught(request('POST', '/api/reservations', { body: {} }))
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('request — 시간 초과·본문 읽기 실패 (05 POL-125, #14)', () => {
+  /** 응답하지 않는 서버 대역: signal이 끊길 때만 실제 fetch처럼 AbortError로 거절된다 (signal이 없으면 끝나지 않음) */
+  function rejectOnAbort(signal: AbortSignal | null | undefined): Promise<never> {
+    return new Promise((_, reject) => {
+      signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+    })
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('응답이 오지 않으면 REQUEST_TIMEOUT_MS 뒤에 NETWORK_ERROR(status 0)로 끝내고 다시 보내지 않는다', async () => {
+    fetchMock.mockImplementation((_url: string, init: RequestInit) => rejectOnAbort(init.signal))
+    let settled = false
+    const result = caught(request('POST', '/api/customers', { body: { name: '정우성' } })).finally(() => { settled = true })
+
+    await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS - 1)
+    expect(settled).toBe(false)
+    expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(false)
+
+    await vi.advanceTimersByTimeAsync(1)
+    const e = await result
+    expect(e).toBeInstanceOf(ApiError)
+    expect([e.status, e.code, e.message]).toEqual([0, NETWORK_ERROR, DEFAULT_MESSAGES[NETWORK_ERROR]])
+    expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('헤더만 오고 본문이 멈춰도 같은 시간 초과로 NETWORK_ERROR', async () => {
+    fetchMock.mockImplementation(async (_url: string, init: RequestInit) => ({
+      status: 200,
+      text: () => rejectOnAbort(init.signal),
+    }))
+    const result = caught(request('GET', '/api/customers'))
+    await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS)
+    const e = await result
+    expect([e.status, e.code]).toEqual([0, NETWORK_ERROR])
+  })
+
+  it('본문 읽기(response.text())가 실패하면 TypeError가 아니라 NETWORK_ERROR(status 0)', async () => {
+    const broken = new ReadableStream({ start(c) { c.error(new TypeError('network error')) } })
+    fetchMock.mockResolvedValue(new Response(broken, { status: 200 }))
+    const e = await caught(request('POST', '/api/customers', { body: {} }))
+    expect(e).toBeInstanceOf(ApiError)
+    expect([e.status, e.code]).toEqual([0, NETWORK_ERROR])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('응답을 받으면 타이머를 지운다 (뒤늦게 끊지 않음)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { success: true, data: 1, error: null }))
+    await request('GET', '/api/x')
+    expect(vi.getTimerCount()).toBe(0)
+    expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(false)
+  })
+
+  it('시간 초과로 끝나면 저장 잠금(submitGuard)이 풀려 사람이 다시 누를 수 있다 (POL-120·125)', async () => {
+    fetchMock.mockImplementation((_url: string, init: RequestInit) => rejectOnAbort(init.signal))
+    const guard = createSubmitGuard()
+    const result = caught(guard.run(() => request('POST', '/api/customers', { body: {} })))
+    expect(guard.isPending()).toBe(true)
+    await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS)
+    expect((await result).code).toBe(NETWORK_ERROR)
+    expect(guard.isPending()).toBe(false)
+  })
+
+  it('getServerHealth도 시간 초과면 NETWORK_ERROR', async () => {
+    fetchMock.mockImplementation((_url: string, init: RequestInit) => rejectOnAbort(init.signal))
+    const result = caught(getServerHealth())
+    await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS)
+    expect((await result).code).toBe(NETWORK_ERROR)
+  })
+
+  it('Mock 응답은 fetch·타이머를 거치지 않는다', async () => {
+    const mock = () => ({ status: 200, body: { success: true, data: 'mock', error: null } })
+    expect(await request<string>('GET', '/api/x', { mock }, { mockEnabled: true })).toBe('mock')
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(vi.getTimerCount()).toBe(0)
   })
 })
 
