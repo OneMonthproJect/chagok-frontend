@@ -123,4 +123,22 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
     expect(data.itemStatuses.filter((s) => s.highlighted).map((s) => s.code)).toEqual(['BATTERY'])
     expect(() => parseResponse(mockGetPanel(999).status, mockGetPanel(999).body)).toThrow(ApiError)
   })
+
+  it('17: 최근 방문은 07 7.2 기록 최신순 2회, 총 방문은 외부만 있는 방문 제외 (#26)', () => {
+    type Panel = { recentVisits: { visitKey: string; visitDate: string; records: { recordId: number; type: string; date: string }[] }[]; totalVisitCount: number }
+    const read = (id: number) => parseResponse<Panel>(mockGetPanel(id).status, mockGetPanel(id).body)
+
+    const oh = read(4) // 55차0010: 방문 3회(08 17 예시)
+    expect(oh.totalVisitCount).toBe(3)
+    expect(oh.recentVisits.map((v) => v.visitKey.slice(-2))).toEqual(['15', '14'])
+    expect(oh.recentVisits[1].records.map((r) => r.recordId)).toEqual([14, 15])
+    expect(oh.recentVisits[0].visitDate > oh.recentVisits[1].visitDate).toBe(true)
+    expect(oh.recentVisits[0].records[0].date).toBe(oh.recentVisits[0].visitDate)
+
+    const seo = read(2) // 22사0007: 교체 1회 + 외부 1회 → 총 1회, 최근 2회에는 외부도 보인다
+    expect(seo.totalVisitCount).toBe(1)
+    expect(seo.recentVisits.map((v) => v.records[0].type)).toEqual(['EXTERNAL', 'REPLACE'])
+
+    expect(read(1).totalVisitCount).toBe(1) // 78라0004
+  })
 })
