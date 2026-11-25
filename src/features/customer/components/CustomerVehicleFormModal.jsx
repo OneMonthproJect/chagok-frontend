@@ -3,11 +3,13 @@ import Button from '@/shared/ui/Button.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import FormField from '@/shared/ui/FormField.jsx'
 import Modal from '@/shared/ui/Modal.jsx'
+import { NETWORK_ERROR } from '@/shared/api/client'
 import { searchCustomers } from '../api'
 import {
   CONSENT_HINT,
   CONSENT_LABEL,
   DUPLICATE_HINT,
+  DUPLICATE_INFO_TITLE,
   DUPLICATE_TITLE,
   MIN_MODEL_YEAR,
   OPTIONAL_VEHICLE_HINT,
@@ -56,8 +58,11 @@ export default function CustomerVehicleFormModal({
   const [saveNotice, setSaveNotice] = useState(null) // { error } 저장 실패 · { title } 칸에 붙일 수 없는 400
   const [duplicates, setDuplicates] = useState([])
   const [focusTick, setFocusTick] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
+  const submittingRef = useRef(false) // "등록"과 "다시 시도"가 함께 쓰는 잠금 — 요청 중에는 어느 쪽도 다시 보내지 않는다(POL-120)
   const formRef = useRef(null)
   const duplicateRequest = useRef(0)
+  const pickable = Boolean(onPick) && pickKinds.length > 0
 
   // 저장을 눌렀는데 칸 오류가 있으면 첫 오류 칸으로 초점
   useEffect(() => {
@@ -95,13 +100,22 @@ export default function CustomerVehicleFormModal({
   }
 
   async function save() {
+    if (submittingRef.current) return
     setSaveNotice(null)
     const found = validateRegisterForm(form, currentYear)
     if (hasErrors(found)) {
       showErrors(found)
       return
     }
-    const outcome = await submitRegistration(form)
+    submittingRef.current = true
+    setSubmitting(true)
+    let outcome
+    try {
+      outcome = await submitRegistration(form)
+    } finally {
+      submittingRef.current = false
+      setSubmitting(false)
+    }
     if (outcome.kind === 'created') {
       onCreated({ ...outcome.result, name: form.name.trim(), plateNumber: normalizePlate(form.plateNumber) })
       return
@@ -112,6 +126,8 @@ export default function CustomerVehicleFormModal({
       return
     }
     setSaveNotice({ error: outcome.error })
+    // 응답이 없으면 저장됐는지 알 수 없다 — 같은 연락처·차량번호를 다시 찾아, 저장됐다면 위 안내에 보이게 한다(09 0장)
+    if (outcome.error.code === NETWORK_ERROR) findDuplicates(form)
   }
 
   function showErrors(found) {
@@ -143,7 +159,7 @@ export default function CustomerVehicleFormModal({
           <Button variant="secondary" onClick={onClose}>
             취소
           </Button>
-          <Button type="submit" form={formId} onClick={save}>
+          <Button type="submit" form={formId} onClick={save} loading={submitting}>
             등록
           </Button>
         </>
@@ -155,7 +171,7 @@ export default function CustomerVehicleFormModal({
 
         {duplicates.length > 0 && (
           <div className="customer-dup" role="status">
-            <p className="customer-dup__title">{DUPLICATE_TITLE}</p>
+            <p className="customer-dup__title">{pickable ? DUPLICATE_TITLE : DUPLICATE_INFO_TITLE}</p>
             <ul className="customer-dup__list">
               {duplicates.map(({ customer, samePhone, samePlate, vehicleId }) => (
                 <li key={customer.customerId} className="customer-dup__item">
@@ -165,7 +181,7 @@ export default function CustomerVehicleFormModal({
                     {samePhone && <em className="customer-dup__tag">같은 연락처</em>}
                     {samePlate && <em className="customer-dup__tag">같은 차량번호</em>}
                   </span>
-                  {onPick && (
+                  {pickable && (
                     <span className="customer-dup__actions">
                       {pickKinds.includes('vehicle') && vehicleId !== null && (
                         <Button

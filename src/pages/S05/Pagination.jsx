@@ -3,6 +3,7 @@
 
 export default function Pagination({ page, totalPages, onChange }) {
   if (totalPages <= 1) return null
+  // LIMIT: 쪽 번호를 모두 그린다. 시연 시드는 10명(1쪽)이라 충분하고, 쪽이 많아지면 앞뒤 몇 쪽만 보이게 줄인다.
   const pages = Array.from({ length: totalPages }, (_, i) => i)
   return (
     <nav className="s05-pagination" aria-label="쪽 나누기">

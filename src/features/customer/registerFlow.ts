@@ -48,6 +48,8 @@ export const CONSENT_LABEL = '점검 시기 안내 수신 동의'
 export const CONSENT_HINT = '고객에게 물어보고 체크하세요. 동의한 고객만 재점검 연락 대상이 됩니다.'
 export const OPTIONAL_VEHICLE_HINT = '연식과 주행거리는 정비 시작 때 입력해도 됩니다.'
 export const DUPLICATE_TITLE = '이미 있는 고객이면 고르세요'
+/** 쓰는 화면이 기존 고객 행동을 연결하지 않았을 때(고를 버튼이 없음) */
+export const DUPLICATE_INFO_TITLE = '같은 연락처·차량번호의 고객이 있습니다'
 export const DUPLICATE_HINT = '다른 고객이면 그대로 새로 등록할 수 있습니다. (가족이 같은 번호를 쓰는 경우 등)'
 
 /** 서버 fieldErrors.field → 입력 칸 (08 06: 차량 칸은 `vehicle.` 접두) */
@@ -93,7 +95,7 @@ export function normalizePlate(plate: string): string {
   return plate.replace(/\s+/g, '')
 }
 
-/** 입력 칸 검사. currentYear는 연식 상한(현재 연도 + 1) 계산용 */
+/** 입력 칸 검사(고객 + 차량). currentYear는 연식 상한(현재 연도 + 1) 계산용 */
 export function validateRegisterForm(form: RegisterForm, currentYear: number): RegisterErrors {
   const errors: RegisterErrors = {}
   const M = REGISTER_MESSAGES
@@ -106,6 +108,16 @@ export function validateRegisterForm(form: RegisterForm, currentYear: number): R
   if (!phone) errors.phone = M.REQUIRED
   else if (!/^[0-9-]+$/.test(phone)) errors.phone = M.PHONE_PATTERN
   else if (phone.length < 9 || phone.length > 20) errors.phone = M.PHONE_LENGTH
+
+  return { ...errors, ...validateVehicleFields(form, currentYear) }
+}
+
+export type VehicleFields = Pick<RegisterForm, 'plateNumber' | 'model' | 'modelYear' | 'mileage'>
+
+/** 차량 칸 검사 (08 06 vehicle·08 08 본문과 같은 범위). M-01과 S-06 차량 추가가 함께 쓴다 */
+export function validateVehicleFields(form: VehicleFields, currentYear: number): Partial<Record<keyof VehicleFields, string>> {
+  const errors: Partial<Record<keyof VehicleFields, string>> = {}
+  const M = REGISTER_MESSAGES
 
   const plate = normalizePlate(form.plateNumber)
   if (!plate) errors.plateNumber = M.REQUIRED

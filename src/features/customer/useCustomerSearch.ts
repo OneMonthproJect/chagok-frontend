@@ -26,8 +26,9 @@ export function useDebouncedValue<T>(value: T, delay: number): T {
   return debounced
 }
 
-export function useCustomerSearch(query: string, page = 0, size?: number): CustomerSearchState {
-  const debouncedQuery = useDebouncedValue(query.trim(), SEARCH_DELAY_MS)
+/** delay: 검색어가 이미 멈춘 값(예: URL에 반영된 검색어)이면 0 */
+export function useCustomerSearch(query: string, page = 0, size?: number, delay = SEARCH_DELAY_MS): CustomerSearchState {
+  const debouncedQuery = useDebouncedValue(query.trim(), delay)
   const [reloadKey, setReloadKey] = useState(0)
   const [result, setResult] = useState<Omit<CustomerSearchState, 'reload'>>({
     status: 'loading',

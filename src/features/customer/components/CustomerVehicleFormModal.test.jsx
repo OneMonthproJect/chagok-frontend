@@ -154,6 +154,41 @@ describe('M-01 저장', () => {
     await settle()
     expect(posts()).toHaveLength(2)
   })
+
+  it('다시 시도 요청 중에 등록을 눌러도 다시 보내지 않는다 (같은 잠금, POL-120)', async () => {
+    fetchMock.mockImplementation((url, init) =>
+      init?.method === 'POST' ? Promise.reject(new TypeError('Failed to fetch')) : Promise.resolve(jsonResponse(200, { success: true, data: { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 }, error: null })),
+    )
+    renderModal()
+    fillRequired()
+    click(button('등록'))
+    await settle()
+    expect(posts()).toHaveLength(1)
+
+    let finish
+    fetchMock.mockImplementation((url, init) =>
+      init?.method === 'POST' ? new Promise((resolve) => (finish = resolve)) : Promise.resolve(jsonResponse(200, { success: true, data: { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 }, error: null })),
+    )
+    click(button('다시 시도'))
+    click(document.querySelector('button[type="submit"]'))
+    await settle()
+    expect(posts()).toHaveLength(2)
+    expect(document.querySelector('button[type="submit"]').disabled).toBe(true)
+    finish(jsonResponse(200, { success: true, data: { customerId: 12, vehicleId: 13 }, error: null }))
+    await settle()
+  })
+
+  it('네트워크 실패 뒤 같은 연락처·차량번호를 다시 찾는다 (저장됐는지 확인용)', async () => {
+    fetchMock.mockImplementation((url, init) =>
+      init?.method === 'POST' ? Promise.reject(new TypeError('Failed to fetch')) : Promise.resolve(jsonResponse(200, { success: true, data: { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 }, error: null })),
+    )
+    renderModal()
+    fillRequired()
+    click(button('등록'))
+    await settle()
+    const searches = fetchMock.mock.calls.filter(([, init]) => init?.method === 'GET').map(([url]) => url)
+    expect(searches).toEqual(['/api/customers?q=010-1234-5678', `/api/customers?q=${encodeURIComponent('12가3456')}`])
+  })
 })
 
 describe('M-01 같은 연락처·차량번호 기존 고객', () => {
@@ -188,13 +223,14 @@ describe('M-01 같은 연락처·차량번호 기존 고객', () => {
     expect(onPick).toHaveBeenCalledWith({ kind: 'add', customerId: 10 })
   })
 
-  it('행동을 연결하지 않은 화면에서는 안내만 (버튼 없음)', async () => {
+  it('행동을 연결하지 않은 화면에서는 안내만 (고르라는 문구·버튼 없음)', async () => {
     fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, existing)))
     renderModal()
     type(field('연락처'), '010-0000-0010')
     act(() => field('연락처').dispatchEvent(new FocusEvent('focusout', { bubbles: true })))
     await settle()
-    expect(document.body.textContent).toContain('이미 있는 고객이면 고르세요')
+    expect(document.body.textContent).toContain('같은 연락처·차량번호의 고객이 있습니다')
+    expect(document.body.textContent).not.toContain('이미 있는 고객이면 고르세요')
     expect(button('이 고객에 차량 추가')).toBeUndefined()
   })
 })

@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useState } from 'react'
 import Button from '@/shared/ui/Button.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import { useCustomerSearch } from '../useCustomerSearch'
@@ -15,7 +15,6 @@ import './customer.css'
 const RECENT_COUNT = 2
 
 export default function VehiclePicker({ value = null, onChange, onRegister, label = '차량 검색' }) {
-  const listId = useId()
   const [query, setQuery] = useState('')
   const search = useCustomerSearch(query)
   const options = vehicleOptions(search.data?.items ?? [])
@@ -28,7 +27,7 @@ export default function VehiclePicker({ value = null, onChange, onRegister, labe
       {search.status === 'error' ? (
         <ErrorNotice title={LOAD_FAILED_MESSAGE} error={search.error} onRetry={search.reload} retryLabel={RELOAD_LABEL} />
       ) : (
-        <div id={listId} className="vehicle-picker__list" role="listbox" aria-label={label} aria-busy={search.status === 'loading'}>
+        <div className="vehicle-picker__list" role="listbox" aria-label={label} aria-busy={search.status === 'loading'}>
           {shown.map((option) => {
             const selected = option.vehicleId === value
             return (
@@ -50,11 +49,9 @@ export default function VehiclePicker({ value = null, onChange, onRegister, labe
               </button>
             )
           })}
-          {search.status === 'ready' && search.query && shown.length === 0 && (
-            <p className="vehicle-picker__empty">{NO_RESULTS_MESSAGE}</p>
-          )}
         </div>
       )}
+      {search.status === 'ready' && search.query && shown.length === 0 && <p className="vehicle-picker__empty">{NO_RESULTS_MESSAGE}</p>}
 
       {onRegister && (
         <div className="vehicle-picker__register">
