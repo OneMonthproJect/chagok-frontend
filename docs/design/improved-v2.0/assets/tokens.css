@@ -1,0 +1,37 @@
+/* 차곡 Design v2.0 토큰 (prototype index.css 의 --ck-* 발췌). 저장소 위치는 FRONTEND_STRUCTURE 9장 Q7 결정 후 */
+:root {
+  /* brand */
+  --ck-brand: #1f2bff; --ck-brand-hover: #1621d9; --ck-brand-tint: #f0f1ff; --ck-brand-ring: rgba(31,43,255,.32);
+  /* surface */
+  --ck-bg: #f2f3f6; --ck-surface: #ffffff; --ck-surface-muted: #f5f6f8; --ck-border: #e4e6ea; --ck-border-soft: #eeeff2; --ck-ink: #111111;
+  /* text (흰 배경 대비: 1 ≈ 18:1, 2 ≈ 6:1, 3 ≈ 5.7:1) */
+  --ck-text-1: #111318; --ck-text-2: #4d525a; --ck-text-3: #5f646d; --ck-text-4: #626770; --ck-text-disabled: #9a9ea5; --ck-text-inverse: #ffffff;
+  /* cycle status (글자색은 각 바탕 위 4.5:1 이상) */
+  --ck-due-bg: #feecec; --ck-due-fg: #b42318; --ck-due-dot: #ef4444;
+  --ck-soon-bg: #fff6e5; --ck-soon-fg: #9a5800; --ck-soon-dot: #f59e0b;
+  --ck-ahead-bg: #eff6ff; --ck-ahead-fg: #1d4ed8; --ck-ahead-dot: #3b82f6;
+  --ck-unknown-bg: #f1f2f3; --ck-unknown-fg: #5f646d; --ck-unknown-dot: #8a8f98;
+  /* reservation status */
+  --ck-rsv-reserved-bg: #f0f1ff; --ck-rsv-reserved-fg: #1f2bff;
+  --ck-rsv-progress-bg: #1f2bff; --ck-rsv-progress-fg: #ffffff;
+  --ck-rsv-done-bg: #ecfdf3; --ck-rsv-done-fg: #067647;
+  --ck-rsv-canceled-bg: #f1f2f3; --ck-rsv-canceled-fg: #5f646d;
+  --ck-rsv-noshow-bg: #feecec; --ck-rsv-noshow-fg: #b42318;
+  /* assignee (담당 색: 상태 색과 다른 계열, 이름과 함께) */
+  --ck-assignee-0: #8b5cf6; --ck-assignee-1: #ec4899; --ck-assignee-2: #0d9488; --ck-assignee-3: #92400e;
+  /* type scale */
+  --ck-fs-caption: 12px; --ck-fs-meta: 13px; --ck-fs-small: 14px; --ck-fs-body: 15px; --ck-fs-body-lg: 16px;
+  --ck-fs-card-title: 18px; --ck-fs-section: 20px; --ck-fs-page: 26px; --ck-fs-number: 32px;
+  --ck-fw-regular: 400; --ck-fw-medium: 500; --ck-fw-semibold: 600; --ck-fw-bold: 700;
+  --ck-lh-tight: 1.25; --ck-lh-body: 1.5;
+  /* spacing (4px grid) */
+  --ck-space-1: 4px; --ck-space-2: 8px; --ck-space-3: 12px; --ck-space-4: 16px; --ck-space-5: 20px; --ck-space-6: 24px; --ck-space-8: 32px;
+  /* radius · shadow */
+  --ck-radius-sm: 8px; --ck-radius-md: 12px; --ck-radius-lg: 16px; --ck-radius-xl: 20px; --ck-radius-pill: 999px;
+  --ck-shadow-card: 0 8px 24px rgba(17,24,39,.045); --ck-shadow-pop: 0 18px 48px rgba(17,24,39,.16); --ck-shadow-brand: 0 10px 25px rgba(31,43,255,.22);
+  /* sizes */
+  --ck-control-h: 44px; --ck-control-h-sm: 40px; --ck-control-h-lg: 48px; --ck-icon: 20px; --ck-icon-sm: 16px;
+  --ck-sidebar-w: 216px; --ck-sidebar-w-collapsed: 76px; --ck-panel-w: 380px; --ck-modal-w: 560px;
+  /* z-index */
+  --ck-z-sidebar: 30; --ck-z-panel: 40; --ck-z-modal: 120; --ck-z-dialog: 130; --ck-z-toast: 150; --ck-z-tooltip: 160;
+}
