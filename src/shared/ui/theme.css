@@ -1,41 +1,185 @@
 /*
- * 차곡 공통 스타일 — ⚠ 임시 (D-19 화면 상세 설계 2026-11-24 확정 전).
- * 방향: Soft Blue Garage × Monochrome Automotive (네이비 · 파스텔 블루 · 연핑크 · 화이트 · 웜 아이보리).
- * 색 값·타이포·여백·아이콘은 확정이 아니다. 바꿀 때는 이 파일의 변수만 고친다(컴포넌트에 색을 직접 쓰지 않음).
- * 상태 색은 09 0장 💡(미확인 회색 / 여유 파랑 / 임박 주황 / 도래 빨강)을 따른다. 글자를 항상 함께 보인다.
+ * 차곡 공통 스타일 — 디자인 토큰의 단일 기준 (최종 디자인 v3.0, #18 STEP 11-B 보완).
+ * 값의 출처: docs/design/references/COMPONENT_SPEC.md 1장 (= docs/design/improved-v2.0/assets/tokens.css, v3도 같은 값).
+ *   tokens.css는 참조 자료라 import하지 않는다. 값은 이 파일에만 둔다(같은 값을 두 곳에서 관리하지 않음).
+ * 컴포넌트 CSS는 색·크기를 직접 쓰지 않고 이 변수를 쓴다.
+ * 상태 색은 09 0장(미확인 회색 / 여유 파랑 / 임박 주황 / 도래 빨강)을 따르고, 글자를 항상 함께 보인다(색만으로 구분하지 않음).
+ * 글꼴 Pretendard는 index.html에서 v1.3.9로 고정해 불러온다. 못 불러오면 아래 font-family의 시스템 글꼴로 보인다.
  */
 :root {
-  --color-navy: #1f2a44;
-  --color-blue-pastel: #dce8f7;
-  --color-pink-soft: #f7dde4;
-  --color-white: #ffffff;
-  --color-ivory: #faf7f0;
-  --color-border: #d9dde5;
-  --color-text: #1f2a44;
-  --color-text-muted: #5d6679;
+  /* 브랜드 */
+  --ck-brand: #1f2bff;
+  --ck-brand-hover: #1621d9;
+  --ck-brand-tint: #f0f1ff;
+  --ck-brand-ring: rgba(31, 43, 255, 0.32);
 
-  --status-unknown-fg: #4b5563;
-  --status-unknown-bg: #eceef2;
-  --status-ahead-fg: #1d4ed8;
-  --status-ahead-bg: #e1ebfb;
-  --status-soon-fg: #b45309;
-  --status-soon-bg: #fdecd3;
-  --status-due-fg: #b91c1c;
-  --status-due-bg: #fbe0e0;
+  /* 표면 */
+  --ck-bg: #f2f3f6;
+  --ck-surface: #ffffff;
+  --ck-surface-muted: #f5f6f8;
+  --ck-border: #e4e6ea;
+  --ck-border-soft: #eeeff2;
+  --ck-ink: #111111;
 
-  --radius: 8px;
-  --gap: 16px;
+  /* 글자 (흰 바탕 대비: 1 ≈ 18:1, 2 ≈ 6:1, 3 ≈ 5.7:1). disabled는 비활성 요소에만 */
+  --ck-text-1: #111318;
+  --ck-text-2: #4d525a;
+  --ck-text-3: #5f646d;
+  --ck-text-4: #626770;
+  --ck-text-disabled: #9a9ea5;
+  --ck-text-inverse: #ffffff;
 
-  color: var(--color-text);
-  background: var(--color-ivory);
-  font-family: system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  /* 점검 주기 상태 (08 0.4 DUE·SOON·AHEAD·UNKNOWN). 글자색은 각 바탕 위 4.5:1 이상 */
+  --ck-due-bg: #feecec;
+  --ck-due-fg: #b42318;
+  --ck-due-dot: #ef4444;
+  --ck-soon-bg: #fff6e5;
+  --ck-soon-fg: #9a5800;
+  --ck-soon-dot: #f59e0b;
+  --ck-ahead-bg: #eff6ff;
+  --ck-ahead-fg: #1d4ed8;
+  --ck-ahead-dot: #3b82f6;
+  --ck-unknown-bg: #f1f2f3;
+  --ck-unknown-fg: #5f646d;
+  --ck-unknown-dot: #8a8f98;
+
+  /* 예약 상태 (08 0.4 RESERVED·IN_PROGRESS·COMPLETED·CANCELED·NO_SHOW). 주기 상태와 합치지 않는다(B03) */
+  --ck-rsv-reserved-bg: #f0f1ff;
+  --ck-rsv-reserved-fg: #1f2bff;
+  --ck-rsv-progress-bg: #1f2bff;
+  --ck-rsv-progress-fg: #ffffff;
+  --ck-rsv-done-bg: #ecfdf3;
+  --ck-rsv-done-fg: #067647;
+  --ck-rsv-canceled-bg: #f1f2f3;
+  --ck-rsv-canceled-fg: #5f646d;
+  --ck-rsv-noshow-bg: #feecec;
+  --ck-rsv-noshow-fg: #b42318;
+
+  /* 담당 색 (API 36 colorIndex 순서). 상태 색과 다른 계열, 이름과 함께 (09 0장) */
+  --ck-assignee-0: #8b5cf6;
+  --ck-assignee-1: #ec4899;
+  --ck-assignee-2: #0d9488;
+  --ck-assignee-3: #92400e;
+
+  /* 글자 크기 · 굵기 · 행간 (업무 화면 최소 12px) */
+  --ck-fs-caption: 12px;
+  --ck-fs-meta: 13px;
+  --ck-fs-small: 14px;
+  --ck-fs-body: 15px;
+  --ck-fs-body-lg: 16px;
+  --ck-fs-card-title: 18px;
+  --ck-fs-section: 20px;
+  --ck-fs-page: 26px;
+  --ck-fs-number: 32px;
+  --ck-fw-regular: 400;
+  --ck-fw-medium: 500;
+  --ck-fw-semibold: 600;
+  --ck-fw-bold: 700;
+  --ck-lh-tight: 1.25;
+  --ck-lh-body: 1.5;
+
+  /* 간격 (4px 단위) */
+  --ck-space-1: 4px;
+  --ck-space-2: 8px;
+  --ck-space-3: 12px;
+  --ck-space-4: 16px;
+  --ck-space-5: 20px;
+  --ck-space-6: 24px;
+  --ck-space-8: 32px;
+
+  /* 모서리 · 그림자 */
+  --ck-radius-sm: 8px;
+  --ck-radius-md: 12px;
+  --ck-radius-lg: 16px;
+  --ck-radius-xl: 20px;
+  --ck-radius-pill: 999px;
+  --ck-shadow-card: 0 8px 24px rgba(17, 24, 39, 0.045);
+  --ck-shadow-pop: 0 18px 48px rgba(17, 24, 39, 0.16);
+  --ck-shadow-brand: 0 10px 25px rgba(31, 43, 255, 0.22);
+
+  /* 크기 (터치 영역 40px 이상) */
+  --ck-control-h: 44px;
+  --ck-control-h-sm: 40px;
+  --ck-control-h-lg: 48px;
+  --ck-icon: 20px;
+  --ck-icon-sm: 16px;
+  --ck-sidebar-w: 216px;
+  --ck-sidebar-w-collapsed: 76px;
+  --ck-panel-w: 380px;
+  --ck-modal-w: 560px;
+
+  /* z-index */
+  --ck-z-sidebar: 30;
+  --ck-z-panel: 40;
+  --ck-z-modal: 120;
+  --ck-z-dialog: 130;
+  --ck-z-toast: 150;
+  --ck-z-tooltip: 160;
+
+  /* 이전 이름 — 기존 코드 호환용 별칭. 새 코드는 --ck-*를 쓴다 */
+  --color-navy: var(--ck-ink);
+  --color-blue-pastel: var(--ck-brand-tint);
+  --color-pink-soft: var(--ck-due-bg);
+  --color-white: var(--ck-surface);
+  --color-ivory: var(--ck-bg);
+  --color-border: var(--ck-border);
+  --color-text: var(--ck-text-1);
+  --color-text-muted: var(--ck-text-3);
+  --status-unknown-fg: var(--ck-unknown-fg);
+  --status-unknown-bg: var(--ck-unknown-bg);
+  --status-ahead-fg: var(--ck-ahead-fg);
+  --status-ahead-bg: var(--ck-ahead-bg);
+  --status-soon-fg: var(--ck-soon-fg);
+  --status-soon-bg: var(--ck-soon-bg);
+  --status-due-fg: var(--ck-due-fg);
+  --status-due-bg: var(--ck-due-bg);
+  --radius: var(--ck-radius-sm);
+  --gap: var(--ck-space-4);
+
+  color: var(--ck-text-1);
+  background: var(--ck-bg);
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-synthesis: none;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  min-width: 320px;
+  background: var(--ck-bg);
 }
 
-/* Layout: 상단 영역 + 본문. 09 0장 크기: 1024px 기준 넓은·좁은 배치 (세부는 D-19) */
+/* 초점 링: 키보드 초점만 3px 브랜드 55% + 2px 간격 (COMPONENT_SPEC STEP 06) */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid rgba(31, 43, 255, 0.55);
+  outline-offset: 2px;
+}
+
+/* 화면에는 숨기고 화면 낭독기에는 읽히는 글자 */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes ck-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Layout: 상단 영역 + 본문. ⚠ 임시 최소 구조 — 모양은 #17(AppLayout·AppMenu)에서 정한다 */
 .layout {
   min-height: 100vh;
   display: flex;
@@ -58,34 +202,129 @@ body {
   }
 }
 
-/* Button: 저장 중 비활성 + 진행 표시 (05 POL-120) */
+/* Button: 높이 40/44/48, 저장 중 비활성 + 진행 표시 (05 POL-120). 화면당 primary 1개 */
 .button {
-  border: 1px solid var(--color-navy);
-  border-radius: var(--radius);
-  padding: 8px 16px;
-  background: var(--color-navy);
-  color: var(--color-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--ck-control-h);
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: var(--ck-radius-pill);
+  background: var(--ck-brand);
+  color: var(--ck-text-inverse);
+  box-shadow: var(--ck-shadow-brand);
   font: inherit;
+  font-size: var(--ck-fs-body);
+  font-weight: var(--ck-fw-bold);
+  white-space: nowrap;
   cursor: pointer;
+  transition: background 0.14s, box-shadow 0.14s, color 0.14s, border-color 0.14s;
+}
+.button:hover {
+  background: var(--ck-brand-hover);
 }
 .button--secondary {
-  background: var(--color-white);
-  color: var(--color-navy);
+  border-color: var(--ck-border);
+  background: var(--ck-surface);
+  color: var(--ck-text-2);
+  box-shadow: none;
+}
+.button--secondary:hover {
+  border-color: #c9ccd3;
+  background: var(--ck-surface);
+  color: var(--ck-text-1);
+}
+.button--ghost {
+  background: transparent;
+  color: var(--ck-text-2);
+  box-shadow: none;
+}
+.button--ghost:hover {
+  background: var(--ck-surface-muted);
+}
+.button--danger {
+  border-color: #f3c0bb;
+  background: var(--ck-surface);
+  color: var(--ck-due-fg);
+  box-shadow: none;
+}
+.button--danger:hover {
+  background: var(--ck-due-bg);
+}
+.button--sm {
+  min-height: var(--ck-control-h-sm);
+  padding: 0 16px;
+  font-size: var(--ck-fs-small);
+}
+.button--lg {
+  min-height: var(--ck-control-h-lg);
+  padding: 0 24px;
 }
 .button:disabled {
-  opacity: 0.6;
+  border-color: var(--ck-border);
+  background: #eceef1;
+  color: var(--ck-text-disabled);
+  box-shadow: none;
   cursor: not-allowed;
 }
-
-/* StatusBadge: 글자 + 색 (색만으로 구분하지 않음) */
-.status-badge {
-  display: inline-block;
-  border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 0.875em;
-  font-weight: 600;
+/* 요청 중: 원래 색을 유지하고 진행 표시만 더한다 */
+.button[aria-busy='true'] {
+  border-color: transparent;
+  background: var(--ck-brand);
+  color: var(--ck-text-inverse);
+  opacity: 0.85;
+  cursor: progress;
 }
-.status-badge--UNKNOWN { color: var(--status-unknown-fg); background: var(--status-unknown-bg); }
-.status-badge--AHEAD { color: var(--status-ahead-fg); background: var(--status-ahead-bg); }
-.status-badge--SOON { color: var(--status-soon-fg); background: var(--status-soon-bg); }
-.status-badge--DUE { color: var(--status-due-fg); background: var(--status-due-bg); }
+.button--secondary[aria-busy='true'],
+.button--danger[aria-busy='true'] {
+  border-color: var(--ck-border);
+  background: var(--ck-surface);
+  color: var(--ck-text-2);
+}
+.button--ghost[aria-busy='true'] {
+  background: transparent;
+  color: var(--ck-text-2);
+}
+.button__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ck-spin 0.8s linear infinite;
+}
+
+/* StatusBadge: 점 + 글자 + 색 (색만으로 구분하지 않음, 09 0장) */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--ck-radius-pill);
+  font-size: var(--ck-fs-meta);
+  font-weight: var(--ck-fw-semibold);
+  white-space: nowrap;
+}
+.status-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.status-badge--UNKNOWN { color: var(--ck-unknown-fg); background: var(--ck-unknown-bg); }
+.status-badge--UNKNOWN .status-badge__dot { background: var(--ck-unknown-dot); }
+.status-badge--AHEAD { color: var(--ck-ahead-fg); background: var(--ck-ahead-bg); }
+.status-badge--AHEAD .status-badge__dot { background: var(--ck-ahead-dot); }
+.status-badge--SOON { color: var(--ck-soon-fg); background: var(--ck-soon-bg); }
+.status-badge--SOON .status-badge__dot { background: var(--ck-soon-dot); }
+.status-badge--DUE { color: var(--ck-due-fg); background: var(--ck-due-bg); }
+.status-badge--DUE .status-badge__dot { background: var(--ck-due-dot); }
+
+@media (prefers-reduced-motion: reduce) {
+  .button__spinner {
+    animation-duration: 2.4s;
+  }
+}
