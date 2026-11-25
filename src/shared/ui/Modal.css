@@ -1,0 +1,120 @@
+/* Modal — 디자인 v3.0 FormModal·ReservationModal 틀 (560 / lg 640, 모서리 24, 겹쳐 열면 위 바탕이 위로) */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ck-z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ck-space-6);
+  background: rgba(12, 14, 19, 0.48);
+  backdrop-filter: blur(3px);
+  animation: ck-modal-fade-in 0.16s ease-out;
+}
+.modal-backdrop--stacked {
+  z-index: calc(var(--ck-z-modal) + 5);
+  background: rgba(12, 14, 19, 0.32);
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: var(--ck-modal-w);
+  max-width: 100%;
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 24px;
+  background: var(--ck-surface);
+  box-shadow: 0 26px 70px rgba(8, 11, 18, 0.25);
+  animation: ck-modal-rise-in 0.19s ease-out;
+}
+.modal:focus {
+  outline: none;
+}
+.modal--lg {
+  width: 640px;
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--ck-border-soft);
+}
+.modal__title {
+  margin: 0;
+  font-size: var(--ck-fs-section);
+  font-weight: var(--ck-fw-bold);
+  letter-spacing: -0.025em;
+  color: var(--ck-text-1);
+}
+.modal__subtitle {
+  margin: 3px 0 0;
+  font-size: var(--ck-fs-caption);
+  color: var(--ck-text-4);
+}
+.modal__close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-surface);
+  color: var(--ck-text-2);
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.modal__close:hover {
+  background: var(--ck-surface-muted);
+  color: var(--ck-text-1);
+}
+
+.modal__body {
+  padding: var(--ck-space-4) 22px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d9dbe0 transparent;
+}
+
+.modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--ck-border-soft);
+  background: var(--ck-surface);
+}
+
+@keyframes ck-modal-fade-in {
+  from { opacity: 0; }
+}
+@keyframes ck-modal-rise-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+}
+
+/* 1024px 미만: 전체 폭 (COMPONENT_SPEC STEP 06 반응형) */
+@media (max-width: 1023px) {
+  .modal-backdrop {
+    padding: var(--ck-space-3);
+  }
+  .modal,
+  .modal--lg {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .modal {
+    animation: none;
+  }
+}
