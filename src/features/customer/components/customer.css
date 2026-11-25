@@ -167,7 +167,7 @@
   font-weight: var(--ck-fw-bold);
   white-space: nowrap;
 }
-/* 동의는 글자로 구분한다(색만으로 구분하지 않음, 09 0장) */
+/* 동의는 글자로 구분한다(색만으로 구분하지 않음, 09 0장). 정비 주기 상태색(미확인·여유·임박·도래)은 쓰지 않는다 */
 .customer-consent {
   display: inline-flex;
   padding: 3px 10px;
@@ -179,8 +179,8 @@
   white-space: nowrap;
 }
 .customer-consent--yes {
-  background: var(--ck-ahead-bg);
-  color: var(--ck-ahead-fg);
+  background: var(--ck-brand-tint);
+  color: var(--ck-brand);
 }
 
 /* 좁은 화면(< 1024): 표를 카드형 줄로 (디자인 RWD-768-Customer-List) */
@@ -301,8 +301,8 @@
   margin-left: var(--ck-space-2);
   padding: 2px 8px;
   border-radius: var(--ck-radius-pill);
-  background: var(--ck-soon-bg);
-  color: var(--ck-soon-fg);
+  background: var(--ck-surface-muted);
+  color: var(--ck-text-2);
   font-size: var(--ck-fs-caption);
   font-style: normal;
   font-weight: var(--ck-fw-semibold);
