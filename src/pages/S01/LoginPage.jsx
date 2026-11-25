@@ -9,9 +9,7 @@ import './LoginPage.css'
 
 // S-01 로그인 (09 S-01, D-68, 디자인 v3.0 S-01). 넓은 화면은 왼쪽 브랜드 영역 + 오른쪽 로그인 카드, 900px 이하는 카드만.
 // - 성공: state.from(로그인 가드·401 처리가 넘긴 원래 화면)이 있으면 그곳, 없으면 홈(S-02).
-// - 이미 토큰이 있고 from이 있으면 그 화면으로 바로 간다.
-// - TODO(#24): "이미 토큰이 있으면 S-02로 바로"는 S-02 라우트가 생기는 chagok-frontend#24에서 켠다.
-//   지금 켜면 '/' 라우트가 없어 로그인 ↔ '/' 사이를 계속 오가므로, 그때까지는 안내 문구만 보인다.
+// - 이미 토큰이 있으면 from 또는 홈으로 바로 간다. (S-02 화면이 생기기 전에는 AppLayout의 404가 보인다, #17)
 // - 안내: 401 만료(reason='expired'), 로그아웃(reason='logout', 앱 골격 #17이 넘김)
 // - 이미지: docs/design/improved-v3.0/prototype/의 정비소 사진·마스코트(렌치)를 이 화면 전용으로 복사해 쓴다.
 //   글꼴 Pretendard는 공통 토큰(#18)이 정할 때까지 설치된 경우에만 쓰이고, 없으면 시스템 글꼴.
@@ -21,8 +19,8 @@ export default function LoginPage() {
   const target = returnPath(location.state, PATHS.LOGIN)
   const loggedIn = getToken() !== null
 
-  if (loggedIn && target) {
-    return <Navigate to={target} replace />
+  if (loggedIn) {
+    return <Navigate to={target ?? PATHS.HOME} replace />
   }
 
   return (
@@ -39,7 +37,7 @@ export default function LoginPage() {
       <section className="login-page__form">
         <LoginForm
           mascotSrc={mascotImage}
-          notice={loginNotice(location.state, loggedIn)}
+          notice={loginNotice(location.state)}
           onSuccess={() => navigate(target ?? PATHS.HOME, { replace: true })}
         />
         <p className="login-page__footer">© 2026 ChaGok</p>

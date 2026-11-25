@@ -1,24 +1,50 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { Outlet, RouterProvider, createBrowserRouter } from 'react-router-dom'
 import RequireAuth from '@/app/RequireAuth.jsx'
 import UnauthorizedRedirect from '@/app/UnauthorizedRedirect.jsx'
-import loginRoute from '@/pages/S01/route.jsx'
-import { PATHS } from '@/app/paths'
+import AppLayout from '@/app/AppLayout.jsx'
+import NotFoundPage from '@/app/NotFoundPage.jsx'
+import { appRoutes, publicRoutes } from '@/app/routes'
 
-// 라우팅. 화면(pages)은 09의 S-xx와 1:1로 각 화면 이슈가 더한다.
-// - PATHS.LOGIN: S-01 로그인 화면 (chagok-frontend#16). 라우트 수집 방식 정리는 앱 골격 이슈(#17).
-// - RequireAuth 아래: 로그인이 필요한 화면(S-02 등)을 자식 Route로 둔다. 아직 없다(빈 화면을 만들지 않음).
-// - 그 밖의 경로는 로그인 경로로 보낸다.
-export default function App() {
+// 라우팅 (chagok-frontend#17, FRONTEND_STRUCTURE 2장·11-1).
+// - data router(createBrowserRouter): S-08 이탈 확인(useBlocker)·스크롤 복원을 쓰기 위해 (설계 Q3).
+// - 화면은 pages/Sxx/route.jsx 를 routes.js가 모은다. 화면 이슈는 이 파일을 고치지 않는다.
+//
+//   Root (UnauthorizedRedirect: 401 → /login, from·reason)
+//   ├─ 공개 라우트 (S-01)
+//   └─ RequireAuth (토큰 없으면 /login, from)
+//      └─ AppLayout (사이드바·위쪽 탭 + Outlet)
+//         ├─ 화면 라우트 (S-02 …)
+//         └─ *  NotFoundPage (로그인한 상태의 없는 주소)
+
+function Root() {
   return (
-    <BrowserRouter>
+    <>
       <UnauthorizedRedirect />
-      <Routes>
-        <Route path={loginRoute.path} element={loginRoute.element} />
-        <Route element={<RequireAuth />}>
-          {/* 로그인이 필요한 화면을 여기에 (예: <Route path="/" element={<HomePage />} />) */}
-        </Route>
-        <Route path="*" element={<Navigate to={PATHS.LOGIN} replace />} />
-      </Routes>
-    </BrowserRouter>
+      <Outlet />
+    </>
   )
+}
+
+const toRoute = ({ path, element }) => ({ path, element })
+
+const router = createBrowserRouter([
+  {
+    element: <Root />,
+    children: [
+      ...publicRoutes.map(toRoute),
+      {
+        element: <RequireAuth />,
+        children: [
+          {
+            element: <AppLayout />,
+            children: [...appRoutes.map(toRoute), { path: '*', element: <NotFoundPage /> }],
+          },
+        ],
+      },
+    ],
+  },
+])
+
+export default function App() {
+  return <RouterProvider router={router} />
 }
