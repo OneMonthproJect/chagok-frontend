@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "data": { "staffId": 1, "name": "박사장", "role": "OWNER", "shopId": 1, "shopName": "차곡카센터" },
+  "error": null
+}
