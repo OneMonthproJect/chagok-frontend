@@ -1,0 +1,101 @@
+/* features/maintenance S-07 정비 이력 — 디자인 v3.0 S-07-vehicle-detail. 색·크기는 theme.css 토큰만 쓴다 */
+.visit-history__header {
+  padding: var(--ck-space-5);
+  border-bottom: 1px solid var(--ck-border-soft);
+}
+.visit-history__title {
+  margin: 0;
+  font-size: var(--ck-fs-card-title);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.visit-history__meta {
+  margin: var(--ck-space-1) 0 0;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.visit-history__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.visit-item {
+  padding: var(--ck-space-4) var(--ck-space-5);
+  border-top: 1px solid var(--ck-border-soft);
+}
+.visit-item:first-child {
+  border-top: 0;
+}
+.visit-item__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ck-space-2);
+}
+.visit-item__date {
+  font-size: var(--ck-fs-body);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.visit-item__meta {
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.visit-item__records {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: var(--ck-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.visit-record {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px var(--ck-space-2);
+  font-size: var(--ck-fs-small);
+  color: var(--ck-text-2);
+}
+.visit-record__item {
+  font-weight: var(--ck-fw-semibold);
+  color: var(--ck-text-1);
+}
+/* 구분·출처 꼬리표는 상태 색(도래·임박·여유·미확인)을 쓰지 않는다 — 상태 색은 StatusBadge 한 곳(09 0장) */
+.visit-record__type,
+.visit-record__source {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--ck-radius-pill);
+  font-size: var(--ck-fs-caption);
+  font-weight: var(--ck-fw-semibold);
+  white-space: nowrap;
+}
+.visit-record__type {
+  background: var(--ck-surface-muted);
+  color: var(--ck-text-2);
+}
+.visit-record__source {
+  background: var(--ck-brand-tint);
+  color: var(--ck-brand);
+}
+.visit-record__date {
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.visit-record__memo {
+  flex-basis: 100%;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+  overflow-wrap: anywhere;
+}
+.visit-history__more-error {
+  padding: 0 var(--ck-space-5) var(--ck-space-4);
+}
+.visit-history__more {
+  display: flex;
+  justify-content: center;
+  padding: var(--ck-space-4) var(--ck-space-5) var(--ck-space-5);
+  border-top: 1px solid var(--ck-border-soft);
+}

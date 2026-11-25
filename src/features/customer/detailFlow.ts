@@ -26,6 +26,11 @@ export function parseCustomerId(value: string | undefined): number | null {
   return Number.isSafeInteger(id) ? id : null
 }
 
+/** URL의 :vehicleId → 08 09 경로 변수 (S-07). 규칙은 parseCustomerId와 같다(양의 정수가 아니면 null) */
+export function parseVehicleId(value: string | undefined): number | null {
+  return parseCustomerId(value)
+}
+
 /** 안내 수신 동의 꼬리표 (디자인 v3.0 S-06). 글자로 구분한다(색만으로 구분하지 않음, 09 0장) */
 export function consentText(consent: boolean): string {
   return consent ? '안내 수신 동의' : '안내 수신 미동의'

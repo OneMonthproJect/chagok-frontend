@@ -146,3 +146,67 @@
 .vehicle-count--zero .vehicle-count__number {
   color: var(--ck-text-3);
 }
+
+/* 차량 카드 → S-07 (pages가 link를 넘길 때만) */
+.vehicle-card-link {
+  display: block;
+  height: 100%;
+  border-radius: var(--ck-radius-lg);
+  color: inherit;
+  text-decoration: none;
+}
+.vehicle-card-link .vehicle-card {
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+.vehicle-card-link:hover .vehicle-card {
+  border-color: var(--ck-brand);
+  box-shadow: var(--ck-shadow-card);
+}
+.vehicle-card-link:focus-visible {
+  outline: 2px solid var(--ck-brand);
+  outline-offset: 2px;
+}
+
+/* ---- S-07 차량·고객 머리 ---- */
+.vehicle-header {
+  min-width: 0;
+}
+.vehicle-header__plate {
+  margin: 0;
+  font-size: var(--ck-fs-number);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+  overflow-wrap: anywhere;
+}
+.vehicle-header__spec {
+  margin: var(--ck-space-2) 0 0;
+  font-size: var(--ck-fs-body);
+  color: var(--ck-text-2);
+}
+.vehicle-header__customer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ck-space-2) var(--ck-space-3);
+  margin: var(--ck-space-3) 0 0;
+  font-size: var(--ck-fs-small);
+}
+.vehicle-header__customer-link,
+.vehicle-header__customer-name {
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.vehicle-header__customer-link {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.vehicle-header__customer-link:hover {
+  color: var(--ck-brand);
+}
+.vehicle-header__customer-link:focus-visible {
+  outline: 2px solid var(--ck-brand);
+  outline-offset: 2px;
+}
+.vehicle-header__phone {
+  color: var(--ck-text-2);
+}
