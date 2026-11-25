@@ -8,6 +8,7 @@
 | 코드 구조 규칙 (프론트 7장) | `chagok-docs/CONVENTIONS.md` |
 | 브랜치·이슈·PR·릴리스 | `chagok-docs/CONTRIBUTING.md` |
 | 처음 보는 팀원 안내 | `chagok-docs/docs/etc/GUIDE_레포구조_협업규칙_AI스킬안내.md` |
+| 디자인 기준 (v3.0 화면·컴포넌트 구조·API 매핑, 참조용) | [`docs/design/README.md`](docs/design/README.md) — 주요 페이지 9 캡처·Mock 프로토타입. 정책 기준은 chagok-docs |
 
 ## 지금 상태
 
