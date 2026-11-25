@@ -72,3 +72,46 @@ describe('FormField 오류 연결', () => {
     expect(markup).toContain('<span class="form-field__suffix">km</span>')
   })
 })
+
+describe('FormField id 자동 생성 (#18 후속, CodeRabbit)', () => {
+  it('id를 주지 않으면 칸마다 고유한 id를 만들고 라벨·칸·오류 문구를 같은 id로 잇는다', () => {
+    const markup = renderToStaticMarkup(
+      <>
+        <FormField label="고객명" error="필수입니다.">
+          <input name="name" />
+        </FormField>
+        <FormField label="연락처" error="연락처를 확인해 주세요.">
+          <input name="phone" />
+        </FormField>
+      </>,
+    )
+    const inputs = [...markup.matchAll(/<input[^>]*>/g)].map((m) => m[0])
+    const ids = inputs.map((tag) => tag.match(/ id="([^"]+)"/)[1])
+    expect(ids).toHaveLength(2)
+    expect(ids[0]).not.toBe(ids[1])
+    expect(markup).not.toContain('undefined')
+    ids.forEach((fieldId, index) => {
+      expect(markup).toContain(`for="${fieldId}"`)
+      expect(inputs[index]).toContain(`aria-describedby="${fieldId}-error"`)
+      expect(markup).toContain(`<p id="${fieldId}-error"`)
+    })
+  })
+
+  it('id를 주면 그 값을 그대로 쓴다', () => {
+    const markup = html({ error: '필수입니다.' })
+    expect(inputTag(markup)).toContain('id="phone"')
+    expect(markup).toContain('<p id="phone-error"')
+  })
+})
+
+describe('FormField id 우선순위', () => {
+  it('FormField에 id가 없고 입력 칸에 id가 있으면 칸의 id를 쓴다', () => {
+    const markup = renderToStaticMarkup(
+      <FormField label="연락처" error="필수입니다.">
+        <input id="customer-phone" />
+      </FormField>,
+    )
+    expect(markup).toContain('for="customer-phone"')
+    expect(markup).toContain('aria-describedby="customer-phone-error"')
+  })
+})

@@ -97,6 +97,7 @@
   color: var(--ck-text-4);
   text-align: left;
 }
+/* 이름 칸은 모든 행을 굵게 — v3 확정 디자인(차량 상세 표). highlighted는 순서 유지 + 꼬리표(tag)로 구분한다 (PR #44 CodeRabbit 의견 미반영, #18) */
 .item-status-list__table tbody th {
   font-weight: var(--ck-fw-bold);
 }
