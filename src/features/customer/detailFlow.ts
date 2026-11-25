@@ -4,12 +4,13 @@
 /** 빈 상태 (09 5장 S-06 차량 없음) */
 export const NO_VEHICLES_MESSAGE = '등록된 차량이 없습니다.'
 
-/** 조회 실패 (디자인 v3.0 Customer-Detail-Error). 아래 줄은 ApiError 문구, 다시 불러오기는 사람이 누를 때만(POL-125) */
-export const DETAIL_LOAD_FAILED_MESSAGE = '고객 정보를 불러오지 못했습니다.'
-
-/** 404 (09 0장 "찾을 수 없습니다", 디자인 v3.0 Vehicle-NotFound와 같은 문구) — 없는 고객·다른 정비소 고객(X1) */
+/**
+ * 404 (09 5장: "찾을 수 없습니다." + "홈으로") — 없는 고객·다른 정비소 고객(X1). 설명 줄은 디자인 v3.0 Vehicle-NotFound 문구.
+ * 조회 실패 문구는 S-05와 같은 searchFlow의 LOAD_FAILED_MESSAGE·RELOAD_LABEL(09 5장)을 쓴다.
+ */
 export const NOT_FOUND_TITLE = '찾을 수 없습니다.'
 export const NOT_FOUND_DESCRIPTION = '주소가 바뀌었거나 볼 수 없는 정보입니다.'
+export const GO_HOME_LABEL = '홈으로'
 
 /** 값이 비어 있을 때 (08 07: modelYear·latestMileage는 null일 수 있음, 07 3.5) */
 export const MODEL_YEAR_MISSING = '연식 미입력'

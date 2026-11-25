@@ -51,6 +51,7 @@ function renderPage(entry = '/customers/10') {
       <Routes>
         <Route path="/customers/:customerId" element={<CustomerDetailPage />} />
         <Route path="/customers" element={<p>S-05</p>} />
+        <Route path="/" element={<p>S-02</p>} />
       </Routes>
       <LocationProbe />
     </MemoryRouter>,
@@ -136,7 +137,7 @@ describe('S-06 고객 상세', () => {
     expect(document.querySelectorAll('button')).toHaveLength(0)
   })
 
-  it('404(다른 정비소·없는 고객, X1): "찾을 수 없습니다." — 다시 불러오기 없음', async () => {
+  it('404(다른 정비소·없는 고객, X1): "찾을 수 없습니다." + 홈으로 — 다시 불러오기 없음', async () => {
     fetchMock.mockResolvedValue(fail(404, 'NOT_FOUND', '찾을 수 없습니다.'))
     renderPage('/customers/11')
     await settle()
@@ -145,6 +146,9 @@ describe('S-06 고객 상세', () => {
     expect(document.body.textContent).toContain('주소가 바뀌었거나 볼 수 없는 정보입니다.')
     expect(document.querySelector('.customer-info')).toBeNull()
     expect(button('다시 불러오기')).toBeUndefined()
+
+    click(button('홈으로')) // 09 5장 404: "찾을 수 없습니다." + "홈으로"
+    expect(location.pathname).toBe('/')
   })
 
   it('주소의 id가 양의 정수가 아니면 부르지 않고 찾을 수 없음', async () => {
@@ -159,7 +163,7 @@ describe('S-06 고객 상세', () => {
     fetchMock.mockResolvedValue(ok(OH))
     renderPage()
     await settle()
-    expect(document.body.textContent).toContain('고객 정보를 불러오지 못했습니다.')
+    expect(document.body.textContent).toContain('불러오지 못했습니다.')
     await act(() => new Promise((resolve) => setTimeout(resolve, 50)))
     expect(fetchMock).toHaveBeenCalledTimes(1)
 
@@ -173,7 +177,7 @@ describe('S-06 고객 상세', () => {
     fetchMock.mockResolvedValue(fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.'))
     renderPage()
     await settle()
-    expect(document.body.textContent).toContain('고객 정보를 불러오지 못했습니다.')
+    expect(document.body.textContent).toContain('불러오지 못했습니다.')
     expect(document.body.textContent).not.toContain('주소가 바뀌었거나')
     expect(button('다시 불러오기')).toBeDefined()
   })

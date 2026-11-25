@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { act, useEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { act } from 'react'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, click, render } from '@/shared/lib/domTest'
 import CustomerListPage from './CustomerListPage.jsx'
@@ -43,15 +43,11 @@ const OH = {
   ],
 }
 
-/** 이동할 때마다 쌓인다 (같은 주소로 두 번 이동하면 두 줄) */
-const visited = []
+let navigate
 
 function LocationProbe() {
-  const current = useLocation()
-  location = current
-  useEffect(() => {
-    visited.push({ pathname: current.pathname, key: current.key })
-  }, [current.key, current.pathname])
+  location = useLocation()
+  navigate = useNavigate()
   return null
 }
 
@@ -118,11 +114,11 @@ describe('S-05 고객·차량 목록', () => {
     fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([OH]))))
     renderPage()
     await waitSearch()
-    visited.length = 0
     click(document.querySelector('tbody tr a'))
     expect(location.pathname).toBe('/customers/10')
-    // 링크와 줄 클릭이 둘 다 이동하면 같은 주소가 두 번 쌓인다
-    expect(visited.filter((entry) => entry.pathname === '/customers/10')).toHaveLength(1)
+    // 링크와 줄 클릭이 둘 다 이동하면 기록이 두 번 쌓여, 뒤로 한 번으로는 목록에 돌아오지 못한다
+    act(() => navigate(-1))
+    expect(location.pathname).toBe('/customers')
   })
 
   it('검색어는 멈춘 뒤 URL ?q= 로 옮기고, 결과가 없으면 검색어를 채워 M-01을 연다', async () => {
