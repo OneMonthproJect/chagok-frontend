@@ -1,0 +1,270 @@
+{
+  "1": [
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000002",
+      "visitDate": "2026-09-24",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 2,
+          "itemId": 1,
+          "itemName": "엔진오일",
+          "type": "INSPECT",
+          "date": "2026-09-24",
+          "memo": null
+        }
+      ]
+    },
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000001",
+      "visitDate": "2026-05-17",
+      "mileage": 40000,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 1,
+          "itemId": 1,
+          "itemName": "엔진오일",
+          "type": "REPLACE",
+          "date": "2026-05-17",
+          "memo": null
+        }
+      ]
+    }
+  ],
+  "2": [
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000003",
+      "visitDate": "2026-05-14",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 3,
+          "itemId": 1,
+          "itemName": "엔진오일",
+          "type": "REPLACE",
+          "date": "2026-05-14",
+          "memo": null
+        }
+      ]
+    }
+  ],
+  "3": [
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000004",
+      "visitDate": "2025-12-14",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 4,
+          "itemId": 4,
+          "itemName": "브레이크패드",
+          "type": "REPLACE",
+          "date": "2025-12-14",
+          "memo": null
+        }
+      ]
+    }
+  ],
+  "4": [
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000005",
+      "visitDate": "2026-09-24",
+      "mileage": 45000,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 5,
+          "itemId": 1,
+          "itemName": "엔진오일",
+          "type": "REPLACE",
+          "date": "2026-09-24",
+          "memo": null
+        }
+      ]
+    }
+  ],
+  "5": [],
+  "6": [
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000007",
+      "visitDate": "2026-10-24",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 7,
+          "itemId": 1,
+          "itemName": "엔진오일",
+          "type": "DECLINE",
+          "date": "2026-10-24",
+          "memo": null
+        }
+      ]
+    },
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000006",
+      "visitDate": "2026-03-24",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 6,
+          "itemId": 1,
+          "itemName": "엔진오일",
+          "type": "REPLACE",
+          "date": "2026-03-24",
+          "memo": null
+        }
+      ]
+    }
+  ],
+  "7": [
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000009",
+      "visitDate": "2026-10-24",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 9,
+          "itemId": 3,
+          "itemName": "에어컨필터",
+          "type": "EXTERNAL",
+          "date": "2026-10-24",
+          "memo": null
+        }
+      ]
+    },
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000008",
+      "visitDate": "2025-10-24",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 8,
+          "itemId": 3,
+          "itemName": "에어컨필터",
+          "type": "REPLACE",
+          "date": "2025-10-24",
+          "memo": null
+        }
+      ]
+    }
+  ],
+  "8": [
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000011",
+      "visitDate": "2026-09-24",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 11,
+          "itemId": 5,
+          "itemName": "타이어 상태 점검",
+          "type": "INSPECT",
+          "date": "2026-09-24",
+          "memo": null
+        }
+      ]
+    },
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000010",
+      "visitDate": "2026-06-13",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 10,
+          "itemId": 5,
+          "itemName": "타이어 상태 점검",
+          "type": "REPLACE",
+          "date": "2026-06-13",
+          "memo": null
+        }
+      ]
+    }
+  ],
+  "9": [
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000012",
+      "visitDate": "2026-04-24",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 12,
+          "itemId": 1,
+          "itemName": "엔진오일",
+          "type": "REPLACE",
+          "date": "2026-04-24",
+          "memo": null
+        }
+      ]
+    }
+  ],
+  "10": [
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000015",
+      "visitDate": "2026-10-24",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 16,
+          "itemId": 1,
+          "itemName": "엔진오일",
+          "type": "REPLACE",
+          "date": "2026-10-24",
+          "memo": null
+        }
+      ]
+    },
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000014",
+      "visitDate": "2026-08-24",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 14,
+          "itemId": 2,
+          "itemName": "에어클리너",
+          "type": "REPLACE",
+          "date": "2026-08-24",
+          "memo": null
+        },
+        {
+          "recordId": 15,
+          "itemId": 3,
+          "itemName": "에어컨필터",
+          "type": "REPLACE",
+          "date": "2026-08-24",
+          "memo": null
+        }
+      ]
+    },
+    {
+      "visitKey": "5eed0000-0000-4000-8000-000000000013",
+      "visitDate": "2023-12-14",
+      "mileage": null,
+      "staffName": "김정비",
+      "records": [
+        {
+          "recordId": 13,
+          "itemId": 6,
+          "itemName": "배터리",
+          "type": "REPLACE",
+          "date": "2023-12-14",
+          "memo": null
+        }
+      ]
+    }
+  ],
+  "11": []
+}
