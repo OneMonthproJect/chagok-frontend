@@ -1,0 +1,383 @@
+/* features/customer 화면 조각 — 디자인 v3.0 S-05·M-01·M-02 차량 검색. 색·크기는 theme.css 토큰만 쓴다 */
+
+/* ---- 검색창 ---- */
+.customer-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ck-space-2) var(--ck-space-4);
+  min-width: 0;
+}
+.customer-search__field {
+  position: relative;
+  flex: 1 1 320px;
+  max-width: 360px;
+}
+.customer-search__icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  display: flex;
+  color: var(--ck-text-3);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.customer-search__input {
+  width: 100%;
+  min-height: var(--ck-control-h);
+  padding: 0 40px 0 42px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-surface);
+  color: var(--ck-text-1);
+  font: inherit;
+  font-size: var(--ck-fs-body);
+}
+.customer-search__input::-webkit-search-cancel-button {
+  display: none;
+}
+.customer-search__input:focus {
+  outline: none;
+  border-color: var(--ck-brand);
+  box-shadow: 0 0 0 3px var(--ck-brand-ring);
+}
+.customer-search__clear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--ck-radius-pill);
+  background: transparent;
+  color: var(--ck-text-3);
+  font-size: 18px;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+.customer-search__clear:hover {
+  background: var(--ck-surface-muted);
+}
+.customer-search__clear:focus-visible {
+  outline: 2px solid var(--ck-brand);
+}
+.customer-search__hint {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+
+/* ---- 결과 표 ---- */
+.customer-results {
+  overflow-x: auto;
+  transition: opacity 0.15s;
+}
+.customer-results--refreshing {
+  opacity: 0.6;
+}
+.customer-results__state {
+  padding: var(--ck-space-5) var(--ck-space-4);
+}
+.customer-results__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-3);
+  padding: var(--ck-space-5) var(--ck-space-4);
+}
+.customer-results__skeleton-row {
+  height: 44px;
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-surface-muted);
+}
+.customer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ck-fs-body);
+}
+.customer-table thead th {
+  padding: 14px var(--ck-space-5);
+  border-bottom: 1px solid var(--ck-border-soft);
+  background: var(--ck-surface-muted);
+  color: var(--ck-text-3);
+  font-size: var(--ck-fs-meta);
+  font-weight: var(--ck-fw-semibold);
+  text-align: left;
+  white-space: nowrap;
+}
+.customer-row th,
+.customer-row td {
+  padding: var(--ck-space-4) var(--ck-space-5);
+  border-bottom: 1px solid var(--ck-border-soft);
+  text-align: left;
+  vertical-align: middle;
+}
+.customer-row__name {
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+  white-space: nowrap;
+}
+.customer-row__name > span:last-child {
+  display: inline-block;
+  max-width: 16em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.customer-row__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-right: var(--ck-space-3);
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-brand-tint);
+  color: var(--ck-brand);
+  font-size: var(--ck-fs-meta);
+  vertical-align: middle;
+}
+.customer-row__phone {
+  color: var(--ck-text-2);
+  white-space: nowrap;
+}
+.customer-row__plates {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ck-space-2);
+}
+.customer-row__count,
+.customer-row__none {
+  color: var(--ck-text-3);
+  font-size: var(--ck-fs-meta);
+}
+.customer-plate {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-sm);
+  background: var(--ck-surface);
+  color: var(--ck-text-1);
+  font-size: var(--ck-fs-meta);
+  font-weight: var(--ck-fw-bold);
+  white-space: nowrap;
+}
+/* 동의는 글자로 구분한다(색만으로 구분하지 않음, 09 0장). 정비 주기 상태색(미확인·여유·임박·도래)은 쓰지 않는다 */
+.customer-consent {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: var(--ck-radius-pill);
+  background: var(--ck-surface-muted);
+  color: var(--ck-text-2);
+  font-size: var(--ck-fs-meta);
+  font-weight: var(--ck-fw-semibold);
+  white-space: nowrap;
+}
+.customer-consent--yes {
+  background: var(--ck-brand-tint);
+  color: var(--ck-brand);
+}
+
+/* 좁은 화면(< 1024): 표를 카드형 줄로 (디자인 RWD-768-Customer-List) */
+@media (max-width: 1023px) {
+  .customer-table thead {
+    display: none;
+  }
+  .customer-table,
+  .customer-table tbody,
+  .customer-row {
+    display: block;
+  }
+  .customer-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--ck-space-2) var(--ck-space-3);
+    padding: var(--ck-space-4);
+    border-bottom: 1px solid var(--ck-border-soft);
+  }
+  .customer-row th,
+  .customer-row td {
+    padding: 0;
+    border: 0;
+  }
+  .customer-row td:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---- M-01 폼 ---- */
+.customer-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-5);
+}
+.customer-form__section-title {
+  margin: 0 0 var(--ck-space-3);
+  font-size: var(--ck-fs-small);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.customer-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ck-space-3) var(--ck-space-4);
+}
+.customer-form__span {
+  grid-column: 1 / -1;
+}
+.customer-form__check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ck-space-2);
+  min-height: var(--ck-control-h-sm);
+  font-size: var(--ck-fs-body);
+  font-weight: var(--ck-fw-semibold);
+  color: var(--ck-text-1);
+  cursor: pointer;
+}
+.customer-form__check input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--ck-brand);
+}
+.customer-form__help {
+  margin: 0;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.customer-form__error {
+  margin: var(--ck-space-1) 0 0;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-due-fg);
+}
+@media (max-width: 767px) {
+  .customer-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 같은 연락처·차량번호 기존 고객 안내 */
+.customer-dup {
+  padding: var(--ck-space-4);
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-brand-tint);
+}
+.customer-dup__title {
+  margin: 0 0 var(--ck-space-2);
+  font-size: var(--ck-fs-small);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.customer-dup__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-2);
+  margin: 0 0 var(--ck-space-2);
+  padding: 0;
+  list-style: none;
+}
+.customer-dup__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ck-space-2);
+  padding: var(--ck-space-2) var(--ck-space-3);
+  border-radius: var(--ck-radius-sm);
+  background: var(--ck-surface);
+}
+.customer-dup__who {
+  font-size: var(--ck-fs-small);
+  color: var(--ck-text-2);
+}
+.customer-dup__tag {
+  display: inline-flex;
+  margin-left: var(--ck-space-2);
+  padding: 2px 8px;
+  border-radius: var(--ck-radius-pill);
+  background: var(--ck-surface-muted);
+  color: var(--ck-text-2);
+  font-size: var(--ck-fs-caption);
+  font-style: normal;
+  font-weight: var(--ck-fw-semibold);
+}
+.customer-dup__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--ck-space-2);
+}
+
+/* ---- 차량 검색 (VehiclePicker) ---- */
+.vehicle-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-2);
+}
+.vehicle-picker .customer-search__field {
+  max-width: none;
+}
+.vehicle-picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vehicle-picker__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
+  width: 100%;
+  padding: var(--ck-space-3);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-surface);
+  color: var(--ck-text-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.vehicle-picker__option:hover {
+  border-color: var(--ck-brand);
+}
+.vehicle-picker__option:focus-visible {
+  outline: 2px solid var(--ck-brand);
+  outline-offset: 1px;
+}
+.vehicle-picker__option--selected {
+  border-color: var(--ck-brand);
+  background: var(--ck-brand-tint);
+}
+.vehicle-picker__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.vehicle-picker__text small {
+  color: var(--ck-text-3);
+  font-size: var(--ck-fs-meta);
+}
+.vehicle-picker__tag {
+  color: var(--ck-brand);
+  font-size: var(--ck-fs-meta);
+  font-style: normal;
+  font-weight: var(--ck-fw-semibold);
+  white-space: nowrap;
+}
+.vehicle-picker__empty {
+  margin: 0;
+  padding: var(--ck-space-2) 0;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.vehicle-picker__register {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ck-space-2);
+}
