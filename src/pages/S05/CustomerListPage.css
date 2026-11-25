@@ -1,0 +1,78 @@
+/* S-05 고객·차량 목록 — 디자인 v3.0 S-05-customers */
+.s05 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-5);
+  min-width: 0;
+}
+.s05__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
+}
+.s05__title {
+  margin: 0;
+  font-size: var(--ck-fs-page);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.s05__count {
+  margin: var(--ck-space-1) 0 0;
+  font-size: var(--ck-fs-small);
+  color: var(--ck-text-3);
+}
+.s05__card {
+  overflow: hidden;
+  border-radius: var(--ck-radius-xl);
+  background: var(--ck-surface);
+  box-shadow: var(--ck-shadow-card);
+}
+.s05__toolbar {
+  padding: var(--ck-space-4) var(--ck-space-5);
+}
+.s05__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
+  padding: var(--ck-space-4) var(--ck-space-5);
+}
+.s05__range {
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.s05-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ck-space-1);
+}
+.s05-pagination__step,
+.s05-pagination__page {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-sm);
+  background: var(--ck-surface);
+  color: var(--ck-text-2);
+  font: inherit;
+  font-size: var(--ck-fs-meta);
+  cursor: pointer;
+}
+.s05-pagination__step:disabled {
+  color: var(--ck-text-disabled);
+  cursor: not-allowed;
+}
+.s05-pagination__page--current {
+  border-color: var(--ck-brand);
+  background: var(--ck-brand);
+  color: var(--ck-text-inverse);
+  font-weight: var(--ck-fw-bold);
+}
+.s05-pagination button:focus-visible {
+  outline: 2px solid var(--ck-brand);
+  outline-offset: 1px;
+}
