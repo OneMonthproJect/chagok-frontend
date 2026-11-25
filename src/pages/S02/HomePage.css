@@ -1,0 +1,90 @@
+/* S-02 홈 (P0-핵심 목록) — 디자인 v3.0 page-header·card-panel·reservation-empty-state. --ck-* 는 #18 토큰, 기본값 포함 */
+.home-page { max-width: 1280px; }
+
+.page-header {
+  min-height: 64px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+.page-header h1 {
+  margin: 0;
+  font-size: var(--ck-fs-page, 26px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+}
+.page-header p {
+  margin: 4px 0 0;
+  color: var(--ck-text-3, #5f646d);
+  font-size: var(--ck-fs-small, 14px);
+}
+
+.home-card {
+  overflow: hidden;
+  border: 1px solid #ecedf1d9;
+  border-radius: var(--ck-radius-lg, 16px);
+  background: var(--ck-surface, #fff);
+  box-shadow: var(--ck-shadow-card, 0 8px 24px #1118270b);
+}
+.home-card__head {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid var(--ck-border-soft, #eeeff2);
+}
+.home-card__title {
+  margin: 0;
+  font-size: var(--ck-fs-card-title, 18px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.home-card__sub {
+  margin: 4px 0 0;
+  color: var(--ck-text-4, #626770);
+  font-size: var(--ck-fs-caption, 12px);
+}
+.home-card__body { padding: 16px; }
+
+/* 임시 빈 상태·오류 (TODO #18: 공통 EmptyState·ErrorNotice로 교체) */
+.home-empty {
+  min-height: 300px;
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.home-empty img { height: 120px; width: auto; }
+.home-empty p {
+  margin: 12px 0 0;
+  color: var(--ck-text-4, #626770);
+  font-size: var(--ck-fs-body, 15px);
+  font-weight: 500;
+}
+.home-state {
+  margin: 0;
+  padding: 40px 0;
+  color: var(--ck-text-3, #5f646d);
+  text-align: center;
+}
+.home-state--error p { margin: 0; color: var(--ck-due-fg, #b42318); font-weight: 600; }
+.home-retry {
+  margin-top: 12px;
+  min-height: var(--ck-control-h-sm, 40px);
+  padding: 0 16px;
+  border: 1px solid var(--ck-border, #e4e6ea);
+  border-radius: var(--ck-radius-md, 12px);
+  background: var(--ck-surface, #fff);
+  color: var(--ck-text-1, #111318);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.home-retry:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: 2px; }

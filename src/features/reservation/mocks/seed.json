@@ -1,0 +1,42 @@
+{
+  "_comment": "07 7.1~7.3 시드의 사본 (A 정비소). 예약 날짜는 오늘 기준 dayOffset + time으로 두고 index.ts가 08 모양으로 바꾼다. 실제 개인정보 없음.",
+  "items": [
+    { "itemId": 1, "code": "ENGINE_OIL", "name": "엔진오일" },
+    { "itemId": 2, "code": "AIR_CLEANER", "name": "에어클리너" },
+    { "itemId": 3, "code": "AC_FILTER", "name": "에어컨필터" },
+    { "itemId": 4, "code": "BRAKE_PAD", "name": "브레이크패드" },
+    { "itemId": 5, "code": "TIRE", "name": "타이어 상태 점검" },
+    { "itemId": 6, "code": "BATTERY", "name": "배터리" }
+  ],
+  "customers": [
+    { "customerId": 1, "name": "김민수", "phone": "010-0000-0001", "consent": true },
+    { "customerId": 2, "name": "이영희", "phone": "010-0000-0002", "consent": true },
+    { "customerId": 3, "name": "박철수", "phone": "010-0000-0003", "consent": true },
+    { "customerId": 4, "name": "최지은", "phone": "010-0000-0004", "consent": true },
+    { "customerId": 5, "name": "정우성", "phone": "010-0000-0005", "consent": true },
+    { "customerId": 6, "name": "한가람", "phone": "010-0000-0006", "consent": true },
+    { "customerId": 7, "name": "서민준", "phone": "010-0000-0007", "consent": true },
+    { "customerId": 8, "name": "윤하늘", "phone": "010-0000-0008", "consent": true },
+    { "customerId": 9, "name": "장미래", "phone": "010-0000-0009", "consent": false },
+    { "customerId": 10, "name": "오세훈", "phone": "010-0000-0010", "consent": true }
+  ],
+  "vehicles": [
+    { "vehicleId": 1, "customerId": 1, "plateNumber": "12가0001", "model": "아반떼", "modelYear": 2019, "latestMileage": 40000 },
+    { "vehicleId": 2, "customerId": 2, "plateNumber": "34나0002", "model": "쏘나타", "modelYear": 2018, "latestMileage": 60000 },
+    { "vehicleId": 3, "customerId": 3, "plateNumber": "56다0003", "model": "그랜저", "modelYear": 2017, "latestMileage": 80000 },
+    { "vehicleId": 4, "customerId": 4, "plateNumber": "78라0004", "model": "K5", "modelYear": 2020, "latestMileage": 45000 },
+    { "vehicleId": 5, "customerId": 5, "plateNumber": "90마0005", "model": "아반떼", "modelYear": 2019, "latestMileage": null },
+    { "vehicleId": 6, "customerId": 6, "plateNumber": "11바0006", "model": "투싼", "modelYear": 2016, "latestMileage": 70000 },
+    { "vehicleId": 7, "customerId": 7, "plateNumber": "22사0007", "model": "쏘렌토", "modelYear": 2018, "latestMileage": 55000 },
+    { "vehicleId": 8, "customerId": 8, "plateNumber": "33아0008", "model": "스포티지", "modelYear": 2021, "latestMileage": 30000 },
+    { "vehicleId": 9, "customerId": 9, "plateNumber": "44자0009", "model": "아반떼", "modelYear": 2015, "latestMileage": 90000 },
+    { "vehicleId": 10, "customerId": 10, "plateNumber": "55차0010", "model": "쏘나타", "modelYear": 2018, "latestMileage": 97000 },
+    { "vehicleId": 11, "customerId": 10, "plateNumber": "66카0011", "model": "K3", "modelYear": null, "latestMileage": null }
+  ],
+  "reservations": [
+    { "reservationId": 1, "dayOffset": 0, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 4, "itemIds": [1], "other": false, "memo": null },
+    { "reservationId": 2, "dayOffset": 0, "time": "14:30:00", "status": "RESERVED", "version": 0, "vehicleId": 7, "itemIds": [], "other": true, "memo": "에어컨 냄새" },
+    { "reservationId": 3, "dayOffset": 2, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 2, "itemIds": [1], "other": false, "memo": null },
+    { "reservationId": 4, "dayOffset": -1, "time": "15:00:00", "status": "RESERVED", "version": 0, "vehicleId": 10, "itemIds": [6], "other": false, "memo": null }
+  ]
+}
