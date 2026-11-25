@@ -215,7 +215,7 @@ describe('S-02 예약 상세 패널', () => {
     handlers.panel = () => ok(panelExample({ reservation: { version: panelVersion } }))
     handlers.complete = () => {
       panelVersion = 1 // 다른 직원이 먼저 바꿈
-      return fail(409, 'CONCURRENT_MODIFICATION', '다른 사용자가 먼저 바꿨습니다. 최신 내용을 확인해 주세요.')
+      return fail(409, 'CONCURRENT_MODIFICATION', '다른 직원이 먼저 수정했습니다. 최신 내용을 다시 불러와 주세요.')
     }
     renderHome('/?reservation=4')
     await settle()
@@ -230,7 +230,7 @@ describe('S-02 예약 상세 패널', () => {
     expect(location.pathname).toBe('/')
     expect(location.search).toBe('?reservation=4')
     const notice = panel().querySelector('.error-notice--warn')
-    expect(notice.textContent).toContain('다른 사용자가 먼저 바꿨습니다.')
+    expect(notice.textContent).toContain('다른 직원이 먼저 수정했습니다.')
     expect(notice.textContent).toContain('최신 내용을 다시 불러왔습니다.')
 
     // 사람이 다시 누르면 새로 읽은 version으로 한 번 더 보낸다
@@ -247,7 +247,7 @@ describe('S-02 예약 상세 패널', () => {
     handlers.panel = () => ok(panelExample({ reservation: { status, needsAction: false } }))
     handlers.complete = () => {
       status = 'COMPLETED' // 다른 직원이 이미 끝냄
-      return fail(409, 'INVALID_STATUS_TRANSITION', '이 예약은 지금 상태에서 방문 완료할 수 없습니다.')
+      return fail(409, 'INVALID_STATUS_TRANSITION', '지금 상태에서는 할 수 없는 변경입니다.')
     }
     renderHome('/?reservation=4')
     await settle()

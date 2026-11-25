@@ -108,6 +108,12 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
   })
 
   it('18·19: version이 다르면 409, 완료 뒤 변경은 409 상태 전이', () => {
+    // 18 확인 순서: 형식(400) → 소유(404). 누락만 fieldErrors[version]
+    const missing = mockComplete(999, {} as never).body as { error: { code: string; fieldErrors: unknown[] } }
+    expect(missing.error.code).toBe('INVALID_INPUT')
+    expect(missing.error.fieldErrors).toHaveLength(1)
+    expect((mockComplete(1, { version: '0' } as never).body as { error: { fieldErrors: unknown[] } }).error.fieldErrors).toHaveLength(0)
+    expect(mockComplete(999, { version: 0 }).status).toBe(404)
     expect(mockComplete(1, { version: 5 }).status).toBe(409)
     expect(mockComplete(1, { version: 0 }).status).toBe(200)
     expect((mockUpdate(1, { version: 1, purpose: { memo: '메모' } }).body as { error: { code: string } }).error.code).toBe('INVALID_STATUS_TRANSITION')

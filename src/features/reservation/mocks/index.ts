@@ -213,20 +213,29 @@ export function mockGetPanel(reservationId: number): MockResponse {
   return ok(panel)
 }
 
-function checkVersion(version: unknown, r: MockReservation): MockResponse | null {
-  if (typeof version !== 'number') return fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.', 'version')
-  if (version !== r.version) return fail(409, 'CONCURRENT_MODIFICATION', '다른 사용자가 먼저 바꿨습니다. 최신 내용을 확인해 주세요.')
+// 409 문구는 백엔드 ErrorCode와 같게 둔다(패널이 서버 message를 그대로 보이므로 Mock·실제 화면 문구가 같아야 함)
+const STATUS_TRANSITION_MESSAGE = '지금 상태에서는 할 수 없는 변경입니다.'
+const CONCURRENT_MESSAGE = '다른 직원이 먼저 수정했습니다. 최신 내용을 다시 불러와 주세요.'
+
+/** version 형식 (08 0.2·18·19): 누락은 fieldErrors[version], 숫자가 아닌 값(타입 불일치)은 fieldErrors 빈 배열 */
+function invalidVersion(version: unknown): MockResponse | null {
+  if (version === undefined || version === null) return fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.', 'version')
+  if (typeof version !== 'number') return fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.')
   return null
 }
 
-/** 08 18 (P0-핵심: RESERVED에서만) */
+function checkVersion(version: number, r: MockReservation): MockResponse | null {
+  if (version !== r.version) return fail(409, 'CONCURRENT_MODIFICATION', CONCURRENT_MESSAGE)
+  return null
+}
+
+/** 08 18 — 형식(400) → 소유(404) → 상태(P0-핵심은 RESERVED만, IN_PROGRESS는 P0-나머지) → version 순 */
 export function mockComplete(reservationId: number, body: ReservationCompleteRequest): MockResponse {
+  const invalid = invalidVersion(body?.version)
+  if (invalid) return invalid
   const r = reservations().find((x) => x.reservationId === reservationId)
   if (!r) return notFound()
-  if (typeof body?.version !== 'number') return fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.', 'version')
-  if (r.status !== 'RESERVED' && r.status !== 'IN_PROGRESS') {
-    return fail(409, 'INVALID_STATUS_TRANSITION', '이 예약은 지금 상태에서 방문 완료할 수 없습니다.')
-  }
+  if (r.status !== 'RESERVED') return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
   const versionError = checkVersion(body.version, r)
   if (versionError) return versionError
   r.status = 'COMPLETED'
@@ -237,11 +246,12 @@ export function mockComplete(reservationId: number, body: ReservationCompleteReq
 /** 08 19 (보낸 필드만, RESERVED만) */
 export function mockUpdate(reservationId: number, body: ReservationUpdateRequest): MockResponse {
   const hasChange = body?.reservedAt !== undefined || body?.purpose !== undefined || body?.assigneeId !== undefined
-  if (typeof body?.version !== 'number') return fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.', 'version')
+  const invalid = invalidVersion(body?.version)
+  if (invalid) return invalid
   if (!hasChange) return fail(400, 'INVALID_INPUT', '바꿀 내용이 없습니다.', 'reservedAt')
   const r = reservations().find((x) => x.reservationId === reservationId)
   if (!r) return notFound()
-  if (r.status !== 'RESERVED') return fail(409, 'INVALID_STATUS_TRANSITION', '이 예약은 지금 상태에서 바꿀 수 없습니다.')
+  if (r.status !== 'RESERVED') return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
   const versionError = checkVersion(body.version, r)
   if (versionError) return versionError
   if (body.reservedAt !== undefined) {
