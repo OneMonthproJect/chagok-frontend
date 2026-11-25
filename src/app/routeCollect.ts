@@ -43,8 +43,9 @@ export function collectRoutes(modules: Record<string, { default?: PageRoute }>):
 
   const seen = new Set<string>()
   for (const route of routes) {
-    if (seen.has(route.path)) throw new Error(`같은 경로가 두 번 있습니다: ${route.path}`)
-    seen.add(route.path)
+    const path = route.path && (route.path.replace(/\/+$/, '') || '/')
+    if (seen.has(path)) throw new Error(`같은 경로가 두 번 있습니다: ${route.path}`)
+    seen.add(path)
   }
 
   const menu = routes

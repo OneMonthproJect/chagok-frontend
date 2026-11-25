@@ -110,10 +110,22 @@
 .sidebar-account small { display: block; color: var(--ck-text-3, #5f646d); font-size: var(--ck-fs-caption, 12px); }
 
 .app-sidebar--collapsed .sidebar-item { justify-content: center; padding: 0; }
-.app-sidebar--collapsed .sidebar-item > span,
-.app-sidebar--collapsed .sidebar-brand > span,
-.app-sidebar--collapsed .sidebar-account > div { display: none; }
+.app-sidebar--collapsed .sidebar-item > span:not(.sidebar-item__fallback),
+.app-sidebar--collapsed .sidebar-brand > span { display: none; }
+.app-sidebar--collapsed .sidebar-item__fallback {
+  font-size: var(--ck-fs-caption, 12px);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
 .app-sidebar--collapsed .sidebar-account { justify-content: center; padding: 6px; background: none; }
+.app-sidebar--collapsed .sidebar-account > div {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 /* 접힌 사이드바: 마우스·키보드 초점에 이름 풍선 */
 .app-sidebar--collapsed [data-tip]:hover::after,

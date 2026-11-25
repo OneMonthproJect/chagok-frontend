@@ -43,7 +43,7 @@ export default function AppMenu({ items, mode, onToggle }) {
             data-tip={item.label}
           >
             <MenuIcon name={item.icon} />
-            <span>{item.label}</span>
+            <span className={item.icon ? undefined : 'sidebar-item__fallback'}>{item.label}</span>
           </NavLink>
         ))}
       </nav>

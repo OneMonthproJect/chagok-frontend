@@ -34,6 +34,13 @@ describe('collectRoutes', () => {
       '../pages/B/route.jsx': mod({ path: '/', element: 'b' }),
     })).toThrow(/두 번/)
   })
+
+  it('끝 슬래시만 다른 경로를 중복으로 거부한다', () => {
+    expect(() => collectRoutes({
+      '../pages/A/route.jsx': mod({ path: '/customers', element: 'a' }),
+      '../pages/B/route.jsx': mod({ path: '/customers/', element: 'b' }),
+    })).toThrow(/같은 경로가 두 번 있습니다/)
+  })
 })
 
 describe('menuMode (디자인 v3.0 RWD)', () => {
