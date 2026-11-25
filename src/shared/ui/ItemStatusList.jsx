@@ -8,6 +8,7 @@ import './ItemStatusList.css'
 //   - 순서는 받은 순서 그대로(서버의 sortOrder 순). highlighted 항목도 자리를 옮기지 않고 굵게만 보인다(D-63 B02).
 //   - API 타입을 모른다. 08 응답을 아래 모양으로 펼치는 일(날짜 형식 등)은 쓰는 화면이 한다.
 // items: [{ id, name, status, highlighted?, tag?(이름 옆 작은 꼬리표), details?: [{ label, value }] }]
+//   table은 첫 항목의 details label로 열 머리를 만든다 — 모든 항목의 details는 같은 label·같은 순서로 넘긴다.
 // loading: 이전 결과를 흐리게 둔 채 새 결과를 기다린다(자리 이동 없음).
 // 사용: <ItemStatusList variant="summary" items={panel.itemStatuses.map(toRow)} />
 
@@ -28,7 +29,7 @@ function ItemName({ item }) {
 }
 
 function itemClass(base, item) {
-  return `${base} item-status-list__item--${item.status}${item.highlighted ? ' is-highlighted' : ''}`
+  return `${base}${item.highlighted ? ' is-highlighted' : ''}`
 }
 
 export default function ItemStatusList({ variant = 'summary', items = [], loading = false, nameLabel = '항목', statusLabel = '상태' }) {

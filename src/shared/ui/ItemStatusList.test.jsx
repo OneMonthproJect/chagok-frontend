@@ -64,6 +64,12 @@ describe('ItemStatusList 세부', () => {
     expect(markup).toContain('>엔진오일')
   })
 
+  it('상태별 색 class를 따로 두지 않는다 — 상태 색은 StatusBadge에서만 (CONVENTIONS 4장)', () => {
+    for (const variant of ['summary', 'target', 'table', 'preview']) {
+      expect(renderToStaticMarkup(<ItemStatusList variant={variant} items={ITEMS} />)).not.toContain('item-status-list__item--')
+    }
+  })
+
   it('모르는 variant는 summary로 그린다', () => {
     expect(renderToStaticMarkup(<ItemStatusList variant="x" items={ITEMS} />)).toContain('item-status-list--summary')
   })

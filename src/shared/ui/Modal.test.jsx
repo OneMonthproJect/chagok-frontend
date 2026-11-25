@@ -115,6 +115,56 @@ describe('Modal 닫기', () => {
   })
 })
 
+describe('Modal 경계 (리뷰 반영)', () => {
+  it('onClose가 없으면 × 버튼을 그리지 않는다 (연결 안 된 버튼 없음)', () => {
+    render(
+      <Modal open title="안내">
+        <p>내용</p>
+      </Modal>,
+    )
+    expect(document.querySelector('button[aria-label="닫기"]')).toBeNull()
+  })
+
+  it('한글 조합 중 Esc는 모달을 닫지 않는다', () => {
+    const onClose = vi.fn()
+    render(<Form onClose={onClose} />)
+    keyDown('Escape', { isComposing: true })
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('안의 칸이 React autoFocus를 써도 닫히면 연 요소로 초점이 돌아간다', () => {
+    function Screen({ open }) {
+      return (
+        <>
+          <button type="button">신규 등록</button>
+          <Modal open={open} title="t" onClose={() => {}}>
+            <input aria-label="고객명" autoFocus />
+          </Modal>
+        </>
+      )
+    }
+    const view = render(<Screen open={false} />)
+    const opener = view.container.querySelector('button')
+    opener.focus()
+    view.rerender(<Screen open />)
+    view.rerender(<Screen open={false} />)
+    expect(document.activeElement).toBe(opener)
+  })
+
+  it('tabindex="-1" 요소는 Tab 순서에서 빼고 마지막 칸을 판정한다', () => {
+    render(
+      <Modal open title="비밀번호" onClose={() => {}}>
+        <input aria-label="비밀번호" />
+        <button type="button" tabIndex={-1}>보기</button>
+      </Modal>,
+    )
+    const input = document.querySelector('input')
+    input.focus()
+    keyDown('Tab')
+    expect(document.activeElement.getAttribute('aria-label')).toBe('닫기')
+  })
+})
+
 describe('Modal 초점 가두기 (Tab)', () => {
   it('마지막 요소에서 Tab → 처음, 처음에서 Shift+Tab → 마지막', () => {
     render(<Form onClose={() => {}} />)
