@@ -1,0 +1,85 @@
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "customerId": 10,
+        "name": "오세훈",
+        "phone": "010-0000-0010",
+        "consent": true,
+        "vehicles": [
+          { "vehicleId": 10, "plateNumber": "55차0010" },
+          { "vehicleId": 11, "plateNumber": "66카0011" }
+        ]
+      },
+      {
+        "customerId": 9,
+        "name": "장미래",
+        "phone": "010-0000-0009",
+        "consent": false,
+        "vehicles": [ { "vehicleId": 9, "plateNumber": "44자0009" } ]
+      },
+      {
+        "customerId": 8,
+        "name": "윤하늘",
+        "phone": "010-0000-0008",
+        "consent": true,
+        "vehicles": [ { "vehicleId": 8, "plateNumber": "33아0008" } ]
+      },
+      {
+        "customerId": 7,
+        "name": "서민준",
+        "phone": "010-0000-0007",
+        "consent": true,
+        "vehicles": [ { "vehicleId": 7, "plateNumber": "22사0007" } ]
+      },
+      {
+        "customerId": 6,
+        "name": "한가람",
+        "phone": "010-0000-0006",
+        "consent": true,
+        "vehicles": [ { "vehicleId": 6, "plateNumber": "11바0006" } ]
+      },
+      {
+        "customerId": 5,
+        "name": "정우성",
+        "phone": "010-0000-0005",
+        "consent": true,
+        "vehicles": [ { "vehicleId": 5, "plateNumber": "90마0005" } ]
+      },
+      {
+        "customerId": 4,
+        "name": "최지은",
+        "phone": "010-0000-0004",
+        "consent": true,
+        "vehicles": [ { "vehicleId": 4, "plateNumber": "78라0004" } ]
+      },
+      {
+        "customerId": 3,
+        "name": "박철수",
+        "phone": "010-0000-0003",
+        "consent": true,
+        "vehicles": [ { "vehicleId": 3, "plateNumber": "56다0003" } ]
+      },
+      {
+        "customerId": 2,
+        "name": "이영희",
+        "phone": "010-0000-0002",
+        "consent": true,
+        "vehicles": [ { "vehicleId": 2, "plateNumber": "34나0002" } ]
+      },
+      {
+        "customerId": 1,
+        "name": "김민수",
+        "phone": "010-0000-0001",
+        "consent": true,
+        "vehicles": [ { "vehicleId": 1, "plateNumber": "12가0001" } ]
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 10,
+    "totalPages": 1
+  },
+  "error": null
+}
