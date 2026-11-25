@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { PATHS } from '@/app/paths'
+import { PATHS, vehiclePath } from '@/app/paths'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import CustomerInfoCard from '@/features/customer/components/CustomerInfoCard.jsx'
@@ -20,14 +20,17 @@ import './CustomerDetailPage.css'
 // - 404(없는 고객·다른 정비소 고객, X1)는 "찾을 수 없습니다." + "홈으로", 그 밖의 실패는 "불러오지 못했습니다." + 사람이 누르는
 //   "다시 불러오기"(09 5장, POL-125). 디자인 v3.0의 "고객 정보를 불러오지 못했습니다."와 다르면 09가 우선(design README).
 // - 위쪽 "고객·차량"은 S-05로. S-05 줄에서 왔으면 그때의 검색어·쪽(`?q=&page=`)으로 돌아간다.
-// - 이 이슈(#20)에 없는 것: 차량 추가(#21), 차량 → S-07 이동(#22), 수정(#32), 지표·비활성화·삭제(P1). 버튼을 미리 두지 않는다.
+// - 차량 카드를 누르면 S-07(#22). S-05에서 가져온 검색(`listSearch`)을 넘겨 S-07의 "고객·차량"도 같은 목록으로 돌아가게 한다.
+// - 이 화면에 아직 없는 것: 차량 추가(#21), 수정(#32), 지표·비활성화·삭제(P1). 버튼을 미리 두지 않는다.
 
 export default function CustomerDetailPage() {
   const { customerId: rawId } = useParams()
   const location = useLocation()
   const customerId = parseCustomerId(rawId)
   const detail = useCustomerDetail(customerId)
-  const backTo = `${PATHS.CUSTOMERS}${listSearchFrom(location.state)}`
+  const listSearch = listSearchFrom(location.state)
+  const backTo = `${PATHS.CUSTOMERS}${listSearch}`
+  const vehicleLink = (vehicle) => ({ to: vehiclePath(vehicle.vehicleId), state: { listSearch } })
 
   return (
     <div className="s06">
@@ -37,12 +40,12 @@ export default function CustomerDetailPage() {
         </Link>
         <h1 className="s06__title">고객 상세</h1>
       </header>
-      <CustomerDetailBody detail={detail} />
+      <CustomerDetailBody detail={detail} vehicleLink={vehicleLink} />
     </div>
   )
 }
 
-function CustomerDetailBody({ detail }) {
+function CustomerDetailBody({ detail, vehicleLink }) {
   const navigate = useNavigate()
   const { status, data, error, reload } = detail
 
@@ -81,7 +84,7 @@ function CustomerDetailBody({ detail }) {
         <CustomerInfoCard customer={data} />
       </section>
       <section className="s06__card">
-        <CustomerVehicleList vehicles={data.vehicles} />
+        <CustomerVehicleList vehicles={data.vehicles} vehicleLink={vehicleLink} />
       </section>
     </div>
   )

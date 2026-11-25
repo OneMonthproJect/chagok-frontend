@@ -6,8 +6,9 @@ import './customerDetail.css'
 // S-06 차량 영역: 머리(건수·"도래·임박은 오늘 기준") + 차량 카드 목록, 차량이 없으면 "등록된 차량이 없습니다." (09 S-06·5장, 08 07).
 // 차량 순서는 서버가 준 순서 그대로(08 07, 백엔드 차량 id 오름차순).
 // 차량 추가(6-1 #21)는 그 이슈가 이 영역 머리와 빈 상태에 버튼을 더한다 — 지금은 연결 안 된 버튼을 두지 않는다(09 0장).
+// vehicleLink(차량) → { to, state }: 카드를 눌러 갈 곳(S-07). pages가 정한다. 없으면 카드를 누를 수 없다.
 
-export default function CustomerVehicleList({ vehicles }) {
+export default function CustomerVehicleList({ vehicles, vehicleLink }) {
   return (
     <section className="customer-vehicles" aria-labelledby="customer-vehicles-title">
       <header className="customer-vehicles__header">
@@ -22,7 +23,7 @@ export default function CustomerVehicleList({ vehicles }) {
         <ul className="customer-vehicles__grid">
           {vehicles.map((vehicle) => (
             <li key={vehicle.vehicleId}>
-              <VehicleRow vehicle={vehicle} />
+              <VehicleRow vehicle={vehicle} link={vehicleLink?.(vehicle)} />
             </li>
           ))}
         </ul>
