@@ -23,7 +23,7 @@ export interface LoginLocationState {
 }
 
 export interface LoginNotice {
-  kind: 'expired' | 'logout' | 'info'
+  kind: 'expired' | 'logout'
   message: string
 }
 
@@ -42,11 +42,10 @@ export function isExpired(state: LoginLocationState | null | undefined): boolean
   return state?.reason === 'expired'
 }
 
-/** 로그인 화면 위 안내: 401 만료 → 로그아웃 → (이미 로그인됨) 순으로 하나만 */
-export function loginNotice(state: LoginLocationState | null | undefined, loggedIn: boolean): LoginNotice | null {
+/** 로그인 화면 위 안내: 401 만료 또는 로그아웃 (디자인 S-01 상태 06·07) */
+export function loginNotice(state: LoginLocationState | null | undefined): LoginNotice | null {
   if (state?.reason === 'expired') return { kind: 'expired', message: EXPIRED_MESSAGE }
   if (state?.reason === 'logout') return { kind: 'logout', message: LOGGED_OUT_MESSAGE }
-  if (loggedIn) return { kind: 'info', message: '이미 로그인되어 있습니다.' }
   return null
 }
 

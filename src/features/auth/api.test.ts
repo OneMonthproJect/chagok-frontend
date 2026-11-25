@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, NETWORK_ERROR, onUnauthorized, parseResponse } from '@/shared/api/client'
 import { getToken, setToken } from '@/shared/lib/tokenStore'
-import { getMe, login } from './api'
+import { ROLE_LABEL, getMe, login, logout } from './api'
 import {
   EXPIRED_MESSAGE, LOGIN_FAILED_MESSAGE, LOGIN_NETWORK_MESSAGE,
   emptyFieldErrors, isExpired, loginErrorMessage, loginNotice, returnPath,
@@ -126,11 +126,19 @@ describe('loginFlow (09 S-01)', () => {
     expect(emptyFieldErrors('owner_a', '1234')).toEqual({})
   })
 
-  it('안내: 만료 → 로그아웃 → 이미 로그인됨 순으로 하나', () => {
-    expect(loginNotice({ reason: 'expired' }, false)).toEqual({ kind: 'expired', message: EXPIRED_MESSAGE })
-    expect(loginNotice({ reason: 'logout' }, false)?.message).toBe('로그아웃했습니다.')
-    expect(loginNotice({}, true)?.kind).toBe('info')
-    expect(loginNotice(null, false)).toBeNull()
+  it('안내: 401 만료 또는 로그아웃', () => {
+    expect(loginNotice({ reason: 'expired' })).toEqual({ kind: 'expired', message: EXPIRED_MESSAGE })
+    expect(loginNotice({ reason: 'logout' })?.message).toBe('로그아웃했습니다.')
+    expect(loginNotice({})).toBeNull()
+    expect(loginNotice(null)).toBeNull()
+  })
+
+  it('logout: 토큰만 지우고 서버는 부르지 않는다 (POL-12), 역할 이름', () => {
+    setToken('token-abc')
+    logout()
+    expect(getToken()).toBeNull()
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(ROLE_LABEL).toEqual({ OWNER: '사장', MECHANIC: '정비사' })
   })
 
   it('돌아갈 경로: 앱 안 경로만, 로그인 화면 자신과 외부 주소는 제외', () => {
