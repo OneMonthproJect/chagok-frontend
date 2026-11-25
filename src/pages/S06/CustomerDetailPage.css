@@ -1,0 +1,62 @@
+/* S-06 고객 상세 — 디자인 v3.0 S-06-customer-detail */
+.s06 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-5);
+  min-width: 0;
+}
+.s06__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ck-space-1);
+  color: var(--ck-text-2);
+  font-size: var(--ck-fs-small);
+  text-decoration: none;
+}
+.s06__back:hover {
+  color: var(--ck-text-1);
+}
+.s06__back:focus-visible {
+  outline: 2px solid var(--ck-brand);
+  outline-offset: 2px;
+}
+.s06__title {
+  margin: var(--ck-space-2) 0 0;
+  font-size: var(--ck-fs-page);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.s06__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-5);
+  transition: opacity 0.15s;
+}
+.s06__body--refreshing {
+  opacity: 0.6;
+}
+.s06__card {
+  overflow: hidden;
+  border-radius: var(--ck-radius-xl);
+  background: var(--ck-surface);
+  box-shadow: var(--ck-shadow-card);
+}
+.s06__card--padded {
+  padding: var(--ck-space-5);
+}
+.s06__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-5);
+}
+.s06__skeleton-block {
+  border-radius: var(--ck-radius-xl);
+  background: var(--ck-surface);
+  box-shadow: var(--ck-shadow-card);
+}
+.s06__skeleton-block--info {
+  height: 104px;
+}
+.s06__skeleton-block--vehicles {
+  height: 260px;
+}

@@ -1,0 +1,148 @@
+/* features/customer S-06 고객 상세 조각 — 디자인 v3.0 S-06-customer-detail. 색·크기는 theme.css 토큰만 쓴다 */
+
+/* ---- 고객 정보 카드 ---- */
+.customer-info {
+  display: flex;
+  align-items: center;
+  gap: var(--ck-space-4);
+  min-width: 0;
+}
+.customer-info__avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--ck-radius-lg);
+  background: var(--ck-brand-tint);
+  color: var(--ck-brand);
+  font-size: var(--ck-fs-section);
+  font-weight: var(--ck-fw-bold);
+}
+.customer-info__text {
+  min-width: 0;
+}
+.customer-info__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ck-space-2) var(--ck-space-3);
+}
+.customer-info__name {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--ck-fs-section);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.customer-info__phone {
+  margin: var(--ck-space-2) 0 0;
+  font-size: var(--ck-fs-body);
+  color: var(--ck-text-2);
+}
+
+/* ---- 차량 영역 ---- */
+.customer-vehicles__header {
+  padding: var(--ck-space-5);
+  border-bottom: 1px solid var(--ck-border-soft);
+}
+.customer-vehicles__title {
+  margin: 0;
+  font-size: var(--ck-fs-card-title);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.customer-vehicles__meta {
+  margin: var(--ck-space-1) 0 0;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.customer-vehicles__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ck-space-4);
+  margin: 0;
+  padding: var(--ck-space-4);
+  list-style: none;
+}
+@media (max-width: 1023px) {
+  .customer-vehicles__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- 차량 카드 ---- */
+.vehicle-card {
+  height: 100%;
+  padding: var(--ck-space-5);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-lg);
+  background: var(--ck-surface);
+}
+.vehicle-card__plate {
+  margin: 0;
+  font-size: var(--ck-fs-card-title);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.vehicle-card__model {
+  margin: var(--ck-space-1) 0 0;
+  font-size: var(--ck-fs-small);
+  color: var(--ck-text-2);
+}
+.vehicle-card__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
+  margin-top: var(--ck-space-5);
+}
+.vehicle-card__label {
+  display: block;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.vehicle-card__mileage {
+  display: block;
+  margin-top: var(--ck-space-1);
+  font-size: var(--ck-fs-body);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+/* 비어 있는 값: 정비 주기 상태색을 쓰지 않는다(09 0장) */
+.vehicle-card__missing {
+  color: var(--ck-text-3);
+  font-weight: var(--ck-fw-regular);
+}
+.vehicle-card__counts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--ck-space-2);
+}
+
+/* 도래 n · 임박 n. 1 이상은 StatusBadge + 숫자, 0은 상태 색 없는 흐린 꼬리표 */
+.vehicle-count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ck-space-1);
+  white-space: nowrap;
+}
+.vehicle-count__number {
+  font-size: var(--ck-fs-meta);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.vehicle-count--zero {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--ck-radius-pill);
+  background: var(--ck-surface-muted);
+  color: var(--ck-text-3);
+  font-size: var(--ck-fs-meta);
+  font-weight: var(--ck-fw-semibold);
+}
+.vehicle-count--zero .vehicle-count__number {
+  color: var(--ck-text-3);
+}

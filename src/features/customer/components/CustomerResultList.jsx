@@ -8,10 +8,11 @@ import './customer.css'
 // search: useCustomerSearch 결과. 처음 불러올 때만 자리 표시를 보이고, 다시 검색하는 동안에는 이전 목록을 흐리게 둔다.
 // 조회 실패는 "불러오지 못했습니다." + 사람이 누르는 "다시 불러오기"(자동 재시도 없음).
 // onRegister(검색어): 빈 상태의 신규 등록 버튼. 검색어가 있으면 그 검색어를 M-01에 채운다(09 S-05 💡).
+// rowLink(고객) → { to, state }: 줄을 눌러 갈 곳(S-06). pages가 정한다. 없으면 줄을 누를 수 없다.
 
 const SKELETON_ROWS = 5
 
-export default function CustomerResultList({ search, onRegister }) {
+export default function CustomerResultList({ search, onRegister, rowLink }) {
   const { status, data, error, query, reload } = search
 
   if (status === 'error') {
@@ -56,7 +57,7 @@ export default function CustomerResultList({ search, onRegister }) {
         </thead>
         <tbody>
           {data.items.map((customer) => (
-            <CustomerRow key={customer.customerId} customer={customer} />
+            <CustomerRow key={customer.customerId} customer={customer} link={rowLink?.(customer)} />
           ))}
         </tbody>
       </table>

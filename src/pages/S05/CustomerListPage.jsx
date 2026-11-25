@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { QUERY } from '@/app/paths'
+import { useLocation, useSearchParams } from 'react-router-dom'
+import { QUERY, customerPath } from '@/app/paths'
 import Button from '@/shared/ui/Button.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import CustomerResultList from '@/features/customer/components/CustomerResultList.jsx'
@@ -16,7 +16,8 @@ import './CustomerListPage.css'
 //   URL의 page는 화면 숫자(1부터), 08 page는 0부터. 기본값(검색어 없음·1쪽)이면 URL에서 뺀다.
 // - [신규 고객·차량 등록] → M-01. 빈 상태의 신규 등록은 검색어를 M-01에 채운다. M-01은 URL이 없다.
 // - 등록 뒤: 화면 위에 결과 문구, 목록을 처음(최근 등록순)부터 다시 불러온다.
-//   줄 → S-06 이동, 등록 뒤 S-06 이동, M-01의 기존 고객 행동(차량 보기·이 고객에 차량 추가)은 S-06·S-07 화면이 생긴 뒤 연결한다.
+//   등록 뒤 S-06 이동, M-01의 기존 고객 행동(차량 보기·이 고객에 차량 추가)은 #19 잔여로 S-06·S-07 화면이 생긴 뒤 연결한다.
+// - 줄 → S-06 (#20). 지금 검색어·쪽(`?q=&page=`)을 state로 넘겨 S-06의 "고객·차량"이 같은 목록으로 돌아오게 한다.
 // - P1(비활성 포함 토글·최근 방문·방문 횟수·점검 예정)은 넣지 않는다.
 
 /** URL page(1부터) → 08 page(0부터). 숫자가 아니거나 1보다 작으면 0 */
@@ -27,6 +28,7 @@ function pageFromUrl(value) {
 
 export default function CustomerListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
   const urlQuery = searchParams.get(QUERY.Q) ?? ''
   const page = pageFromUrl(searchParams.get(QUERY.PAGE))
 
@@ -86,7 +88,11 @@ export default function CustomerListPage() {
         <div className="s05__toolbar">
           <CustomerSearchBox value={input} onChange={setInput} hint="일부만 입력해도 찾습니다. 띄어쓰기·하이픈은 무시합니다." />
         </div>
-        <CustomerResultList search={search} onRegister={(q) => setRegisterQuery(q)} />
+        <CustomerResultList
+          search={search}
+          onRegister={(q) => setRegisterQuery(q)}
+          rowLink={(customer) => ({ to: customerPath(customer.customerId), state: { listSearch: location.search } })}
+        />
         {range && search.data && (
           <footer className="s05__footer">
             <span className="s05__range">{range}</span>

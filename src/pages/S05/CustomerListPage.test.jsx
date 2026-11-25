@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act } from 'react'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, click, render } from '@/shared/lib/domTest'
 import CustomerListPage from './CustomerListPage.jsx'
@@ -43,8 +43,11 @@ const OH = {
   ],
 }
 
+let navigate
+
 function LocationProbe() {
   location = useLocation()
+  navigate = useNavigate()
   return null
 }
 
@@ -72,7 +75,7 @@ function typeSearch(value) {
 const button = (text) => Array.from(document.querySelectorAll('button')).find((b) => b.textContent.trim() === text)
 
 describe('S-05 고객·차량 목록', () => {
-  it('고객명·연락처·동의·차량번호들과 건수를 보인다 (줄은 아직 누를 수 없음)', async () => {
+  it('고객명·연락처·동의·차량번호들과 건수를 보인다', async () => {
     fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([OH, KIM]))))
     renderPage()
     await waitSearch()
@@ -87,9 +90,35 @@ describe('S-05 고객·차량 목록', () => {
     expect(rows[0].textContent).toContain('66카0011')
     expect(rows[0].textContent).toContain('2대')
     expect(rows[1].querySelector('.customer-consent').textContent).toBe('동의')
-    expect(rows[0].querySelector('a, button')).toBeNull()
+    expect(rows[0].querySelector('button')).toBeNull()
     expect(document.body.textContent).toContain('등록 고객 2명')
     expect(document.body.textContent).toContain('2명 중 1–2')
+  })
+
+  it('줄을 누르면 S-06 — 고객명은 링크(키보드), 줄 어디를 눌러도 같은 곳, 지금 검색어·쪽을 state로 (#20)', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([OH, KIM], 41, 1))))
+    renderPage('/customers?q=%EC%98%A4&page=2')
+    await waitSearch()
+
+    const rows = document.querySelectorAll('tbody tr')
+    const nameLink = rows[0].querySelector('a')
+    expect(nameLink.textContent).toBe('오세훈')
+    expect(nameLink.getAttribute('href')).toBe('/customers/10')
+
+    click(rows[1].querySelector('.customer-row__phone')) // 링크 밖(연락처 칸)을 눌러도 이동
+    expect(location.pathname).toBe('/customers/1')
+    expect(location.state).toEqual({ listSearch: '?q=%EC%98%A4&page=2' })
+  })
+
+  it('고객명 링크를 누르면 한 번만 이동한다', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([OH]))))
+    renderPage()
+    await waitSearch()
+    click(document.querySelector('tbody tr a'))
+    expect(location.pathname).toBe('/customers/10')
+    // 링크와 줄 클릭이 둘 다 이동하면 기록이 두 번 쌓여, 뒤로 한 번으로는 목록에 돌아오지 못한다
+    act(() => navigate(-1))
+    expect(location.pathname).toBe('/customers')
   })
 
   it('검색어는 멈춘 뒤 URL ?q= 로 옮기고, 결과가 없으면 검색어를 채워 M-01을 연다', async () => {
