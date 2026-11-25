@@ -1,0 +1,102 @@
+/* FormField — 디자인 v3.0 .ck-field (라벨 14 / 칸 높이 44·모서리 12 / 아래 한 줄 13) */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-field__label {
+  font-size: var(--ck-fs-small);
+  font-weight: var(--ck-fw-semibold);
+  color: var(--ck-text-2);
+}
+.form-field__required {
+  margin-left: 2px;
+  color: var(--ck-due-fg);
+}
+
+.form-field__control {
+  position: relative;
+}
+.form-field__control :is(input:not([type='checkbox'], [type='radio']), select, textarea) {
+  width: 100%;
+  min-height: var(--ck-control-h);
+  padding: 0 14px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-surface);
+  color: var(--ck-text-1);
+  font: inherit;
+  font-size: var(--ck-fs-body);
+  outline: none;
+}
+.form-field__control textarea {
+  padding: 10px 14px;
+  line-height: var(--ck-lh-body);
+}
+.form-field__control :is(input, textarea)::placeholder {
+  color: #6b7078;
+}
+.form-field__control :is(input, select, textarea):focus {
+  border-color: var(--ck-brand);
+  box-shadow: 0 0 0 3px var(--ck-brand-ring);
+}
+.form-field__control :is(input, select, textarea)[aria-invalid='true'] {
+  border-color: var(--ck-due-fg);
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.12);
+}
+.form-field__control :is(input, select, textarea):disabled {
+  background: #f1f2f4;
+  color: var(--ck-text-disabled);
+}
+
+/* 단위(km·년)를 칸 오른쪽 안에 */
+.form-field__control--suffix :is(input, select) {
+  padding-right: 44px;
+}
+.form-field__suffix {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  font-size: var(--ck-fs-small);
+  color: var(--ck-text-3);
+  pointer-events: none;
+}
+
+.form-field__message {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: var(--ck-fs-meta);
+}
+.form-field__message--hint {
+  color: var(--ck-text-3);
+}
+.form-field__message--warn {
+  color: #8a4f00;
+  font-weight: var(--ck-fw-semibold);
+}
+.form-field__message--error {
+  color: var(--ck-due-fg);
+  font-weight: var(--ck-fw-semibold);
+}
+.form-field__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  color: var(--ck-text-inverse);
+  font-size: 10px;
+  font-weight: var(--ck-fw-bold);
+  line-height: 1;
+}
+.form-field__message--error .form-field__icon {
+  background: var(--ck-due-fg);
+}
+.form-field__message--warn .form-field__icon {
+  background: #8a4f00;
+}

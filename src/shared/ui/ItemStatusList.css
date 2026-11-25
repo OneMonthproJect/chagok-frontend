@@ -1,0 +1,142 @@
+/* ItemStatusList — 디자인 v3.0 (예약 패널 점검 주기 · 재점검 펼침 줄 · 차량 상세 표 · 방문 기록 미리보기 카드) */
+.item-status-list {
+  transition: opacity 0.14s;
+}
+.item-status-list.is-loading {
+  opacity: 0.55;
+}
+.item-status-list__items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item-status-list__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--ck-text-1);
+}
+.is-highlighted .item-status-list__name {
+  font-weight: var(--ck-fw-bold);
+}
+.item-status-list__tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--ck-radius-pill);
+  background: var(--ck-brand-tint);
+  color: var(--ck-brand);
+  font-size: var(--ck-fs-caption);
+  font-weight: var(--ck-fw-semibold);
+  white-space: nowrap;
+}
+.item-status-list__label {
+  color: var(--ck-text-3);
+}
+
+/* summary: 이름 왼쪽 · 상태 오른쪽 한 줄 */
+.item-status-list--summary .item-status-list__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
+  min-height: 40px;
+  font-size: var(--ck-fs-small);
+}
+
+/* target: 이름 · 상태 · 근거 칸 (재점검 대상 펼침 줄) */
+.item-status-list--target .item-status-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.item-status-list--target .item-status-list__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ck-space-3);
+  min-height: 42px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: #f7f8f9;
+  font-size: var(--ck-fs-meta);
+}
+.item-status-list--target .item-status-list__name {
+  flex: 0 0 164px;
+}
+.item-status-list--target .item-status-list__detail {
+  flex: 1 1 150px;
+  color: var(--ck-text-2);
+}
+
+/* table: 차량 상세 점검 주기 표 */
+.item-status-list--table {
+  overflow-x: auto;
+}
+.item-status-list__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ck-fs-small);
+  white-space: nowrap;
+}
+.item-status-list__table thead th {
+  height: 42px;
+  padding: 0 14px;
+  background: #fafafa;
+  color: var(--ck-text-4);
+  font-size: var(--ck-fs-caption);
+  font-weight: var(--ck-fw-semibold);
+  text-align: left;
+}
+.item-status-list__table tbody th,
+.item-status-list__table tbody td {
+  height: 54px;
+  padding: 0 14px;
+  border-top: 1px solid var(--ck-border-soft);
+  color: var(--ck-text-4);
+  text-align: left;
+}
+.item-status-list__table tbody th {
+  font-weight: var(--ck-fw-bold);
+}
+/* 상태별 행 배경·카드 테두리는 두지 않는다 — 상태 색은 StatusBadge 한 곳에서만 (CONVENTIONS 4장, 09 0장) */
+
+/* preview: 3열 카드 (방문 기록 저장 전 미리보기) */
+.item-status-list--preview .item-status-list__items {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.item-status-list--preview .item-status-list__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--ck-border-soft);
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-surface);
+  font-size: var(--ck-fs-caption);
+}
+.item-status-list__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ck-space-2);
+  margin-bottom: 4px;
+  font-size: var(--ck-fs-small);
+  font-weight: var(--ck-fw-semibold);
+}
+.item-status-list--preview .item-status-list__detail {
+  margin: 0;
+  color: var(--ck-text-4);
+}
+
+@media (max-width: 1023px) {
+  .item-status-list--preview .item-status-list__items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .item-status-list--target .item-status-list__name {
+    flex-basis: 120px;
+  }
+}
