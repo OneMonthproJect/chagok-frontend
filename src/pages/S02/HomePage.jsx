@@ -40,7 +40,8 @@ export default function HomePage() {
     const params = new URLSearchParams(searchParams)
     if (next === today) params.delete(QUERY.DATE)
     else params.set(QUERY.DATE, next)
-    setSearchParams(params, { replace: true, state: location.state })
+    // 패널을 연 채 날짜를 바꾸면 닫기는 뒤로 가기가 아니라 쿼리 지우기(뒤로 가면 이전 날짜로 돌아가므로)
+    setSearchParams(params, { replace: true, state: null })
   }
 
   function openReservation(id) {

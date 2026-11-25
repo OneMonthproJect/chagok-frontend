@@ -142,6 +142,24 @@ describe('S-02 예약 상세 패널', () => {
     expect(panel()).toBeNull()
   })
 
+  it('목록에서 연 뒤 날짜를 바꾸고 닫으면 바꾼 날짜에 머문다(쿼리만 지움)', async () => {
+    renderHome('/?date=2030-03-10')
+    await settle()
+    click(document.querySelector('.rsv-row'))
+    await settle()
+    expect(location.search).toBe('?date=2030-03-10&reservation=4')
+
+    click(document.querySelector('[aria-label="다음 날짜"]'))
+    await settle()
+    expect(location.search).toBe('?date=2030-03-11&reservation=4')
+    expect(panel()).not.toBeNull() // 날짜를 바꿔도 패널은 그대로
+
+    click(document.querySelector('[aria-label="예약 상세 닫기"]'))
+    await settle()
+    expect(location.search).toBe('?date=2030-03-11')
+    expect(panel()).toBeNull()
+  })
+
   it('주소로 바로 열면 닫기·Esc는 쿼리만 지운다(날짜는 그대로)', async () => {
     renderHome('/?date=2026-11-30&reservation=4')
     await settle()
@@ -231,7 +249,7 @@ describe('S-02 예약 상세 패널', () => {
     expect(location.search).toBe('?reservation=4')
     const notice = panel().querySelector('.error-notice--warn')
     expect(notice.textContent).toContain('다른 직원이 먼저 수정했습니다.')
-    expect(notice.textContent).toContain('최신 내용을 다시 불러왔습니다.')
+    expect(notice.textContent).toContain('최신 내용을 다시 불러와 주세요.') // 서버 message 그대로(문구를 새로 만들지 않음)
 
     // 사람이 다시 누르면 새로 읽은 version으로 한 번 더 보낸다
     handlers.complete = () => ok({ reservationId: 4, status: 'COMPLETED', vehicleId: 10, version: 2 })

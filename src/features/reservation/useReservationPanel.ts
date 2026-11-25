@@ -52,6 +52,14 @@ export function useReservationPanel(reservationId: number | null): ReservationPa
   })
   const idRef = useRef(reservationId)
   idRef.current = reservationId
+  // 18 요청 중에 패널을 닫거나 화면을 떠나면 결과를 쓰지 않는다(S-08로 끌려가지 않게)
+  const aliveRef = useRef(true)
+  useEffect(() => {
+    aliveRef.current = true
+    return () => {
+      aliveRef.current = false
+    }
+  }, [])
 
   // 다른 예약으로 바뀌면 이전 예약의 안내를 지운다
   const [noticeFor, setNoticeFor] = useState(reservationId)
@@ -98,10 +106,10 @@ export function useReservationPanel(reservationId: number | null): ReservationPa
     setNotice(null)
     try {
       const completed = await completeReservation(id, { version: data.reservation.version })
-      return idRef.current === id ? { kind: 'completed', data: completed } : { kind: 'stale' }
+      return aliveRef.current && idRef.current === id ? { kind: 'completed', data: completed } : { kind: 'stale' }
     } catch (e) {
       const error = e as ApiError
-      if (idRef.current !== id) return { kind: 'stale' }
+      if (!aliveRef.current || idRef.current !== id) return { kind: 'stale' }
       if (reloadsOnConflict(error.code)) {
         setNotice({ tone: 'warn', error })
         setReloadKey((key) => key + 1) // 최신 상태·version을 다시 읽는다(18을 다시 보내지는 않음)

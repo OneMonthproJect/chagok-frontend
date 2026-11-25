@@ -4,13 +4,11 @@ import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import ItemStatusList from '@/shared/ui/ItemStatusList.jsx'
 import {
-  CONFLICT_RELOADED_MESSAGE,
   LOAD_FAILED_MESSAGE,
   NO_HISTORY_MESSAGE,
   NO_PURPOSE,
   NOT_FOUND_MESSAGE,
   RELOAD_LABEL,
-  VEHICLE_DETAIL_MIN_VISITS,
   canOpenVehicleDetail,
   itemStatusRows,
   mileageText,
@@ -58,7 +56,6 @@ export default function ReservationPanel({ panel, onClose, onComplete, onOpenVeh
           <ErrorNotice
             tone={notice.tone}
             error={notice.error}
-            body={notice.tone === 'warn' ? CONFLICT_RELOADED_MESSAGE : undefined}
             onRetry={notice.tone === 'error' ? reload : undefined}
             retryLabel={RELOAD_LABEL}
           />
@@ -162,7 +159,7 @@ function PanelBody({ status, data, error, reload, onOpenVehicle }) {
           </Button>
         </div>
         <p id="rsv-panel-visit-count" className="rsv-panel__caption">
-          총 방문 {totalVisitCount}회{detailEnabled ? '' : ` · 방문 ${VEHICLE_DETAIL_MIN_VISITS}회 이상이면 차량 상세로 이동할 수 있습니다`}
+          총 방문 {totalVisitCount}회
         </p>
         {recentVisits.length === 0 ? <p className="rsv-panel__empty">{NO_HISTORY_MESSAGE}</p> : <RecentVisits visits={recentVisits} />}
       </section>

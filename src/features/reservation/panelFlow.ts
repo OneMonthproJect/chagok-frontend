@@ -10,8 +10,6 @@ export const NO_HISTORY_MESSAGE = '최근 정비 이력이 없습니다.'
 export const NOT_FOUND_MESSAGE = '찾을 수 없습니다.'
 export const LOAD_FAILED_MESSAGE = '불러오지 못했습니다.'
 export const RELOAD_LABEL = '다시 불러오기'
-/** 409 뒤 패널을 다시 불러왔다는 안내(디자인 v3.0 Home-Panel-Conflict409). 첫 줄은 서버 message */
-export const CONFLICT_RELOADED_MESSAGE = '최신 내용을 다시 불러왔습니다. 확인한 뒤 다시 처리해 주세요.'
 /** 예약 목적이 없을 때 (목록 줄과 같은 말) */
 export const NO_PURPOSE = '목적 없음'
 export const MODEL_YEAR_MISSING = '연식 미입력'
