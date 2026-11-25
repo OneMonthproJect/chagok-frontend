@@ -10,8 +10,9 @@ import './LoginForm.css'
 //   응답 없음은 연결 확인 문구(상태 05), 만료·로그아웃 안내는 notice로 받는다(상태 06·07).
 // - 입력값은 컴포넌트 상태에만 둔다(브라우저 저장소에 두지 않음). 실패해도 입력값을 지우지 않는다 (05 POL-122).
 // - Enter로도 보내고, 요청 중 두 번 보내지 않는다 (05 POL-120).
-// 사용: <LoginForm notice={{ kind: 'expired', message: '…' }} onSuccess={(res) => ...} />
-export default function LoginForm({ notice = null, onSuccess }) {
+// 사용: <LoginForm mascotSrc={img} notice={{ kind: 'expired', message: '…' }} onSuccess={(res) => ...} />
+//   mascotSrc: 카드 위에 걸치는 마스코트 이미지(장식). 이미지 파일은 화면(pages)이 넘긴다.
+export default function LoginForm({ notice = null, mascotSrc = null, onSuccess }) {
   const guardRef = useRef(null)
   if (guardRef.current === null) guardRef.current = createSubmitGuard()
   const [loginId, setLoginId] = useState('')
@@ -46,6 +47,9 @@ export default function LoginForm({ notice = null, onSuccess }) {
 
   return (
     <form className="login-card" onSubmit={handleSubmit} noValidate aria-busy={pending}>
+      {mascotSrc && (
+        <span className="login-card__mascot" aria-hidden="true"><img src={mascotSrc} alt="" /></span>
+      )}
       <ChagokLogo size={72} />
       <h1 className="login-card__title">차곡</h1>
       <p className="login-card__caption">정비 기록을 차곡차곡, 다음 방문까지</p>

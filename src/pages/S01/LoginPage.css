@@ -23,6 +23,16 @@
   -webkit-mask-image: radial-gradient(circle at 50% 45%, #000, #0000 70%);
   mask-image: radial-gradient(circle at 50% 45%, #000, #0000 70%);
 }
+.login-visual__image {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  z-index: 2;
+  width: min(760px, 86%);
+  transform: translate(-50%, -50%);
+  mix-blend-mode: multiply;
+  filter: drop-shadow(0 24px 28px #2c313a21);
+}
 .login-visual__note {
   position: absolute;
   top: 34px;
