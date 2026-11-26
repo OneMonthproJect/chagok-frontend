@@ -44,6 +44,10 @@
 
 /* ---- 차량 영역 ---- */
 .customer-vehicles__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
   padding: var(--ck-space-5);
   border-bottom: 1px solid var(--ck-border-soft);
 }

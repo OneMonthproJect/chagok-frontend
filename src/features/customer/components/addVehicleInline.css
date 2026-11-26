@@ -1,0 +1,11 @@
+/* S-06 차량 추가 인라인 폼 (차량 영역 머리 아래) */
+.add-vehicle {
+  padding: var(--ck-space-5);
+  border-bottom: 1px solid var(--ck-border-soft);
+  background: var(--ck-brand-tint);
+}
+.add-vehicle__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ck-space-2);
+}
