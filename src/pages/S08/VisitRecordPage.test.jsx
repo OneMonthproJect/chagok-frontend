@@ -9,7 +9,8 @@ import VisitRecordPage from './VisitRecordPage.jsx'
 // 차량 채움·검색, 방문일 기본 서울 오늘, 고른 항목만 12로 저장 → S-07, 0개면 저장 비활성, 저장 중 비활성·한 번만,
 // 400 칸 옆·입력값 유지, 500·네트워크는 사람이 누르는 다시 시도(자동 재전송 없음), 연식·주행거리 빈 차량(D-58),
 // 주행거리 경계(0·2,000,000 / 2,000,001·-1), 미래 방문일, 404 → 찾을 수 없음,
-// 저장 전 미리보기(10, #35)는 방문 정보 아래에 있고 실패해도 저장을 막지 않음(자세한 동작은 VisitPreview.test.jsx)
+// 저장 전 미리보기(10, #35)는 방문 정보 아래에 있고 실패해도 저장을 막지 않음(자세한 동작은 VisitPreview.test.jsx),
+// P0-나머지 #29: 거절·외부(정비일·주행거리)·점검 결과 입력(F-MNT-02·03), D-58은 교체·점검일 때만, 미리보기 꼬리표(F-CYC-02)
 
 let fetchMock
 let location
@@ -78,7 +79,10 @@ const ITEM_STATUS = {
   vehicleId: 4,
   asOf: '2026-11-24',
   inputMileage: null,
-  items: ITEMS.map((i) => ({ itemId: i.itemId, code: i.code, name: i.name, status: 'UNKNOWN', dueReason: null, baseRecord: null, nextDueDate: null, nextDueMileage: null })),
+  items: ITEMS.map((i) => ({
+    itemId: i.itemId, code: i.code, name: i.name, status: 'UNKNOWN', dueReason: null, baseRecord: null, nextDueDate: null, nextDueMileage: null,
+    lastDecline: null, lastCaution: null,
+  })),
 }
 
 /** 08 7.1 36 JSON 예시 (A 정비소 사장·정비사) */
@@ -164,9 +168,9 @@ describe('S-08 방문·정비 기록', () => {
     expect(input('visit-date').getAttribute('max')).toBe('2026-11-24')
     expect(input('visit-model-year')).toBeNull() // 연식이 있는 차량은 연식 칸 없음
     expect(rowNames()).toEqual(['엔진오일', '에어클리너', '에어컨필터', '브레이크패드', '타이어 상태 점검', '배터리'])
-    // 줄마다 기록 안 함(기본)/교체/점검 — P0-핵심에 거절·외부 없음
+    // 줄마다 기록 안 함(기본)/교체/점검/거절/외부 (09 S-08 4번, P0-나머지 #29)
     const labels = Array.from(document.querySelectorAll('.item-record-row')[0].querySelectorAll('label')).map((l) => l.textContent)
-    expect(labels).toEqual(['기록 안 함', '교체', '점검'])
+    expect(labels).toEqual(['기록 안 함', '교체', '점검', '거절', '외부'])
     expect(document.querySelectorAll('input[value="NONE"]:checked')).toHaveLength(6)
     expect(document.body.textContent).not.toMatch(/정상|불량|고장/)
   })
@@ -385,9 +389,12 @@ describe('S-08 방문·정비 기록', () => {
 
     expect(document.body.textContent).toContain('연식·주행거리를 입력해 주세요.')
     expect(input('visit-model-year')).not.toBeNull()
-    expect(input('visit-mileage').getAttribute('aria-required')).toBe('true')
+    // 필수 표시는 교체·점검을 골랐을 때만 (08 12)
+    expect(input('visit-mileage').getAttribute('aria-required')).toBeNull()
 
     choose(1, 'REPLACE')
+    expect(input('visit-mileage').getAttribute('aria-required')).toBe('true')
+    expect(input('visit-model-year').getAttribute('aria-required')).toBe('true')
     click(saveButton())
     await settle()
     expect(posts()).toHaveLength(0)
@@ -406,6 +413,166 @@ describe('S-08 방문·정비 기록', () => {
       records: [{ itemId: 1, type: 'REPLACE', memo: null }],
     })
     expect(location.pathname).toBe('/vehicles/11')
+  })
+
+  it('D-58: 거절·외부만 고르면 연식·주행거리가 비어 있어도 묻지 않고 저장한다 (08 12)', async () => {
+    serve({ vehicle: ok(EMPTY_VEHICLE), id: 11, save: ok({ ...SAVED, vehicleId: 11 }) })
+    renderPage('/visits/new?vehicleId=11')
+    await settle()
+
+    choose(1, 'DECLINE')
+    choose(3, 'EXTERNAL')
+    type('record-external-date-3', '2026-10-01')
+    expect(input('visit-mileage').getAttribute('aria-required')).toBeNull()
+    click(saveButton())
+    await settle()
+    expect(postBody()).toEqual({
+      visitDate: '2026-11-24',
+      mileage: null,
+      mechanicId: 2, // 직접 진입 → 로그인 계정(#62)
+      records: [
+        { itemId: 1, type: 'DECLINE', memo: null },
+        { itemId: 3, type: 'EXTERNAL', externalDate: '2026-10-01', externalMileage: null, memo: null },
+      ],
+    })
+    expect(location.pathname).toBe('/vehicles/11')
+  })
+
+  it('거절·외부·점검 결과: 08 12 P0-나머지 예시 모양으로 보낸다 (F-MNT-02·03)', async () => {
+    serve()
+    renderPage()
+    await settle()
+
+    type('visit-mileage', '55000')
+    choose(1, 'REPLACE')
+    choose(4, 'DECLINE')
+    type('record-memo-4', '다음 방문 때 하기로 함')
+    choose(3, 'EXTERNAL')
+    expect(input('record-external-date-3').getAttribute('max')).toBe('2026-11-24')
+    type('record-external-date-3', '2026-10-01')
+    type('record-memo-3', '다른 곳에서 교체했다고 함')
+    choose(5, 'INSPECT')
+    // 점검 결과는 고르지 않아도 되고(기본 "고르지 않음"), 고르면 양호·주의
+    expect(document.querySelector('input[name="record-result-5"]:checked').value).toBe('')
+    click(document.querySelector('input[name="record-result-5"][value="CAUTION"]'))
+    type('record-memo-5', '앞 타이어 마모')
+    expect(document.querySelector('.s08__summary').textContent).toBe(
+      '4개 항목 · 엔진오일(교체), 에어컨필터(외부), 브레이크패드(거절), 타이어 상태 점검(점검)',
+    )
+    click(saveButton())
+    await settle()
+
+    expect(postBody()).toEqual({
+      visitDate: '2026-11-24',
+      mileage: 55000,
+      mechanicId: 2, // 직접 진입 → 로그인 계정(#62)
+      records: [
+        { itemId: 1, type: 'REPLACE', memo: null },
+        { itemId: 3, type: 'EXTERNAL', externalDate: '2026-10-01', externalMileage: null, memo: '다른 곳에서 교체했다고 함' },
+        { itemId: 4, type: 'DECLINE', memo: '다음 방문 때 하기로 함' },
+        { itemId: 5, type: 'INSPECT', inspectResult: 'CAUTION', memo: '앞 타이어 마모' },
+      ],
+    })
+  })
+
+  it('외부 정비일이 비었거나 미래면 보내지 않고 그 칸에, 구분을 바꿨다 되돌려도 쓴 값은 그대로', async () => {
+    serve()
+    renderPage()
+    await settle()
+
+    choose(3, 'EXTERNAL')
+    click(saveButton())
+    await settle()
+    expect(posts()).toHaveLength(0)
+    expect(fieldMessage('record-external-date-3')).toContain('필수 입력입니다.')
+
+    type('record-external-date-3', '2026-11-25')
+    type('record-external-mileage-3', '41,000')
+    click(saveButton())
+    await settle()
+    expect(posts()).toHaveLength(0)
+    expect(fieldMessage('record-external-date-3')).toContain('오늘 이전 날짜만 입력할 수 있습니다.')
+
+    choose(3, 'DECLINE')
+    expect(input('record-external-date-3')).toBeNull()
+    choose(3, 'EXTERNAL')
+    expect(input('record-external-date-3').value).toBe('2026-11-25')
+    expect(input('record-external-mileage-3').value).toBe('41,000')
+
+    type('record-external-date-3', '2026-10-01')
+    click(saveButton())
+    await settle()
+    expect(postBody().records).toEqual([{ itemId: 3, type: 'EXTERNAL', externalDate: '2026-10-01', externalMileage: 41000, memo: null }])
+  })
+
+  it('400 fieldErrors records[i].externalDate·externalMileage는 그 항목 칸에, 입력값 유지 (POL-121)', async () => {
+    serve({
+      save: fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.', [
+        { field: 'records[1].externalMileage', reason: '0 이상 2,000,000 이하로 입력해 주세요.' },
+      ]),
+    })
+    renderPage()
+    await settle()
+
+    choose(1, 'DECLINE')
+    choose(3, 'EXTERNAL')
+    type('record-external-date-3', '2026-10-01')
+    type('record-external-mileage-3', '2000001')
+    click(saveButton())
+    await settle()
+
+    expect(fieldMessage('record-external-mileage-3')).toContain('0 이상 2,000,000 이하로 입력해 주세요.')
+    expect(input('record-external-mileage-3').value).toBe('2000001')
+    expect(location.pathname).toBe('/visits/new')
+
+    // 그 칸을 고치면 그 칸 오류만 지운다
+    type('record-external-mileage-3', '41000')
+    expect(fieldMessage('record-external-mileage-3')).toBeNull()
+  })
+
+  it('구분을 바꾸면 D-58 "비어 있음" 오류만 지우고, 서버가 알려 준 주행거리 범위 오류는 남긴다 (POL-121)', async () => {
+    serve({
+      vehicle: ok(EMPTY_VEHICLE),
+      id: 11,
+      save: fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.', [{ field: 'mileage', reason: '0 이상 2,000,000 이하로 입력해 주세요.' }]),
+    })
+    renderPage('/visits/new?vehicleId=11')
+    await settle()
+
+    choose(1, 'REPLACE')
+    click(saveButton())
+    await settle()
+    expect(fieldMessage('visit-mileage')).toContain('차량의 주행거리가 비어 있어 입력해 주세요.')
+    choose(1, 'DECLINE') // 거절만 남으면 필수가 아니다 → 비어 있음 오류를 지운다
+    expect(fieldMessage('visit-mileage')).toBeNull()
+    expect(fieldMessage('visit-model-year')).toBeNull()
+
+    choose(1, 'REPLACE')
+    type('visit-mileage', '2000001')
+    type('visit-model-year', '2019')
+    click(saveButton())
+    await settle()
+    expect(fieldMessage('visit-mileage')).toContain('0 이상 2,000,000 이하로 입력해 주세요.')
+    choose(5, 'DECLINE') // 다른 줄의 구분을 바꿔도 서버 범위 오류는 남는다
+    expect(fieldMessage('visit-mileage')).toContain('0 이상 2,000,000 이하로 입력해 주세요.')
+    expect(input('visit-mileage').value).toBe('2000001')
+  })
+
+  it('미리보기 줄에 "지난 방문 거절"·"지난 점검 주의" 꼬리표를 서버 값 그대로 (F-CYC-02, 09 S-08)', async () => {
+    const items = ITEM_STATUS.items.map((i) =>
+      i.itemId === 1
+        ? { ...i, lastDecline: { date: '2026-10-24', memo: null } }
+        : i.itemId === 5
+          ? { ...i, lastCaution: { date: '2026-09-24', memo: '앞 타이어 마모' } }
+          : i,
+    )
+    routes.itemStatus = ok({ ...ITEM_STATUS, items })
+    serve()
+    renderPage()
+    await settle()
+
+    const tags = Array.from(document.querySelectorAll('.visit-preview .item-status-list__tag')).map((t) => t.textContent)
+    expect(tags).toEqual(['지난 방문 거절(2026.10.24)', '지난 점검 주의(2026.09.24, 앞 타이어 마모)'])
   })
 
   it('없는 차량·다른 정비소 차량(404, X5)이면 찾을 수 없음', async () => {

@@ -31,6 +31,13 @@
   font-weight: var(--ck-fw-semibold);
   white-space: nowrap;
 }
+/* table(S-07)·preview(S-08) 꼬리표에는 메모(200자 이내)가 들어갈 수 있어(지난 점검 주의, F-CYC-02) 좁은 화면에서는 줄을 바꾼다.
+   summary(S-02 패널 「예약 목적」)·target은 그대로 한 줄 */
+.item-status-list--table .item-status-list__tag,
+.item-status-list--preview .item-status-list__tag {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .item-status-list__label {
   color: var(--ck-text-3);
 }
