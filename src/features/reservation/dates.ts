@@ -3,10 +3,8 @@
 const SEOUL = 'Asia/Seoul'
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
-/** 서울 기준 오늘 YYYY-MM-DD */
-export function todaySeoul(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: SEOUL, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
-}
+/** 서울 기준 오늘 YYYY-MM-DD · 날짜 형식 검사 — 한 곳(shared/lib/date)의 것을 그대로 내보낸다(#23). 기존 호출부는 고치지 않는다 */
+export { isValidDate, todaySeoul } from '@/shared/lib/date'
 
 /** 서울 기준 지금 "YYYY-MM-DDTHH:mm:ss" (오프셋 없는 08 일시와 비교용) */
 export function nowSeoul(now: Date = new Date()): string {
@@ -15,14 +13,6 @@ export function nowSeoul(now: Date = new Date()): string {
   }).formatToParts(now)
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00'
   return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`
-}
-
-/** 'YYYY-MM-DD' 이고 실제 있는 날짜인지 (2026-02-30 거부) */
-export function isValidDate(value: unknown): value is string {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-  const [y, m, d] = value.split('-').map(Number)
-  const date = new Date(Date.UTC(y, m - 1, d))
-  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d
 }
 
 /** 날짜에 일수를 더한다 (달·해 넘김 포함, 시간대 영향 없음) */
