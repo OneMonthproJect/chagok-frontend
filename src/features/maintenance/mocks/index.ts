@@ -123,8 +123,8 @@ type LooseVisitSave = Partial<VisitSaveRequest> & {
  * 08 12 — 검사 순서는 P0-핵심 서버와 같다: 형식(필수·길이) → 차량 소속(404, X5) → 아직 열지 않은 입력 → 방문일·외부 정비일 →
  * 항목 중복 → 쓰는 항목(X11) → 차량이 비어 있을 때 필수(D-58, 교체·점검이 있을 때만) → 연식·주행거리 범위.
  * P0-나머지(#29): 외부·거절·점검 결과를 받는다. mechanicId(담당 지정)는 #62가 열 때까지 400 그대로.
- * LIMIT: P0-나머지 서버(chagok-backend#32)가 아직 없어 외부 정비일·외부 주행거리 오류 문구는 P0-핵심 서버의 같은 종류 문구를 빌렸다.
- *   구분과 맞지 않는 값(점검이 아닌데 inspectResult 등)은 화면이 보내지 않으므로 흉내 내지 않는다 / 서버가 머지되면 문구·순서를 맞춘다.
+ * LIMIT: 외부 주행거리 범위 문구는 공용 MILEAGE_RANGE를 써서 서버(chagok-backend#32, "0 ~ 2,000,000 사이로 입력해 주세요.")와 글자가 다르다(화면은 서버 문구를 그대로 보임).
+ *   구분과 맞지 않는 값(점검이 아닌데 inspectResult 등 — 서버는 400)은 화면이 보내지 않으므로 흉내 내지 않는다.
  */
 export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockResponse {
   const request = (body ?? {}) as LooseVisitSave

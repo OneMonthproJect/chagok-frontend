@@ -21,7 +21,7 @@ export const CUSTOMER_STATEMENT_LABEL = '고객 진술'
 /**
  * 08 11 기록이 고객 진술인지. source(P0-나머지)를 먼저 보고, 없으면 type EXTERNAL로 정한다.
  * 구분과 출처는 항상 짝이다(07 3.7 CHECK (record_type = 'EXTERNAL') = (source = 'CUSTOMER_STATEMENT'), 04 F-MNT-04).
- * LIMIT: P0-핵심 서버(backend#32 머지 전)는 11에 source를 주지 않는다 / backend#32 머지 뒤 type 대체를 지울 수 있다.
+ * LIMIT: backend develop(#32 머지 뒤 포함)의 11은 아직 source를 주지 않는다 / 11이 source를 싣기 전에는 type 대체를 지우지 않는다.
  */
 export function isCustomerStatement(record: { type: RecordType; source?: RecordSource | null }): boolean {
   return record.source != null ? record.source === 'CUSTOMER_STATEMENT' : record.type === 'EXTERNAL'
