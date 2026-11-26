@@ -1,7 +1,9 @@
-// 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 05~09의 사본이며 계약의 기준은 08이다.
+// 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 05~09·22·23의 사본이며 계약의 기준은 08이다.
 // 값은 07 7.2 A 정비소 시드(고객 10명·차량 11대)와 08 JSON 예시. 실제 개인정보 없음.
 // 로그인은 A 정비소 기준이고, A에 없는 id(B 정비소 고객 11·차량 12 포함, 07 7.4)는 404 NOT_FOUND(격리).
 // 응답 함수는 상태를 쌓지 않는다(등록해도 목록에 더하지 않음 — 프론트에 데이터를 쌓지 않음).
+// 그래서 07·09의 version은 늘 0이고, 22·23은 version 0이면 성공(+1을 돌려줌), 그 밖의 숫자면 409 CONCURRENT_MODIFICATION이다.
+// 수정해도 다시 조회하면 시드 값으로 돌아온다(상태를 쌓지 않음).
 // api.ts만 동적 import()로 부른다. 화면·pages는 import하지 않는다.
 
 import type { FieldError, MockResponse } from '@/shared/api/client'
@@ -12,8 +14,10 @@ import type {
   CustomerDetailVehicle,
   CustomerSearchItem,
   CustomerSearchParams,
+  CustomerUpdateRequest,
   VehicleDetail,
   VehicleInput,
+  VehicleUpdateRequest,
 } from '../types'
 import customersOk from './customers.json'
 import customerDetailOk from './customer-detail.json'
@@ -61,7 +65,21 @@ const notFound = () => error(404, 'NOT_FOUND', '찾을 수 없습니다.')
 /** 검색 비교용: 공백·하이픈 무시 (08 05) */
 const searchKey = (text: string) => text.replace(/[\s-]/g, '')
 
-/** 08 05 */
+/**
+ * 08 0.5 연락처 마스킹(서버 한 곳의 규칙을 Mock에만 옮김 — 화면 코드는 가리지 않는다). 05 목록 응답에만 쓴다(07·09는 전체 번호).
+ * 숫자 n자리: 9 이상은 머리(02면 2자리, 아니면 3자리)-가운데 `*`-뒤 4자리, 5~8은 `*`-뒤 4자리, 4 이하는 `*`만. 빈 값은 그대로.
+ */
+export function maskPhone(phone: string): string {
+  const d = phone.replace(/\D/g, '')
+  if (d === '') return phone
+  if (d.length <= 4) return '*'.repeat(d.length)
+  const tail = d.slice(-4)
+  if (d.length <= 8) return `${'*'.repeat(d.length - 4)}-${tail}`
+  const head = d.startsWith('02') ? d.slice(0, 2) : d.slice(0, 3)
+  return `${head}-${'*'.repeat(d.length - head.length - 4)}-${tail}`
+}
+
+/** 08 05 — 찾기는 실제 번호로, 응답의 phone은 가린 값(P0-나머지, 08 0.5) */
 export function mockSearchCustomers(params: CustomerSearchParams = {}): MockResponse {
   // 쪽 나누기 오류는 서버(PageLimit)와 같은 fieldErrors
   const page = params.page ?? 0
@@ -83,7 +101,7 @@ export function mockSearchCustomers(params: CustomerSearchParams = {}): MockResp
     : CUSTOMERS
 
   return ok({
-    items: matched.slice(page * size, page * size + size),
+    items: matched.slice(page * size, page * size + size).map((c) => ({ ...c, phone: maskPhone(c.phone) })),
     page,
     size,
     totalElements: matched.length,
@@ -143,6 +161,7 @@ export function mockGetCustomer(customerId: number): MockResponse {
     name: customer.name,
     phone: customer.phone,
     consent: customer.consent,
+    version: 0,
     vehicles: customer.vehicles.map((v) => ({ vehicleId: v.vehicleId, plateNumber: v.plateNumber, ...VEHICLE_SPECS[v.vehicleId] })),
   }
   return ok(detail)
@@ -169,7 +188,85 @@ export function mockGetVehicle(vehicleId: number): MockResponse {
     model,
     modelYear,
     latestMileage,
+    version: 0,
     customer: { customerId: owner.customerId, name: owner.name, phone: owner.phone, consent: owner.consent },
   }
   return ok(detail)
+}
+
+/** Mock의 07·09 version (상태를 쌓지 않아 늘 0) */
+const MOCK_VERSION = 0
+const CANNOT_CLEAR = '비울 수 없습니다.'
+const concurrent = () => error(409, 'CONCURRENT_MODIFICATION', '다른 직원이 먼저 수정했습니다. 최신 내용을 다시 불러와 주세요.')
+
+/**
+ * 22·23 공통 version 검사(400). 누락은 version 칸 오류, 숫자가 아니면 본문을 읽을 수 없는 경우라 fieldErrors 없이(08 0.2).
+ * 반환 null이면 통과.
+ */
+function versionError(version: unknown): MockResponse | null {
+  if (version === undefined || version === null) return invalid([{ field: 'version', reason: REGISTER_MESSAGES.REQUIRED }])
+  return typeof version === 'number' && Number.isInteger(version) ? null : invalid()
+}
+
+/**
+ * 08 22 — 08의 확인 순서 그대로: 정비소 소유(없는 고객·다른 정비소 고객 404) → 입력 검증(400) → version 다르면 409.
+ * LIMIT: 백엔드 develop은 @Valid 형식 검증(400)을 소유 확인(404)보다 먼저 한다(08과 다름, #32 계약 점검에서 보고).
+ * 결정이 나면 이 순서를 그 결정에 맞춘다.
+ */
+export function mockUpdateCustomer(customerId: number, body: CustomerUpdateRequest): MockResponse {
+  const M = REGISTER_MESSAGES
+  const detail = mockGetCustomer(customerId)
+  if (detail.status !== 200) return detail
+  const badVersion = versionError(body.version)
+  if (badVersion) return badVersion
+  const errors: FieldError[] = []
+  const name = body.name?.trim()
+  const phone = body.phone?.trim()
+  if (name !== undefined && !name) errors.push({ field: 'name', reason: CANNOT_CLEAR })
+  else if (name !== undefined && name.length > 50) errors.push({ field: 'name', reason: M.NAME_MAX })
+  if (phone !== undefined && !/^[0-9-]*$/.test(phone)) errors.push({ field: 'phone', reason: M.PHONE_PATTERN })
+  else if (phone !== undefined && (phone.length < 9 || phone.length > 20)) errors.push({ field: 'phone', reason: M.PHONE_LENGTH })
+  if (errors.length > 0) return invalid(errors)
+
+  if (body.version !== MOCK_VERSION) return concurrent()
+  const current = (detail.body as { data: CustomerDetail }).data
+  const next = { name: name ?? current.name, phone: phone ?? current.phone, consent: body.consent ?? current.consent }
+  const changed = next.name !== current.name || next.phone !== current.phone || next.consent !== current.consent
+  return ok({ customerId, ...next, version: changed ? MOCK_VERSION + 1 : MOCK_VERSION })
+}
+
+/** 08 23 — 22와 같은 순서(같은 LIMIT). 고객은 바꾸지 않는다 */
+export function mockUpdateVehicle(vehicleId: number, body: VehicleUpdateRequest): MockResponse {
+  const M = REGISTER_MESSAGES
+  const detail = mockGetVehicle(vehicleId)
+  if (detail.status !== 200) return detail
+  const badVersion = versionError(body.version)
+  if (badVersion) return badVersion
+  const errors: FieldError[] = []
+  const plateNumber = body.plateNumber?.replace(/\s+/g, '')
+  const model = body.model?.trim()
+  if (plateNumber !== undefined && !plateNumber) errors.push({ field: 'plateNumber', reason: CANNOT_CLEAR })
+  else if (plateNumber !== undefined && plateNumber.length > 20) errors.push({ field: 'plateNumber', reason: M.PLATE_MAX })
+  if (model !== undefined && !model) errors.push({ field: 'model', reason: CANNOT_CLEAR })
+  else if (model !== undefined && model.length > 50) errors.push({ field: 'model', reason: M.MODEL_MAX })
+  const currentYear = new Date().getFullYear()
+  if (body.modelYear != null && body.modelYear < MIN_MODEL_YEAR) errors.push({ field: 'modelYear', reason: M.MODEL_YEAR_MIN })
+  else if (body.modelYear != null && body.modelYear > currentYear + 1) {
+    errors.push({ field: 'modelYear', reason: modelYearRangeMessage(currentYear) })
+  }
+  const mileage = body.latestMileage
+  if (mileage != null && mileage < 0) errors.push({ field: 'latestMileage', reason: M.MILEAGE_MIN })
+  else if (mileage != null && mileage > MAX_MILEAGE) errors.push({ field: 'latestMileage', reason: M.MILEAGE_MAX })
+  if (errors.length > 0) return invalid(errors)
+
+  if (body.version !== MOCK_VERSION) return concurrent()
+  const current = (detail.body as { data: VehicleDetail }).data
+  const next = {
+    plateNumber: plateNumber ?? current.plateNumber,
+    model: model ?? current.model,
+    modelYear: body.modelYear ?? current.modelYear,
+    latestMileage: mileage ?? current.latestMileage,
+  }
+  const changed = (Object.keys(next) as (keyof typeof next)[]).some((key) => next[key] !== current[key])
+  return ok({ vehicleId, ...next, version: changed ? MOCK_VERSION + 1 : MOCK_VERSION })
 }

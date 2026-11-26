@@ -223,6 +223,19 @@ describe('M-01 같은 연락처·차량번호 기존 고객', () => {
     expect(onPick).toHaveBeenCalledWith({ kind: 'add', customerId: 10 })
   })
 
+  it('05가 가린 연락처(010-****-0010)여도 연락처 검색 결과면 "같은 연락처"로 보인다 (08 0.5, #32)', async () => {
+    const masked = { ...existing, data: { ...existing.data, items: existing.data.items.map((c) => ({ ...c, phone: '010-****-0010' })) } }
+    fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, masked)))
+    renderModal({ onPick: vi.fn(), pickKinds: ['add', 'edit'] })
+    type(field('연락처'), '010-0000-0010')
+    act(() => field('연락처').dispatchEvent(new FocusEvent('focusout', { bubbles: true })))
+    await settle()
+
+    expect(document.body.textContent).toContain('같은 연락처')
+    expect(document.body.textContent).toContain('010-****-0010') // 가린 값 그대로 보임(풀지 않음)
+    expect(button('기존 고객 수정')).toBeDefined()
+  })
+
   it('행동을 연결하지 않은 화면에서는 안내만 (고르라는 문구·버튼 없음)', async () => {
     fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, existing)))
     renderModal()

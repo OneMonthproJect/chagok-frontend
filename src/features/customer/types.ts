@@ -1,5 +1,6 @@
 // 08 05~09 고객·차량 — 필드 이름·타입·nullable은 08 표·JSON 예시와 글자까지 같게 둔다.
-// P0-핵심 기준. P0-나머지(22·23 version, 목록 phone 마스킹은 서버 값 그대로)·P1(status·active·지표 등)은 그 이슈가 더한다.
+// P0-핵심 + P0-나머지 22·23 고객·차량 수정과 07·09 version(#32). 목록 phone 마스킹은 서버 값 그대로 보인다(08 0.5).
+// P1(status·active·지표 등)은 그 이슈가 더한다.
 
 /** 08 05 쿼리. q는 고객명·연락처·차량번호 일부(공백·하이픈은 서버가 무시), 비우면 전체(최근 등록순) */
 export interface CustomerSearchParams {
@@ -65,12 +66,13 @@ export interface CustomerDetailVehicle {
   soonCount: number
 }
 
-/** 08 07 응답 data — phone 전체(D-40) */
+/** 08 07 응답 data — phone 전체(D-40). version은 고객 수정(22) 요청에 그대로 보낸다(vehicles[]에는 없음) */
 export interface CustomerDetail {
   customerId: number
   name: string
   phone: string
   consent: boolean
+  version: number
   vehicles: CustomerDetailVehicle[]
 }
 
@@ -91,12 +93,49 @@ export interface VehicleCustomer {
   consent: boolean
 }
 
-/** 08 09 응답 data */
+/** 08 09 응답 data. version은 차량 수정(23) 요청에 그대로 보낸다(고객의 version과 별개) */
 export interface VehicleDetail {
   vehicleId: number
   plateNumber: string
   model: string
   modelYear: number | null
   latestMileage: number | null
+  version: number
   customer: VehicleCustomer
+}
+
+/** 08 22 요청 — version 필수, 나머지는 보낸 것만 바꾼다(보내지 않으면 그대로) */
+export interface CustomerUpdateRequest {
+  version: number
+  name?: string
+  phone?: string
+  consent?: boolean
+}
+
+/** 08 22 응답 data — 바뀐 뒤의 값과 바뀐 version */
+export interface CustomerUpdateResponse {
+  customerId: number
+  name: string
+  phone: string
+  consent: boolean
+  version: number
+}
+
+/** 08 23 요청 — version 필수, 나머지는 보낸 것만 바꾼다. 고객은 바꾸지 않는다 */
+export interface VehicleUpdateRequest {
+  version: number
+  plateNumber?: string
+  model?: string
+  modelYear?: number
+  latestMileage?: number
+}
+
+/** 08 23 응답 data — 바뀐 뒤의 값과 바뀐 version */
+export interface VehicleUpdateResponse {
+  vehicleId: number
+  plateNumber: string
+  model: string
+  modelYear: number | null
+  latestMileage: number | null
+  version: number
 }
