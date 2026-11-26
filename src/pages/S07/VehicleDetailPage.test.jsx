@@ -8,6 +8,7 @@ import VehicleDetailPage from './VehicleDetailPage.jsx'
 // S-07 차량 상세 (09 S-07·5장, 04 F-CUS-05, 08 09·10·11, #22 테스트):
 // 차량·고객(전체 연락처, 고객명 → S-06), 점검 주기 표(상태 서버 값 그대로, "정상·불량" 표현 없음), 방문 이력(최신순·더 보기·"고객 진술"),
 // 이력 없음 문구 + "방문 기록", 404(남의 차량 X2·X6) → 찾을 수 없음, 조회 실패 → 사람이 누르는 다시 불러오기,
+// P0-나머지 #29: 점검 주기 표의 "지난 방문 거절"·"지난 점검 주의" 꼬리표(F-CYC-02), 이력의 출처(source)·점검 결과(F-MNT-03),
 // [방문 기록] → S-08, [예약] → M-02(차량 채움), 연결 안 된 버튼(수정·비활성화) 없음
 
 let fetchMock
@@ -36,8 +37,11 @@ const ok = (data) => () => jsonResponse(200, { success: true, data, error: null 
 const fail = (status, code, message) => () =>
   jsonResponse(status, { success: false, data: null, error: { code, message, fieldErrors: [], details: null } })
 
+/** 08 10 P0-나머지 꼬리표 — 기본은 없음 */
+const NO_NOTE = { lastDecline: null, lastCaution: null }
+
 const UNKNOWN = (itemId, code, name) => ({
-  itemId, code, name, status: 'UNKNOWN', dueReason: null, baseRecord: null, nextDueDate: null, nextDueMileage: null,
+  itemId, code, name, status: 'UNKNOWN', dueReason: null, baseRecord: null, nextDueDate: null, nextDueMileage: null, ...NO_NOTE,
 })
 
 /** 08 09 JSON 예시 */
@@ -58,16 +62,16 @@ const ITEM_STATUS = {
   items: [
     {
       itemId: 1, code: 'ENGINE_OIL', name: '엔진오일', status: 'AHEAD', dueReason: null,
-      baseRecord: { date: '2026-09-24', mileage: 45000, type: 'REPLACE' }, nextDueDate: '2027-03-24', nextDueMileage: 55000,
+      baseRecord: { date: '2026-09-24', mileage: 45000, type: 'REPLACE' }, nextDueDate: '2027-03-24', nextDueMileage: 55000, ...NO_NOTE,
     },
     UNKNOWN(2, 'AIR_CLEANER', '에어클리너'),
     {
       itemId: 3, code: 'AC_FILTER', name: '에어컨필터', status: 'DUE', dueReason: 'DATE',
-      baseRecord: { date: '2026-03-24', mileage: null, type: 'EXTERNAL' }, nextDueDate: '2026-09-24', nextDueMileage: null,
+      baseRecord: { date: '2026-03-24', mileage: null, type: 'EXTERNAL' }, nextDueDate: '2026-09-24', nextDueMileage: null, ...NO_NOTE,
     },
     {
       itemId: 4, code: 'BRAKE_PAD', name: '브레이크패드', status: 'SOON', dueReason: null,
-      baseRecord: { date: '2025-12-14', mileage: null, type: 'REPLACE' }, nextDueDate: '2026-12-14', nextDueMileage: null,
+      baseRecord: { date: '2025-12-14', mileage: null, type: 'REPLACE' }, nextDueDate: '2026-12-14', nextDueMileage: null, ...NO_NOTE,
     },
     UNKNOWN(5, 'TIRE', '타이어 상태 점검'),
     UNKNOWN(6, 'BATTERY', '배터리'),
@@ -85,8 +89,10 @@ const visit = (n, visitDate, records, mileage = null) => ({
 const VISITS_PAGE = (items, over = {}) => ({ items, page: 0, size: 20, totalElements: items.length, totalPages: items.length ? 1 : 0, ...over })
 
 const HISTORY = [
-  visit(9, '2026-10-24', [{ recordId: 9, itemId: 3, itemName: '에어컨필터', type: 'EXTERNAL', date: '2026-10-01', memo: '다른 곳에서 교체했다고 함' }]),
-  visit(5, '2026-09-24', [{ recordId: 5, itemId: 1, itemName: '엔진오일', type: 'REPLACE', date: '2026-09-24', memo: null }], 45000),
+  visit(9, '2026-10-24', [
+    { recordId: 9, itemId: 3, itemName: '에어컨필터', type: 'EXTERNAL', date: '2026-10-01', memo: '다른 곳에서 교체했다고 함', source: 'CUSTOMER_STATEMENT', inspectResult: null },
+  ]),
+  visit(5, '2026-09-24', [{ recordId: 5, itemId: 1, itemName: '엔진오일', type: 'REPLACE', date: '2026-09-24', memo: null, source: 'SHOP', inspectResult: null }], 45000),
 ]
 
 function serve({ vehicle = ok(VEHICLE), itemStatus = ok(ITEM_STATUS), visits = ok(VISITS_PAGE(HISTORY)), id = 4 } = {}) {
@@ -191,6 +197,47 @@ describe('S-07 차량 상세', () => {
     expect(second.querySelector('.visit-record__type').textContent).toBe('교체')
     expect(second.querySelector('.visit-record__source')).toBeNull() // 우리 정비소 기록은 고객 진술이 아님
     expect(second.querySelector('.visit-record__date')).toBeNull() // 방문일과 같으면 다시 쓰지 않음
+  })
+
+  it('꼬리표: 지난 방문 거절(날짜)·지난 점검 주의(날짜, 메모)를 항목 이름 옆에 서버 값 그대로, 상태는 바꾸지 않는다 (F-CYC-02)', async () => {
+    const items = ITEM_STATUS.items.map((i) =>
+      i.itemId === 1
+        ? { ...i, lastDecline: { date: '2026-10-24', memo: '다음에 하기로 함' } }
+        : i.itemId === 5
+          ? { ...i, lastCaution: { date: '2026-09-24', memo: '앞 타이어 마모' } }
+          : i,
+    )
+    serve({ itemStatus: ok({ ...ITEM_STATUS, items }) })
+    renderPage()
+    await settle()
+
+    const rows = tableRows()
+    const tag = (tr) => tr.querySelector('.item-status-list__tag')?.textContent ?? null
+    expect(tag(rows[0])).toBe('지난 방문 거절(2026.10.24)')
+    expect(tag(rows[4])).toBe('지난 점검 주의(2026.09.24, 앞 타이어 마모)')
+    expect(rows.filter((tr) => tag(tr) !== null)).toHaveLength(2)
+    expect(rows[0].querySelector('.status-badge').textContent).toBe('여유')
+    expect(rows[4].querySelector('.status-badge').textContent).toBe('미확인')
+  })
+
+  it('정비 이력: 출처는 서버 source 그대로(고객 진술만 표시), 점검 결과는 값이 있을 때만 (F-MNT-03)', async () => {
+    const history = [
+      visit(11, '2026-09-24', [
+        { recordId: 11, itemId: 5, itemName: '타이어 상태 점검', type: 'INSPECT', date: '2026-09-24', memo: '앞 타이어 마모', source: 'SHOP', inspectResult: 'CAUTION' },
+        { recordId: 12, itemId: 4, itemName: '브레이크패드', type: 'INSPECT', date: '2026-09-24', memo: null, source: 'SHOP', inspectResult: null },
+        { recordId: 13, itemId: 1, itemName: '엔진오일', type: 'DECLINE', date: '2026-09-24', memo: null, source: 'SHOP', inspectResult: null },
+      ]),
+    ]
+    serve({ visits: ok(VISITS_PAGE(history)) })
+    renderPage()
+    await settle()
+
+    const lines = Array.from(visitItems()[0].querySelectorAll('.visit-record'))
+    const result = (li) => li.querySelector('.visit-record__result')?.textContent ?? null
+    expect(lines.map((li) => li.querySelector('.visit-record__type').textContent)).toEqual(['점검', '점검', '거절'])
+    expect(lines.map(result)).toEqual(['주의', null, null])
+    expect(visitItems()[0].querySelector('.visit-record__source')).toBeNull()
+    expect(lines[0].textContent).toContain('앞 타이어 마모')
   })
 
   it('이력이 없으면 "정비 이력이 없습니다." + "방문 기록" → S-08 (09 5장)', async () => {

@@ -4,6 +4,8 @@ import {
   baseRecordText,
   dateText,
   hasMoreVisits,
+  isCustomerStatement,
+  itemNoteTag,
   itemStatusTableRows,
   kmText,
   visitCountText,
@@ -11,7 +13,7 @@ import {
 } from './maintenanceFlow'
 import type { ItemStatusItem, Visit } from './types'
 
-// S-07 표시 규칙 (09 S-07, 04 F-CUS-05·F-CYC-01). 상태·다음 정비일·다음 km는 서버 값 그대로, 글자 모양만 바꾼다.
+// S-07 표시 규칙 (09 S-07, 04 F-CUS-05·F-CYC-01·F-CYC-02). 상태·다음 정비일·다음 km는 서버 값 그대로, 글자 모양만 바꾼다.
 
 const ITEM = (over: Partial<ItemStatusItem>): ItemStatusItem => ({
   itemId: 1,
@@ -22,6 +24,8 @@ const ITEM = (over: Partial<ItemStatusItem>): ItemStatusItem => ({
   baseRecord: null,
   nextDueDate: null,
   nextDueMileage: null,
+  lastDecline: null,
+  lastCaution: null,
   ...over,
 })
 
@@ -77,6 +81,31 @@ describe('itemStatusTableRows (ItemStatusList table)', () => {
     const byKm = itemStatusTableRows([ITEM({ status: 'DUE', dueReason: 'KM', nextDueDate: '2027-03-24', nextDueMileage: 55000 })])
     expect(byKm[0].details[1].value).toBe('2027.03.24')
     expect(byKm[0].details[2].value).toBe('55,000 km (도래 근거)')
+  })
+})
+
+describe('꼬리표 (04 F-CYC-02, 08 10 lastDecline·lastCaution)', () => {
+  it('지난 방문 거절(날짜) · 지난 점검 주의(날짜, 메모), 메모가 없으면 날짜만, 둘 다 null이면 없음', () => {
+    expect(itemNoteTag(ITEM({}))).toBeUndefined()
+    expect(itemNoteTag(ITEM({ lastDecline: { date: '2026-10-24', memo: '다음에 하기로 함' } }))).toBe('지난 방문 거절(2026.10.24)')
+    expect(itemNoteTag(ITEM({ lastCaution: { date: '2026-09-24', memo: '앞 타이어 마모' } }))).toBe('지난 점검 주의(2026.09.24, 앞 타이어 마모)')
+    expect(itemNoteTag(ITEM({ lastCaution: { date: '2026-09-24', memo: null } }))).toBe('지난 점검 주의(2026.09.24)')
+  })
+
+  it('꼬리표는 줄의 tag로만 붙고 상태는 서버 값 그대로 (꼬리표가 상태를 바꾸지 않음)', () => {
+    const [row] = itemStatusTableRows([ITEM({ status: 'AHEAD', lastDecline: { date: '2026-10-24', memo: null } })])
+    expect(row.status).toBe('AHEAD')
+    expect(row.tag).toBe('지난 방문 거절(2026.10.24)')
+    expect(itemStatusTableRows([ITEM({})])[0].tag).toBeUndefined()
+  })
+})
+
+describe('고객 진술 (09 S-07, 08 11 source)', () => {
+  it('source가 있으면 source로, 없으면(P0-핵심 서버) type EXTERNAL로 — 07 3.7 CHECK로 둘은 같다', () => {
+    expect(isCustomerStatement({ type: 'EXTERNAL', source: 'CUSTOMER_STATEMENT' })).toBe(true)
+    expect(isCustomerStatement({ type: 'REPLACE', source: 'SHOP' })).toBe(false)
+    expect(isCustomerStatement({ type: 'EXTERNAL' })).toBe(true)
+    expect(isCustomerStatement({ type: 'DECLINE' })).toBe(false)
   })
 })
 

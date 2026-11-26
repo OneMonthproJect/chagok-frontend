@@ -61,8 +61,9 @@
   font-weight: var(--ck-fw-semibold);
   color: var(--ck-text-1);
 }
-/* 구분·출처 꼬리표는 상태 색(도래·임박·여유·미확인)을 쓰지 않는다 — 상태 색은 StatusBadge 한 곳(09 0장) */
+/* 구분·점검 결과·출처 꼬리표는 상태 색(도래·임박·여유·미확인)을 쓰지 않는다 — 상태 색은 StatusBadge 한 곳(09 0장) */
 .visit-record__type,
+.visit-record__result,
 .visit-record__source {
   display: inline-flex;
   align-items: center;
@@ -74,6 +75,10 @@
 }
 .visit-record__type {
   background: var(--ck-surface-muted);
+  color: var(--ck-text-2);
+}
+.visit-record__result {
+  border: 1px solid var(--ck-border-soft);
   color: var(--ck-text-2);
 }
 .visit-record__source {

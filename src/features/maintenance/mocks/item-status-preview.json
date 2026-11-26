@@ -14,7 +14,9 @@
             "type": "REPLACE"
           },
           "nextDueDate": "2027-03-24",
-          "nextDueMileage": 55000
+          "nextDueMileage": 55000,
+          "lastDecline": null,
+          "lastCaution": null
         }
       ]
     }
