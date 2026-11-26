@@ -153,6 +153,20 @@ export interface ReservationCompleted {
   version: number
 }
 
+// ---- 20 POST /api/reservations/{id}/cancel · 21 POST /api/reservations/{id}/no-show (P0-나머지) ----
+// 요청·응답 모양은 18과 같다(08 20·21: "요청·서버 처리·실패 처리·화면 처리는 18과 같다").
+
+export interface ReservationStatusChangeRequest {
+  version: number
+}
+
+export interface ReservationStatusChanged {
+  reservationId: number
+  status: ReservationStatus // 20: CANCELED, 21: NO_SHOW
+  vehicleId: number
+  version: number
+}
+
 // ---- 19 PATCH /api/reservations/{id} ----
 
 /** 보낸 필드만 바꾼다. memo: 보내지 않거나 null이면 그대로, ""이면 비움. itemIds: []이면 모두 지움 */
