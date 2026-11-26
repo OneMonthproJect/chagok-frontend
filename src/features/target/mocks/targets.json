@@ -1,0 +1,23 @@
+{
+  "_comment": "07 7.2·7.5 시드의 재점검 대상 6대 사본(정렬 순서 그대로). 날짜는 오늘 기준 baseMonths·baseDays(기준 기록일), 주기 cycleMonths로 index.ts가 계산한다. 실제 개인정보 없음.",
+  "items": [
+    { "customerId": 6, "customerName": "한가람", "phone": "010-0000-0006", "vehicleId": 6, "plateNumber": "11바0006",
+      "targetItems": [{ "itemId": 1, "name": "엔진오일", "status": "DUE", "baseMonths": -8, "baseDays": 0, "cycleMonths": 6 }],
+      "activeReservation": null },
+    { "customerId": 2, "customerName": "이영희", "phone": "010-0000-0002", "vehicleId": 2, "plateNumber": "34나0002",
+      "targetItems": [{ "itemId": 1, "name": "엔진오일", "status": "DUE", "baseMonths": -6, "baseDays": -10, "cycleMonths": 6 }],
+      "activeReservation": { "reservationId": 3, "dayOffset": 2, "time": "10:00:00" } },
+    { "customerId": 1, "customerName": "김민수", "phone": "010-0000-0001", "vehicleId": 1, "plateNumber": "12가0001",
+      "targetItems": [{ "itemId": 1, "name": "엔진오일", "status": "DUE", "baseMonths": -6, "baseDays": -7, "cycleMonths": 6 }],
+      "activeReservation": null },
+    { "customerId": 8, "customerName": "윤하늘", "phone": "010-0000-0008", "vehicleId": 8, "plateNumber": "33아0008",
+      "targetItems": [{ "itemId": 5, "name": "타이어 상태 점검", "status": "SOON", "baseMonths": -6, "baseDays": 20, "cycleMonths": 6 }],
+      "activeReservation": null },
+    { "customerId": 3, "customerName": "박철수", "phone": "010-0000-0003", "vehicleId": 3, "plateNumber": "56다0003",
+      "targetItems": [{ "itemId": 4, "name": "브레이크패드", "status": "SOON", "baseMonths": -12, "baseDays": 20, "cycleMonths": 12 }],
+      "activeReservation": null },
+    { "customerId": 10, "customerName": "오세훈", "phone": "010-0000-0010", "vehicleId": 10, "plateNumber": "55차0010",
+      "targetItems": [{ "itemId": 6, "name": "배터리", "status": "SOON", "baseMonths": -36, "baseDays": 20, "cycleMonths": 36 }],
+      "activeReservation": null }
+  ]
+}
