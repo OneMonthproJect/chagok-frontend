@@ -1,0 +1,83 @@
+/* S-08 방문 정보 · 항목 기록 — 디자인 v3.0 S-08-visit-record */
+.visit-info {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ck-space-4);
+}
+@media (min-width: 768px) {
+  .visit-info {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.item-record-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item-record-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-3);
+  padding: var(--ck-space-4) 0;
+  border-top: 1px solid var(--ck-border-soft);
+}
+.item-record-row:first-child {
+  border-top: 0;
+}
+.item-record-row__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
+}
+.item-record-row__name {
+  font-size: var(--ck-fs-body);
+  font-weight: var(--ck-fw-semibold);
+  color: var(--ck-text-1);
+}
+.item-record-row--selected .item-record-row__name {
+  color: var(--ck-brand);
+}
+.item-record-row__choices {
+  display: inline-flex;
+  padding: var(--ck-space-1);
+  gap: var(--ck-space-1);
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-surface-muted);
+}
+.item-record-row__choice {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  min-height: var(--ck-control-h-sm);
+  padding: 0 var(--ck-space-3);
+  border-radius: var(--ck-radius-sm);
+  font-size: var(--ck-fs-small);
+  font-weight: var(--ck-fw-medium);
+  color: var(--ck-text-3);
+  cursor: pointer;
+}
+.item-record-row__choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.item-record-row__choice--checked {
+  background: var(--ck-surface);
+  color: var(--ck-brand);
+  font-weight: var(--ck-fw-bold);
+  box-shadow: var(--ck-shadow-card);
+}
+.item-record-row__choice:has(input:focus-visible) {
+  outline: 2px solid var(--ck-brand);
+  outline-offset: 2px;
+}
+.item-record-row__memo {
+  max-width: 560px;
+}
