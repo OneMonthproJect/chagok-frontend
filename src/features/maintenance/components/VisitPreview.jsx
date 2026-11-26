@@ -30,7 +30,8 @@ export default function VisitPreview({ vehicleId, mileage }) {
 
   const preview = useItemStatus(vehicleId, query)
   const failed = preview.status === 'error' || preview.status === 'notFound'
-  const waiting = !Number.isNaN(parsed) && parsed !== query
+  // 실패를 보이는 중에는 대기만으로 라벨을 바꾸지 않는다(본문 오류 상자와 라벨이 같은 상태를 보이게). 0.5초 뒤 다시 부르면 불러오는 중으로 바뀐다
+  const waiting = !failed && !Number.isNaN(parsed) && parsed !== query
   const loading = waiting || preview.status === 'loading'
   const stateLabel = loading ? M.STATE_LOADING : failed ? M.STATE_FAILED : M.STATE_READY
   const invalid = preview.error?.code === 'INVALID_INPUT'

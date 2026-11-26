@@ -160,6 +160,23 @@ describe('S-08 저장 전 미리보기', () => {
     expect(firstRowText()).toContain('도래')
   })
 
+  it('실패를 보이는 중에 새 값을 넣으면 0.5초 동안은 라벨·본문 모두 실패 그대로, 그 뒤 새 값으로 다시 부른다', async () => {
+    routes[BASE] = fail(500, 'INTERNAL_ERROR', '오류')
+    const setMileage = renderPreview()
+    await flush()
+    expect(state()).toBe('불러오지 못함')
+
+    setMileage('55000')
+    await wait(PREVIEW_DELAY_MS - 1)
+    expect(state()).toBe('불러오지 못함') // 본문 오류 상자와 같은 상태
+    expect(document.querySelector('.error-notice')).not.toBeNull()
+
+    await wait(1)
+    expect(calls()).toEqual([BASE, `${BASE}?mileage=55000`])
+    expect(state()).toBe('최신')
+    expect(firstRowText()).toContain('도래')
+  })
+
   it('주행거리를 비우면 mileage 없이 다시 부른다(T11), 숫자가 아니면 부르지 않고 마지막 결과를 둔다', async () => {
     const setMileage = renderPreview('55000')
     await flush()

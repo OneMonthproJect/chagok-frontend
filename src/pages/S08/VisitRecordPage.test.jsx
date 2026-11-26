@@ -393,6 +393,8 @@ describe('S-08 방문·정비 기록', () => {
     await settle()
     expect(document.body.textContent).toContain('찾을 수 없습니다.')
     expect(document.querySelector('.s08__footer')).toBeNull()
+    // 미리보기(08 10)는 차량을 불러온 뒤에만 그린다 — 404면 부르지 않는다(VisitPreview 404 주석의 근거)
+    expect(fetchMock.mock.calls.map(([path]) => path)).not.toContain('/api/vehicles/12/item-status')
 
     click(button('홈으로'))
     expect(location.pathname).toBe('/')
