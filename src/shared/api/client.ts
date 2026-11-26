@@ -3,6 +3,7 @@
 // - 성공이면 data를 돌려주고, 실패면 ApiError를 던진다. 화면은 ApiError.code로 갈라 처리한다.
 // - 401 AUTH_REQUIRED: 토큰을 지우고 onUnauthorized 구독자(app의 로그인 가드)에게 알린다. 라우터는 모른다.
 // - 자동으로 다시 보내지 않는다 (POL-125). 재시도는 사람이 한다.
+// - 응답 없음·시간 초과(REQUEST_TIMEOUT_MS)·본문 읽기 실패는 ApiError{status 0, NETWORK_ERROR} (POL-125, #14).
 // - 일시 문자열("2026-11-24T10:00:00")은 바꾸지 않고 그대로 넘긴다 (08 0.1).
 // - Mock(CONVENTIONS 7장 「Mock」): 판정은 isMockEnabled 한 곳. 실제 응답과 Mock 응답이 같은 해석(parseResponse)을 거친다.
 //   Mock 응답은 호출하는 features/*/api.ts가 넘긴다(shared는 features를 import하지 않음).
@@ -163,31 +164,41 @@ export async function request<T>(
   if (token) headers.Authorization = `Bearer ${token}`
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
 
-  let response: Response
-  try {
-    response = await fetch(`${BASE_URL}${path}`, {
-      method,
-      headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    })
-  } catch {
-    // 응답 없음: 다시 보내지 않는다. 저장됐는지는 사람이 확인한다 (POL-125)
-    throw new ApiError(0, NETWORK_ERROR, DEFAULT_MESSAGES[NETWORK_ERROR])
-  }
-
-  return parseResponse<T>(response.status, await readJson(response))
+  const { status, body } = await send(`${BASE_URL}${path}`, {
+    method,
+    headers,
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+  })
+  return parseResponse<T>(status, body)
 }
 
 /** 서버 확인용 (`/actuator/health`는 08 공통 응답이 아니라 { status }만 준다). 인증 없이 부른다. */
 export async function getServerHealth(): Promise<string> {
-  let response: Response
+  const { status, body } = await send(`${BASE_URL}/actuator/health`, { headers: { Accept: 'application/json' } })
+  return (body as { status?: string } | null)?.status ?? `HTTP ${status}`
+}
+
+/**
+ * 요청 하나의 시간 초과(밀리초). 요청 시작부터 응답 본문 읽기 완료까지를 센다.
+ * 근거: 05 POL-125, 08 0.2 「네트워크 오류·응답 없음」 — 10초 (chagok-docs#120)
+ */
+export const REQUEST_TIMEOUT_MS = 10_000
+
+/**
+ * fetch 한 번 + 본문 읽기. 응답 없음·시간 초과·본문 읽기 실패는 모두 ApiError{0, NETWORK_ERROR}로 끝낸다 (POL-125).
+ * 서버가 받았는지 알 수 없으므로 다시 보내지 않는다. 저장됐는지는 사람이 목록·이력에서 확인한다.
+ */
+async function send(url: string, init: RequestInit): Promise<{ status: number; body: unknown }> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
   try {
-    response = await fetch(`${BASE_URL}/actuator/health`, { headers: { Accept: 'application/json' } })
+    const response = await fetch(url, { ...init, signal: controller.signal })
+    return { status: response.status, body: await readJson(response) }
   } catch {
     throw new ApiError(0, NETWORK_ERROR, DEFAULT_MESSAGES[NETWORK_ERROR])
+  } finally {
+    clearTimeout(timer)
   }
-  const body = (await readJson(response)) as { status?: string } | null
-  return body?.status ?? `HTTP ${response.status}`
 }
 
 async function readJson(response: Response): Promise<unknown> {

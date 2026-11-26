@@ -44,6 +44,11 @@
   border-color: var(--ck-due-fg);
   box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.12);
 }
+/* 오류 칸에 초점: 오류 테두리는 유지하고 고리를 진하게 해 비초점 오류·일반 초점과 구별 (전역 outline은 이 칸에서 꺼져 있음) */
+.form-field__control :is(input, select, textarea)[aria-invalid='true']:focus {
+  border-color: var(--ck-due-fg);
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.32);
+}
 .form-field__control :is(input, select, textarea):disabled {
   background: #f1f2f4;
   color: var(--ck-text-disabled);

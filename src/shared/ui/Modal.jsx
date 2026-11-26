@@ -4,7 +4,8 @@ import './Modal.css'
 
 // 공통 모달 틀: 머리(제목·부제·닫기) + 내용 + 바닥(footer). M-01·M-02·M-03·차량 추가·수정·이력이 같은 틀을 쓴다.
 // 접근성 (COMPONENT_SPEC STEP 06 useDialogA11y): 열리면 첫 입력 칸(또는 data-autofocus·initialFocus)에 초점,
-// Tab은 모달 안에서만 돈다, Esc는 맨 위 모달만 닫는다, 닫히면 연 요소로 초점이 돌아간다.
+// Tab은 모달 안에서만 돈다(숨김·비활성 요소 제외), Esc는 맨 위 모달만 닫는다, 닫히면 연 요소로 초점이 돌아간다.
+// 겹친 모달: 위 모달이 남아 있으면 배경으로 초점을 옮기지 않는다(아래 모달만 닫히면 초점 유지, 위 모달을 닫으면 남은 모달 안으로).
 // 닫기(Esc·× 버튼·바깥 누름)는 onClose만 부른다. 입력값을 지킬지(확인 후 닫기 등)는 쓰는 화면이 정한다.
 // onClose가 없으면 × 버튼을 그리지 않는다(연결 안 된 버튼 없음). 처음 초점은 React autoFocus 대신 data-autofocus·initialFocus로 준다.
 // 사용: <Modal open={open} title="고객·차량 등록" onClose={close} footer={<Button onClick={save}>저장</Button>}>…</Modal>
@@ -23,8 +24,33 @@ const FOCUSABLE = [
   .join(',')
 const FIELDS = 'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled])'
 
+// 초점을 실제로 받을 수 있는 요소만 후보로 둔다: 숨김(hidden·inert·display:none·visibility:hidden)과
+// 비활성(:disabled, 비활성 fieldset 안 포함)은 뺀다. 처음 초점과 Tab 순환에 같은 검사를 쓴다.
+function canFocus(element, dialog) {
+  if (element.matches(':disabled')) return false
+  if (getComputedStyle(element).visibility === 'hidden') return false
+  for (let node = element; node && node !== dialog.parentElement; node = node.parentElement) {
+    if (node.hidden || node.hasAttribute('inert')) return false
+    if (getComputedStyle(node).display === 'none') return false
+  }
+  return true
+}
+
+function focusable(root, dialog, selector = FOCUSABLE) {
+  return Array.from(root.querySelectorAll(selector)).filter((element) => canFocus(element, dialog))
+}
+
 // 열린 순서대로 쌓는다. 키보드(Esc·Tab)는 맨 위 모달만 처리한다.
+// 항목: { dialog, opener } — opener는 닫힐 때 초점을 돌려줄 요소
 const openStack = []
+
+// 아래 모달이 먼저 닫히면, 그 모달 안에서 열린 위 모달의 opener를 아래 모달의 opener로 넘긴다
+// (위 모달이 닫힐 때 사라진 요소 대신 배경의 원래 opener로 돌아가게).
+function handOverOpener(closing) {
+  for (const entry of openStack) {
+    if (entry.opener instanceof HTMLElement && closing.dialog.contains(entry.opener)) entry.opener = closing.opener
+  }
+}
 
 export default function Modal({ open, ...props }) {
   if (!open) return null
@@ -49,14 +75,15 @@ function ModalDialog({ title, subtitle, size = 'md', stacked = false, onClose, f
 
   useEffect(() => {
     const dialog = dialogRef.current
-    const entry = {}
+    const entry = { dialog, opener }
     openStack.push(entry)
 
+    const autofocus = dialog.querySelector('[data-autofocus]')
     const first =
       initialFocusRef.current?.current ??
-      dialog.querySelector('[data-autofocus]') ??
-      bodyRef.current?.querySelector(FIELDS) ??
-      dialog.querySelector(FOCUSABLE) ??
+      (autofocus && canFocus(autofocus, dialog) ? autofocus : null) ??
+      (bodyRef.current ? focusable(bodyRef.current, dialog, FIELDS)[0] : null) ??
+      focusable(dialog, dialog)[0] ??
       dialog
     first.focus()
 
@@ -69,7 +96,7 @@ function ModalDialog({ title, subtitle, size = 'md', stacked = false, onClose, f
         return
       }
       if (event.key !== 'Tab') return
-      const items = Array.from(dialog.querySelectorAll(FOCUSABLE))
+      const items = focusable(dialog, dialog)
       if (items.length === 0) {
         event.preventDefault()
         dialog.focus()
@@ -90,8 +117,19 @@ function ModalDialog({ title, subtitle, size = 'md', stacked = false, onClose, f
     document.addEventListener('keydown', onKeyDown)
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      openStack.splice(openStack.indexOf(entry), 1)
-      if (opener instanceof HTMLElement && opener.isConnected) opener.focus()
+      const index = openStack.indexOf(entry)
+      const wasTop = index === openStack.length - 1
+      openStack.splice(index, 1)
+      if (!wasTop) {
+        // 아래 모달만 닫힘: 초점은 위 모달에 그대로 둔다
+        handOverOpener(entry)
+        return
+      }
+      const next = openStack[openStack.length - 1]
+      const back = entry.opener
+      const canReturn = back instanceof HTMLElement && back.isConnected && (!next || next.dialog.contains(back))
+      if (canReturn) back.focus()
+      else if (next) (focusable(next.dialog, next.dialog)[0] ?? next.dialog).focus()
     }
   }, [opener])
 

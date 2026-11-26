@@ -1,32 +1,48 @@
 import { useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import DateNavigator from '@/features/reservation/components/DateNavigator.jsx'
 import ReservationList from '@/features/reservation/components/ReservationList.jsx'
+import ReservationPanel from '@/features/reservation/components/ReservationPanel.jsx'
 import ReservationFormModal from '@/features/reservation/components/ReservationFormModal.jsx'
 import { formatFullDate, isValidDate, todaySeoul } from '@/features/reservation/dates'
+import { parseReservationId } from '@/features/reservation/panelFlow'
 import { useDayReservations } from '@/features/reservation/useDayReservations'
+import { useReservationPanel } from '@/features/reservation/useReservationPanel'
 import VehiclePicker from '@/features/customer/components/VehiclePicker.jsx'
 import CustomerVehicleFormModal from '@/features/customer/components/CustomerVehicleFormModal.jsx'
 import Button from '@/shared/ui/Button.jsx'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
-import { QUERY } from '@/app/paths'
+import { PATHS, QUERY, vehiclePath } from '@/app/paths'
 import { emptyDayMessage, listTitle } from './homeText'
 import { useServiceItems } from './useServiceItems'
 import mascotLaptop from './assets/home-mascot-laptop.png'
 import './HomePage.css'
 
-// S-02 홈 — P0-핵심: 날짜별 예약 목록 (09 S-02, F-RSV-02, 디자인 v3.0 Home-Core-TodayList, chagok-frontend#24) + 예약 등록 M-02(#25).
+// S-02 홈 — P0-핵심: 날짜별 예약 목록 + 예약 상세 패널 + 예약 등록·변경 M-02
+//   (09 S-02·M-02, F-RSV-01·02·03·04·06, 디자인 v3.0 Home-Core-TodayList·Home-Week·Modal-Create·Modal-Edit).
 // - 날짜는 ?date=YYYY-MM-DD (없거나 잘못되면 오늘, 오늘이면 URL에서 뺌). 새로 고쳐도 같은 날짜.
-// - [예약 등록](머리·빈 날) → M-02. 차량은 customer의 VehiclePicker, 신규는 M-01(CustomerVehicleFormModal), 항목은 13 — 여기서 조립한다
-//   (feature끼리 import 금지). 등록되면 그 날짜 목록으로 옮겨 다시 불러온다.
-// - 다음 이슈가 이어서 고친다: 요약 숫자(#28), 줄 → 예약 상세 패널·[변경](#26), 캘린더(P0-나머지 #30·#36).
+// - 예약 상세 패널은 ?reservation=<id> (#26). 줄을 누르면 열고(기록 하나 추가), 닫기·Esc·뒤로 가기는 쿼리를 지운다.
+//   패널 안 [방문 완료](08 18)가 성공하면 S-08(/visits/new?vehicleId=&reservationId=)로, 409면 패널·목록을 다시 불러오고 이동하지 않는다.
+//   [상세 이동]은 S-07(/vehicles/:vehicleId). [변경]은 M-02 변경 모드(#25).
+// - [예약 등록](머리·빈 날) → M-02 (#25). 차량은 customer의 VehiclePicker, 신규는 M-01(CustomerVehicleFormModal), 항목은 13 —
+//   여기서 조립한다(feature끼리 import 금지). 등록·변경되면 그 날짜 목록으로 옮겨 다시 불러온다.
+// - 다음 이슈가 이어서 고친다: 요약 숫자(#28), 캘린더(P0-나머지 #30·#36).
+
+/** 패널을 목록에서 열었는지(이때만 닫기 = 뒤로 가기). 주소로 바로 들어왔으면 쿼리만 지운다 */
+const PANEL_FROM_LIST = 'panelFromList'
+
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
+  const navigate = useNavigate()
   const today = todaySeoul()
   const queryDate = searchParams.get(QUERY.DATE)
   const date = isValidDate(queryDate) ? queryDate : today
   const { state, reload } = useDayReservations(date)
+  const reservationId = parseReservationId(searchParams.get(QUERY.RESERVATION)) // undefined면 패널 닫힘
+  const panelOpen = reservationId !== undefined
+  const openedFromList = location.state?.[PANEL_FROM_LIST] === true
   const items = useServiceItems()
   const [createOpen, setCreateOpen] = useState(false)
   const [registerQuery, setRegisterQuery] = useState(null) // M-01을 열 때의 검색어 (null = 닫힘)
@@ -36,22 +52,44 @@ export default function HomePage() {
     const params = new URLSearchParams(searchParams)
     if (next === today) params.delete(QUERY.DATE)
     else params.set(QUERY.DATE, next)
+    // 패널을 연 채 날짜를 바꾸면 닫기는 뒤로 가기가 아니라 쿼리 지우기(뒤로 가면 이전 날짜로 돌아가므로)
+    setSearchParams(params, { replace: true, state: null })
+  }
+
+  function openReservation(id) {
+    const params = new URLSearchParams(searchParams)
+    params.set(QUERY.RESERVATION, String(id))
+    // 패널이 이미 열려 있으면 바꾸기만 한다(뒤로 가기 한 번에 닫히도록)
+    if (panelOpen) setSearchParams(params, { replace: true, state: location.state })
+    else setSearchParams(params, { state: { [PANEL_FROM_LIST]: true } })
+  }
+
+  function closePanel() {
+    if (openedFromList) {
+      navigate(-1)
+      return
+    }
+    const params = new URLSearchParams(searchParams)
+    params.delete(QUERY.RESERVATION)
     setSearchParams(params, { replace: true })
   }
 
-  function handleSaved(saved) {
-    setCreateOpen(false)
+  /** 등록·변경 뒤: 그 날짜 목록으로 옮기거나(다른 날) 다시 불러온다(같은 날) */
+  function showSaved(saved) {
     const savedDate = saved.reservedAt.slice(0, 10)
     if (savedDate === date) reload()
     else changeDate(savedDate)
   }
 
-  /** 409 같은 차량 유효 예약 → 기존 예약 상세 패널 (?reservation=, 패널은 #26) */
-  function openExisting(reservationId) {
+  function handleCreated(saved) {
     setCreateOpen(false)
-    const params = new URLSearchParams(searchParams)
-    params.set(QUERY.RESERVATION, String(reservationId))
-    setSearchParams(params)
+    showSaved(saved)
+  }
+
+  /** 409 같은 차량 유효 예약 → 기존 예약 상세 패널 */
+  function openExisting(id) {
+    setCreateOpen(false)
+    openReservation(id)
   }
 
   function renderVehiclePicker({ value, onChange }) {
@@ -60,7 +98,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="home-page">
+    <div className={`home-page${panelOpen ? ' has-panel' : ''}`}>
       <header className="page-header">
         <div>
           <h1>홈</h1>
@@ -71,35 +109,60 @@ export default function HomePage() {
         </div>
       </header>
 
-      <section className="home-card" aria-labelledby="home-list-title">
-        <div className="home-card__head">
-          <div>
-            <h2 id="home-list-title" className="home-card__title">{listTitle(date, today)}</h2>
-            <p className="home-card__sub">시각순</p>
+      <div className="home-layout">
+        <section className="home-card" aria-labelledby="home-list-title">
+          <div className="home-card__head">
+            <div>
+              <h2 id="home-list-title" className="home-card__title">{listTitle(date, today)}</h2>
+              <p className="home-card__sub">시각순</p>
+            </div>
+            <DateNavigator date={date} today={today} onChange={changeDate} />
           </div>
-          <DateNavigator date={date} today={today} onChange={changeDate} />
-        </div>
 
-        <div className="home-card__body" aria-busy={state.kind === 'loading'}>
-          {state.kind === 'loading' && <p className="home-state">예약을 불러오는 중…</p>}
+          <div className="home-card__body" aria-busy={state.kind === 'loading'}>
+            {state.kind === 'loading' && <p className="home-state">예약을 불러오는 중…</p>}
 
-          {state.kind === 'error' && (
-            <ErrorNotice title="예약을 불러오지 못했습니다." error={state.error} onRetry={reload} />
-          )}
+            {state.kind === 'error' && (
+              <ErrorNotice title="예약을 불러오지 못했습니다." error={state.error} onRetry={reload} />
+            )}
 
-          {state.kind === 'ok' && state.items.length === 0 && (
-            <EmptyState
-              title={emptyDayMessage(date, today)}
-              illustration={<img className="home-empty__mascot" src={mascotLaptop} alt="" />}
-              action={date >= today ? { label: '예약 등록', onClick: () => setCreateOpen(true) } : undefined}
-            />
-          )}
+            {state.kind === 'ok' && state.items.length === 0 && (
+              <EmptyState
+                title={emptyDayMessage(date, today)}
+                illustration={<img className="home-empty__mascot" src={mascotLaptop} alt="" />}
+                action={date >= today ? { label: '예약 등록', onClick: () => setCreateOpen(true) } : undefined}
+              />
+            )}
 
-          {state.kind === 'ok' && state.items.length > 0 && (
-            <ReservationList items={state.items} label={listTitle(date, today)} />
-          )}
-        </div>
-      </section>
+            {state.kind === 'ok' && state.items.length > 0 && (
+              <ReservationList
+                items={state.items}
+                label={listTitle(date, today)}
+                selectedId={reservationId ?? null}
+                onSelect={openReservation}
+              />
+            )}
+          </div>
+        </section>
+
+        {panelOpen && (
+          <HomeReservationPanel
+            reservationId={reservationId}
+            items={items}
+            onClose={closePanel}
+            onConflict={reload}
+            onEdited={showSaved}
+            onCompleted={(done) => {
+              const params = new URLSearchParams({
+                [QUERY.VEHICLE_ID]: String(done.vehicleId),
+                [QUERY.RESERVATION_ID]: String(done.reservationId),
+              })
+              navigate(`${PATHS.VISIT_NEW}?${params}`)
+            }}
+            onOpenVehicle={(vehicleId) => navigate(vehiclePath(vehicleId))}
+          />
+        )}
+      </div>
 
       {createOpen && (
         <ReservationFormModal
@@ -107,7 +170,7 @@ export default function HomePage() {
           initialDate={date}
           items={items}
           vehiclePicker={renderVehiclePicker}
-          onSaved={handleSaved}
+          onSaved={handleCreated}
           onClose={() => setCreateOpen(false)}
           onOpenExisting={openExisting}
         />
@@ -126,5 +189,49 @@ export default function HomePage() {
         />
       )}
     </div>
+  )
+}
+
+/**
+ * 패널이 열렸을 때만 17을 부른다. 409 뒤에는 목록도 다시 불러 같은 상태를 보인다(목록·패널이 어긋나지 않게).
+ * [변경] → M-02 변경 모드: 패널이 읽은 예약(version 포함)으로 열고, 저장되면 패널·목록을 다시 불러온다.
+ */
+function HomeReservationPanel({ reservationId, items, onClose, onConflict, onCompleted, onEdited, onOpenVehicle }) {
+  const panel = useReservationPanel(reservationId)
+  const [editTarget, setEditTarget] = useState(null)
+
+  async function complete() {
+    const result = await panel.complete()
+    if (result.kind === 'completed') onCompleted(result.data)
+    else if (result.kind === 'conflict') onConflict()
+  }
+
+  function openEdit(data) {
+    setEditTarget({
+      reservationId: data.reservation.reservationId,
+      version: data.reservation.version,
+      reservedAt: data.reservation.reservedAt,
+      purpose: data.reservation.purpose,
+      vehicle: { vehicleId: data.vehicle.vehicleId, plateNumber: data.vehicle.plateNumber, customerName: data.customer.name },
+    })
+  }
+
+  return (
+    <>
+      <ReservationPanel panel={panel} onClose={onClose} onComplete={complete} onEdit={openEdit} onOpenVehicle={onOpenVehicle} />
+      {editTarget && (
+        <ReservationFormModal
+          mode="edit"
+          target={editTarget}
+          items={items}
+          onSaved={(saved) => {
+            setEditTarget(null)
+            panel.reload()
+            onEdited(saved)
+          }}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
+    </>
   )
 }
