@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, NETWORK_ERROR, parseResponse } from '@/shared/api/client'
 import { getItemStatus, getItems, getVisits, itemStatusQuery, saveVisit, visitListQuery } from './api'
-import { mockGetItemStatus, mockGetItems, mockGetVisits, mockSaveVisit } from './mocks'
+import { mockGetItemStatus, mockGetItems, mockGetVisits, mockSaveVisit, type ItemStatusPreviewFixture } from './mocks'
 import itemStatusPreviewFixture from './mocks/item-status-preview.json'
 import itemStatusFixture from './mocks/item-status.json'
 import itemsOk from './mocks/items.json'
@@ -11,11 +11,11 @@ import type { ItemStatusResponse, ServiceItem, Visit, VisitListResponse, VisitSa
 // 08 10~13: 실제 fetch 없이 확인한다 (fetch 대역, customer/api.test.ts와 같은 방식). Mock은 client의 같은 해석(parseResponse)을 거친다.
 
 // fixture가 types.ts(08) 모양과 맞는지 컴파일 때(tsc) 확인한다
-const FIXTURES: [Record<string, ItemStatusResponse>, Record<string, Visit[]>, ServiceItem[], Record<string, Record<string, ItemStatusResponse>>] = [
+const FIXTURES: [Record<string, ItemStatusResponse>, Record<string, Visit[]>, ServiceItem[], ItemStatusPreviewFixture] = [
   itemStatusFixture as Record<string, ItemStatusResponse>,
   visitsFixture as Record<string, Visit[]>,
   itemsOk.data as ServiceItem[],
-  itemStatusPreviewFixture as Record<string, Record<string, ItemStatusResponse>>,
+  itemStatusPreviewFixture as ItemStatusPreviewFixture,
 ]
 
 function jsonResponse(status: number, body: unknown): Response {
