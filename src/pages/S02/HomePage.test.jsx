@@ -3,6 +3,7 @@ import { act } from 'react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, click, keyDown, render } from '@/shared/lib/domTest'
+import { shiftMonth, todaySeoul } from '@/features/reservation/dates'
 import HomePage from './HomePage.jsx'
 
 // S-02 예약 상세 패널 (09 S-02, 08 17·18, chagok-frontend#26 테스트):
@@ -78,11 +79,13 @@ const LIST_ITEM = {
 beforeEach(() => {
   handlers = {
     list: () => ok({ from: 'x', to: 'x', items: [LIST_ITEM] }),
+    summary: () => ok([]),
     panel: () => ok(panelExample()),
     complete: () => ok({ reservationId: 4, status: 'COMPLETED', vehicleId: 10, version: 1 }),
   }
   fetchMock = vi.fn((url, init) => {
     if (url.startsWith('/api/reservations?')) return Promise.resolve(handlers.list())
+    if (url.startsWith('/api/reservations/summary?')) return Promise.resolve(handlers.summary())
     if (url === '/api/reservations/4/panel') return Promise.resolve(handlers.panel())
     if (url === '/api/reservations/4/complete' && init.method === 'POST') return Promise.resolve(handlers.complete(init))
     return Promise.resolve(fail(404, 'NOT_FOUND', '찾을 수 없습니다.'))
@@ -120,6 +123,8 @@ const calls = (match) => fetchMock.mock.calls.filter(([url, init]) => match(url,
 const panelCalls = () => calls((url) => url === '/api/reservations/4/panel')
 const completeCalls = () => calls((url) => url.endsWith('/complete'))
 const listCalls = () => calls((url) => url.startsWith('/api/reservations?'))
+const summaryCalls = () => calls((url) => url.startsWith('/api/reservations/summary?'))
+const cell = (date) => document.querySelector(`.mcal-day[data-date="${date}"]`)
 
 describe('S-02 예약 상세 패널', () => {
   it('줄을 누르면 ?reservation=으로 패널을 열고 17을 부른다, 닫기는 쿼리를 지운다(뒤로 가기)', async () => {
@@ -376,6 +381,7 @@ describe('S-02 예약 등록·변경 (M-02)', () => {
     expect(button('저장', dialog).disabled).toBe(true)
 
     const before = panelCalls().length
+    const summaryBefore = summaryCalls().length
     click(button('16:00', dialog))
     click(button('저장', dialog))
     await settle()
@@ -384,6 +390,30 @@ describe('S-02 예약 등록·변경 (M-02)', () => {
     expect(JSON.parse(patchCalls()[0][1].body)).toEqual({ version: 2, reservedAt: `${day}T16:00:00` })
     expect(document.querySelector('[role="dialog"]')).toBeNull()
     expect(panelCalls().length).toBeGreaterThan(before)
+    expect(summaryCalls().length).toBeGreaterThan(summaryBefore) // 같은 날 저장이어도 캘린더 건수를 다시 부른다(#30)
+  })
+
+  it('같은 달의 다른 날로 저장되면 그 날짜로 옮기고, 조회 기간이 같아도 42를 다시 부른다 (#30)', async () => {
+    handlers.panel = () => ok(panelExample({ reservation: { reservedAt: '2030-03-10T15:00:00', needsAction: false, version: 2 } }))
+    handlers.patch = () => ok({ reservationId: 4, status: 'RESERVED', reservedAt: '2030-03-20T16:00:00', vehicleId: 10, version: 3 })
+    const base = fetchMock.getMockImplementation()
+    fetchMock.mockImplementation((url, init) =>
+      url === '/api/reservations/4' && init?.method === 'PATCH' ? Promise.resolve(handlers.patch()) : base(url, init))
+
+    renderHome('/?date=2030-03-10&reservation=4')
+    await settle()
+    click(button('변경', panel()))
+    await settle()
+    const dialog = document.querySelector('[role="dialog"]')
+    const before = summaryCalls().length
+    click(button('16:00', dialog))
+    click(button('저장', dialog))
+    await settle()
+
+    expect(patchCalls()).toHaveLength(1)
+    expect(new URLSearchParams(location.search).get('date')).toBe('2030-03-20')
+    expect(summaryCalls().length).toBeGreaterThan(before)
+    expect(summaryCalls().at(-1)[0]).toBe('/api/reservations/summary?from=2030-02-24&to=2030-04-06')
   })
 
   it('진행중·끝난 예약은 [변경]이 없다 (08 19)', async () => {
@@ -427,5 +457,134 @@ describe('S-02 요약 숫자', () => {
     await settle()
     expect(document.body.textContent).toContain('요약 숫자를 불러오지 못했습니다.')
     expect(document.querySelectorAll('.rsv-row').length).toBe(1)
+  })
+})
+
+describe('S-02 월 캘린더 (F-RSV-05, #30)', () => {
+  const day = (date, counts = {}) => ({ date, total: 0, reserved: 0, inProgress: 0, completed: 0, canceled: 0, noShow: 0, ...counts })
+
+  it('그 달 42칸(일요일 시작)으로 42를 한 번 부르고, 칸의 숫자는 서버 값 그대로', async () => {
+    handlers.summary = () => ok([
+      // total은 서버 값(취소 제외) — 화면이 상태별 숫자를 더해 6으로 만들지 않는다
+      day('2030-03-10', { total: 3, reserved: 1, inProgress: 1, canceled: 2, noShow: 1 }),
+      day('2030-03-11', { canceled: 1 }), // 취소만 있는 날: 총 건수 없이 취소 1
+      day('2030-03-31', { total: 1, reserved: 1 }), // 월말 23:30 예약 → 서버가 준 날짜 칸
+    ])
+    renderHome('/?date=2030-03-10')
+    await settle()
+
+    expect(summaryCalls().map(([url]) => url)).toEqual(['/api/reservations/summary?from=2030-02-24&to=2030-04-06'])
+    expect(document.querySelectorAll('.mcal-day')).toHaveLength(42)
+    expect(document.querySelector('.mcal__title').textContent).toBe('2030년 3월')
+
+    const busy = cell('2030-03-10')
+    expect(busy.querySelector('.mcal-day__total').textContent).toBe('3건')
+    expect(Array.from(busy.querySelectorAll('.mcal-count')).map((c) => c.textContent)).toEqual(['예약 1', '진행중 1', '취소 2', '노쇼 1'])
+    expect(busy.getAttribute('aria-pressed')).toBe('true') // 고른 날짜
+    expect(busy.getAttribute('aria-label')).toContain('3건, 예약 1, 진행중 1, 취소 2, 노쇼 1')
+
+    expect(cell('2030-03-11').querySelector('.mcal-day__total')).toBeNull()
+    expect(cell('2030-03-11').textContent).toContain('취소 1')
+    expect(cell('2030-03-31').querySelector('.mcal-day__total').textContent).toBe('1건')
+    expect(cell('2030-04-01').querySelector('.mcal-day__total')).toBeNull()
+    expect(cell('2030-03-12').textContent).toBe('12') // 빈 날은 칸만 (문구 없음)
+    expect(cell('2030-02-24').classList.contains('is-outside')).toBe(true)
+  })
+
+  it('날짜 칸을 누르면 ?date=가 바뀌어 그날 목록(15)을 부르고, 같은 달이면 42를 다시 부르지 않는다', async () => {
+    renderHome('/?date=2030-03-10')
+    await settle()
+    click(cell('2030-03-20'))
+    await settle()
+    expect(location.search).toBe('?date=2030-03-20')
+    expect(listCalls().at(-1)[0]).toBe('/api/reservations?from=2030-03-20&to=2030-03-20')
+    expect(summaryCalls()).toHaveLength(1)
+    expect(cell('2030-03-20').getAttribute('aria-pressed')).toBe('true')
+
+    // 목록 줄 → 예약 상세 패널 (P0-핵심 흐름 그대로)
+    click(document.querySelector('.rsv-row'))
+    await settle()
+    expect(location.search).toBe('?date=2030-03-20&reservation=4')
+    expect(panel()).not.toBeNull()
+  })
+
+  it('다음 달 → 그 달 1일, 이전 달·오늘로', async () => {
+    renderHome('/?date=2030-03-10')
+    await settle()
+    click(document.querySelector('[aria-label="다음 달"]'))
+    await settle()
+    expect(location.search).toBe('?date=2030-04-01')
+    expect(summaryCalls().at(-1)[0]).toBe('/api/reservations/summary?from=2030-03-31&to=2030-05-11')
+
+    click(document.querySelector('[aria-label="이전 달"]'))
+    click(document.querySelector('[aria-label="이전 달"]'))
+    await settle()
+    expect(location.search).toBe('?date=2030-02-01')
+
+    click(document.querySelector('.mcal__today'))
+    await settle()
+    expect(location.search).toBe('') // 오늘은 URL에서 뺀다
+    expect(document.querySelector('.mcal-day.is-today').getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('42가 실패하면 안내 + 사람이 누르는 다시 시도, 목록은 그대로 (자동 재요청 없음)', async () => {
+    handlers.summary = () => fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.')
+    renderHome('/?date=2030-03-10')
+    await settle()
+    expect(document.body.textContent).toContain('예약 건수를 불러오지 못했습니다.')
+    expect(document.querySelectorAll('.mcal-day')).toHaveLength(42)
+    expect(document.querySelectorAll('.rsv-row')).toHaveLength(1)
+    await settle()
+    expect(summaryCalls()).toHaveLength(1)
+
+    handlers.summary = () => ok([day('2030-03-10', { total: 1, reserved: 1 })])
+    click(button('다시 시도', document.querySelector('.mcal')))
+    await settle()
+    expect(summaryCalls()).toHaveLength(2)
+    expect(cell('2030-03-10').querySelector('.mcal-day__total').textContent).toBe('1건')
+    expect(document.body.textContent).not.toContain('예약 건수를 불러오지 못했습니다.')
+  })
+
+  it('목록 줄에 담당 이름+색 라벨, assignee가 없으면(P0-핵심 응답) 라벨 없음', async () => {
+    handlers.list = () => ok({ from: 'x', to: 'x', items: [{ ...LIST_ITEM, assignee: { staffId: 2, name: '김정비', colorIndex: 1 } }] })
+    renderHome('/?date=2030-03-10')
+    await settle()
+    const label = document.querySelector('.rsv-row .assignee-label')
+    expect(label.textContent).toBe('담당 김정비') // 화면 읽기용 "담당 " + 이름 (색만으로 구분하지 않음)
+    expect(label.classList.contains('assignee-label--c1')).toBe(true)
+
+    cleanup()
+    handlers.list = () => ok({ from: 'x', to: 'x', items: [LIST_ITEM] })
+    renderHome('/?date=2030-03-10')
+    await settle()
+    expect(document.querySelector('.rsv-row .assignee-label')).toBeNull()
+  })
+
+  it('달을 빠르게 옮기면 늦게 온 이전 달 응답은 버린다', async () => {
+    let resolveMarch
+    handlers.summary = () => new Promise((resolve) => { resolveMarch = resolve })
+    renderHome('/?date=2030-03-10')
+    await settle()
+    handlers.summary = () => ok([day('2030-04-15', { total: 1, reserved: 1 })])
+    click(document.querySelector('[aria-label="다음 달"]'))
+    await settle()
+    expect(cell('2030-04-15').querySelector('.mcal-day__total').textContent).toBe('1건')
+
+    resolveMarch(ok([day('2030-04-15', { total: 9, reserved: 9 })])) // 3월 달력 응답이 늦게 도착
+    await settle()
+    expect(cell('2030-04-15').querySelector('.mcal-day__total').textContent).toBe('1건')
+  })
+
+  it('오늘이 있는 달로 옮기면 1일이 아니라 오늘을 고른다 (URL에서 date가 빠짐)', async () => {
+    const today = todaySeoul()
+    renderHome('/')
+    await settle()
+    click(document.querySelector('[aria-label="이전 달"]'))
+    await settle()
+    expect(location.search).toBe(`?date=${shiftMonth(today, -1)}`)
+    click(document.querySelector('[aria-label="다음 달"]'))
+    await settle()
+    expect(location.search).toBe('')
+    expect(cell(today).getAttribute('aria-pressed')).toBe('true')
   })
 })

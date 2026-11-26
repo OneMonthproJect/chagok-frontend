@@ -1,5 +1,6 @@
-// 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 15~19의 사본이며 계약의 기준은 08이다.
+// 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 15~19·42의 사본이며 계약의 기준은 08이다.
 // 값은 07 7.1~7.3 시드(seed.json). 예약 날짜는 오늘(서울) 기준으로 계산하고, 바뀐 상태는 메모리에만 둔다(새로 고치면 처음으로).
+// 15 목록의 담당(assignee, P0-나머지)은 07 7.3 담당 계정(seed.json staff·assigneeStaffId, #30).
 // 패널(17)의 최근 방문·총 방문 수는 07 7.2 기록(seed.json visits, #26)으로 만든다(11 모양, 최신순 2회, 외부만 있는 방문은 세지 않음 POL-45).
 // LIMIT: 점검 주기(itemStatuses)는 단순화 — 항목 상태 모두 미확인. 상태 판정은 서버(cycle)의 일이라 Mock에서 계산하지 않는다. 실제 값은 백엔드 연결로 확인한다.
 // api.ts만 동적 import()로 부른다. 화면·pages는 import하지 않는다.
@@ -13,6 +14,8 @@ import type {
   ReservationPanel,
   ReservationPeriodQuery,
   ReservationStatus,
+  ReservationSummaryQuery,
+  ReservationDaySummary,
   ReservationUpdateRequest,
   RecentVisit,
   VisitRecord,
@@ -28,9 +31,12 @@ interface MockReservation {
   itemIds: number[]
   other: boolean
   memo: string | null
+  assigneeStaffId: number
 }
 
 const MAX_DAYS = 42
+/** LIMIT: Mock은 로그인 계정을 모른다. 담당 없이 등록하면(P0-핵심 16) 사장(owner_a)으로 둔다. 실제는 서버가 토큰 계정으로 채운다 */
+const DEFAULT_ASSIGNEE_ID = 1
 let store: MockReservation[] | null = null
 let nextId = 100
 
@@ -46,6 +52,7 @@ function reservations(): MockReservation[] {
       itemIds: r.itemIds,
       other: r.other,
       memo: r.memo,
+      assigneeStaffId: r.assigneeStaffId,
     }))
   }
   return store
@@ -67,6 +74,7 @@ const notFound = () => fail(404, 'NOT_FOUND', '찾을 수 없습니다.')
 const vehicleOf = (vehicleId: number) => seed.vehicles.find((v) => v.vehicleId === vehicleId)
 const customerOf = (customerId: number) => seed.customers.find((c) => c.customerId === customerId)
 const itemOf = (itemId: number) => seed.items.find((i) => i.itemId === itemId)
+const assigneeOf = (staffId: number) => seed.staff.find((s) => s.staffId === staffId)
 
 function purposeSummary(r: MockReservation): string | null {
   const names = r.itemIds.map((id) => itemOf(id)?.name).filter(Boolean) as string[]
@@ -96,6 +104,7 @@ function toListItem(r: MockReservation): ReservationListItem {
     customerName: customer.name,
     phone: customer.phone,
     purposeSummary: purposeSummary(r),
+    assignee: assigneeOf(r.assigneeStaffId),
   }
 }
 
@@ -122,6 +131,28 @@ export function mockGetReservations(query: ReservationPeriodQuery): MockResponse
   return ok({ from, to, items })
 }
 
+/** 08 42 — 날짜별 건수. total은 취소만 제외(진행중·노쇼 포함). 예약이 하나도 없는 날은 넣지 않는다(❓ #40 확인 중, types.ts) */
+export function mockGetReservationSummary(query: ReservationSummaryQuery): MockResponse {
+  const { from, to } = query
+  if (!from || !to || from > to || addDays(from, MAX_DAYS - 1) < to) {
+    return fail(400, 'INVALID_INPUT', '조회 기간을 확인해 주세요.', !from ? 'from' : 'to')
+  }
+  const byDate = new Map<string, ReservationDaySummary>()
+  for (const r of reservations()) {
+    const date = r.reservedAt.slice(0, 10)
+    if (date < from || date > to) continue
+    const day = byDate.get(date) ?? { date, total: 0, reserved: 0, inProgress: 0, completed: 0, canceled: 0, noShow: 0 }
+    if (r.status !== 'CANCELED') day.total += 1
+    if (r.status === 'RESERVED') day.reserved += 1
+    else if (r.status === 'IN_PROGRESS') day.inProgress += 1
+    else if (r.status === 'COMPLETED') day.completed += 1
+    else if (r.status === 'CANCELED') day.canceled += 1
+    else if (r.status === 'NO_SHOW') day.noShow += 1
+    byDate.set(date, day)
+  }
+  return ok([...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)))
+}
+
 /** 08 16 (P0-핵심: 담당은 서버가 채움) */
 export function mockCreateReservation(body: ReservationCreateRequest): MockResponse {
   if (!vehicleOf(body.vehicleId)) return notFound()
@@ -140,6 +171,7 @@ export function mockCreateReservation(body: ReservationCreateRequest): MockRespo
     itemIds: body.purpose?.itemIds ?? [],
     other: body.purpose?.other ?? false,
     memo: body.purpose?.memo ?? null,
+    assigneeStaffId: body.assigneeId ?? DEFAULT_ASSIGNEE_ID,
   }
   reservations().push(created)
   return ok({ reservationId: created.reservationId, status: created.status, reservedAt: created.reservedAt, vehicleId: created.vehicleId, version: 0 })
