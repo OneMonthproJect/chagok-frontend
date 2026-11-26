@@ -1,0 +1,63 @@
+/* ErrorNotice — 디자인 v3.0 .ck-notice (error·warn·info, 모서리 12, 제목 15 굵게 + 본문 14, 다시 시도 버튼은 오른쪽) */
+.error-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ck-space-3);
+  padding: 14px 16px;
+  border: 1px solid;
+  border-radius: var(--ck-radius-md);
+  font-size: var(--ck-fs-small);
+}
+.error-notice--error {
+  border-color: #f3c0bb;
+  background: #fff7f6;
+  color: #7a1a12;
+}
+.error-notice--warn {
+  border-color: #f3d9a8;
+  background: #fffaf0;
+  color: #6b3d00;
+}
+.error-notice--info {
+  border-color: #cfd3ff;
+  background: var(--ck-brand-tint);
+  color: #1a24b8;
+}
+
+.error-notice__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 50%;
+  color: var(--ck-text-inverse);
+  font-size: var(--ck-fs-caption);
+  font-weight: var(--ck-fw-bold);
+  line-height: 1;
+}
+.error-notice--error .error-notice__icon { background: var(--ck-due-fg); }
+.error-notice--warn .error-notice__icon { background: var(--ck-soon-fg); }
+.error-notice--info .error-notice__icon { background: var(--ck-brand); }
+
+.error-notice__text {
+  flex: 1;
+  min-width: 0;
+}
+.error-notice__title {
+  margin: 0;
+  font-size: var(--ck-fs-body);
+  font-weight: var(--ck-fw-bold);
+}
+.error-notice__body {
+  margin: 2px 0 0;
+}
+.error-notice__body:first-child {
+  margin-top: 0;
+}
+.error-notice > .button {
+  flex: none;
+  margin-left: auto;
+}

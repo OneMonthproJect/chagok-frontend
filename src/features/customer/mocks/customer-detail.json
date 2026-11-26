@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "data": {
+    "customerId": 10,
+    "name": "오세훈",
+    "phone": "010-0000-0010",
+    "consent": true,
+    "vehicles": [
+      { "vehicleId": 10, "plateNumber": "55차0010", "model": "쏘나타", "modelYear": 2018, "latestMileage": 97000, "dueCount": 0, "soonCount": 1 },
+      { "vehicleId": 11, "plateNumber": "66카0011", "model": "K3", "modelYear": null, "latestMileage": null, "dueCount": 0, "soonCount": 0 }
+    ]
+  },
+  "error": null
+}

@@ -7,7 +7,7 @@ import { PATHS } from '@/app/paths'
 export default function RequireAuth() {
   const location = useLocation()
   if (!getToken()) {
-    return <Navigate to={PATHS.LOGIN} replace state={{ from: location.pathname }} />
+    return <Navigate to={PATHS.LOGIN} replace state={{ from: location.pathname + location.search }} />
   }
   return <Outlet />
 }

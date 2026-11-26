@@ -1,0 +1,76 @@
+/* S-04 재점검 대상 줄 — 디자인 v3.0 Reinspection. 색·크기는 --ck-* (#18) */
+.target-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.target-row {
+  border: 1px solid #ecedf1d9;
+  border-radius: var(--ck-radius-lg);
+  background: var(--ck-surface);
+  box-shadow: var(--ck-shadow-card);
+}
+.target-row__main {
+  min-height: 72px;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(0, 2fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+.target-row__customer,
+.target-row__vehicle { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.target-row__customer b,
+.target-row__vehicle b { color: var(--ck-text-1); font-size: var(--ck-fs-body); font-weight: 700; }
+.target-row__customer span { color: var(--ck-text-3); font-size: var(--ck-fs-small); }
+
+.target-row__items { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.target-row__count {
+  padding: 3px 8px;
+  border-radius: var(--ck-radius-pill);
+  font-size: var(--ck-fs-caption);
+  font-weight: 700;
+}
+.target-row__count--DUE { background: var(--ck-due-bg); color: var(--ck-due-fg); }
+.target-row__count--SOON { background: var(--ck-soon-bg); color: var(--ck-soon-fg); }
+.target-row__names { color: var(--ck-text-2); font-size: var(--ck-fs-small); }
+
+.target-row__action { display: flex; align-items: center; gap: 8px; justify-self: end; }
+.target-row__reserved {
+  min-height: var(--ck-control-h-sm);
+  padding: 0 14px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-pill);
+  background: var(--ck-surface);
+  color: var(--ck-text-2);
+  font: inherit;
+  font-size: var(--ck-fs-meta);
+  font-weight: 600;
+  cursor: pointer;
+}
+.target-row__reserved:hover { border-color: var(--ck-brand); color: var(--ck-brand); }
+.target-row__toggle {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border: 0;
+  border-radius: var(--ck-radius-md);
+  background: transparent;
+  color: var(--ck-text-3);
+  cursor: pointer;
+}
+.target-row__toggle:hover { background: var(--ck-surface-muted); }
+.target-row__reserved:focus-visible,
+.target-row__toggle:focus-visible { outline: 3px solid var(--ck-brand-ring); outline-offset: 2px; }
+.target-row__detail { padding: 0 18px 16px; border-top: 1px solid var(--ck-border-soft); }
+
+@media (max-width: 1023px) {
+  .target-row__main { grid-template-columns: 1fr 1fr; }
+  .target-row__items { grid-column: 1 / -1; }
+  .target-row__action { grid-column: 1 / -1; justify-self: start; }
+}

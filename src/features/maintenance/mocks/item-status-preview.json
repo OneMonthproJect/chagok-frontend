@@ -1,0 +1,22 @@
+{
+  "4": {
+    "55000": {
+      "items": [
+        {
+          "itemId": 1,
+          "code": "ENGINE_OIL",
+          "name": "엔진오일",
+          "status": "DUE",
+          "dueReason": "KM",
+          "baseRecord": {
+            "date": "2026-09-24",
+            "mileage": 45000,
+            "type": "REPLACE"
+          },
+          "nextDueDate": "2027-03-24",
+          "nextDueMileage": 55000
+        }
+      ]
+    }
+  }
+}
