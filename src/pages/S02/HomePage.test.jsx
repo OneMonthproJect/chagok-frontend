@@ -252,6 +252,7 @@ describe('S-02 예약 상세 패널', () => {
     renderHome('/?reservation=4')
     await settle()
     const listBefore = listCalls().length
+    const summaryBefore = summaryCalls().length
     click(button('방문 완료', panel()))
     await settle()
     await settle()
@@ -259,6 +260,7 @@ describe('S-02 예약 상세 패널', () => {
     expect(completeCalls()).toHaveLength(1) // 자동 재전송 없음
     expect(panelCalls()).toHaveLength(2) // 17 다시 조회
     expect(listCalls().length).toBe(listBefore + 1) // 목록도 최신으로
+    expect(summaryCalls().length).toBe(summaryBefore + 1) // 캘린더 건수(42)도 다시 부른다(#30)
     expect(location.pathname).toBe('/')
     expect(location.search).toBe('?reservation=4')
     const notice = panel().querySelector('.error-notice--warn')
@@ -445,6 +447,7 @@ describe('S-02 예약 취소·노쇼', () => {
     renderHome('/?reservation=4')
     await settle()
     const listBefore = listCalls().length
+    const summaryBefore = summaryCalls().length
     click(button('취소', panel()))
     await settle()
 
@@ -464,6 +467,7 @@ describe('S-02 예약 취소·노쇼', () => {
     expect(dialog()).toBeNull()
     expect(panelCalls()).toHaveLength(2)
     expect(listCalls().length).toBe(listBefore + 1)
+    expect(summaryCalls().length).toBe(summaryBefore + 1) // 취소는 칸 총 건수에서 빠지므로 42를 다시 부른다(#30)
     expect(panel().querySelector('.rsv-status').textContent).toBe('취소')
     expect(panel().querySelector('.error-notice--info').textContent).toContain('예약을 취소했습니다.')
     expect(button('취소', panel())).toBeUndefined() // 끝난 예약은 버튼 없음
@@ -503,6 +507,7 @@ describe('S-02 예약 취소·노쇼', () => {
     renderHome('/?reservation=4')
     await settle()
     const listBefore = listCalls().length
+    const summaryBefore = summaryCalls().length
     click(button('노쇼', panel()))
     await settle()
     click(button('노쇼 처리', dialog()))
@@ -512,6 +517,7 @@ describe('S-02 예약 취소·노쇼', () => {
     expect(noShowCalls()).toHaveLength(1) // 자동 재전송 없음
     expect(panelCalls()).toHaveLength(2)
     expect(listCalls().length).toBe(listBefore + 1)
+    expect(summaryCalls().length).toBe(summaryBefore + 1) // 409 뒤에도 42를 다시 부른다(#30)
     expect(panel().querySelector('.rsv-status').textContent).toBe('방문 완료')
     expect(panel().querySelector('.error-notice--warn').textContent).toContain('지금 상태에서는 할 수 없는 변경입니다.')
     expect(button('노쇼', panel())).toBeUndefined()
