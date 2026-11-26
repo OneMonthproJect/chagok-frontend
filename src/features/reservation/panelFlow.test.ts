@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CONFIRM_TEXT,
+  canCancel,
   canComplete,
   canEdit,
+  canNoShow,
   canOpenVehicleDetail,
   itemStatusRows,
   mileageText,
@@ -32,6 +35,20 @@ describe('panelFlow', () => {
     expect(canEdit('COMPLETED')).toBe(false)
     expect(canEdit('CANCELED')).toBe(false)
     expect(canEdit('NO_SHOW')).toBe(false)
+  })
+
+  it('취소는 예약·진행중에서만, 노쇼는 시각이 지난(needsAction) 예약만 (08 20·21, #31)', () => {
+    expect(canCancel('RESERVED')).toBe(true)
+    expect(canCancel('IN_PROGRESS')).toBe(true)
+    for (const s of ['COMPLETED', 'CANCELED', 'NO_SHOW'] as const) expect(canCancel(s)).toBe(false)
+    expect(canNoShow('RESERVED', true)).toBe(true)
+    expect(canNoShow('RESERVED', false)).toBe(false)
+    for (const s of ['IN_PROGRESS', 'COMPLETED', 'CANCELED', 'NO_SHOW'] as const) expect(canNoShow(s, true)).toBe(false)
+  })
+
+  it('확인 대화상자 문구 (디자인 v3.0)', () => {
+    expect(CONFIRM_TEXT.cancel.title).toBe('예약을 취소할까요?')
+    expect(CONFIRM_TEXT.noShow.confirmLabel).toBe('노쇼 처리')
   })
 
   it('방문 완료는 예약·진행중에서만 (08 18)', () => {

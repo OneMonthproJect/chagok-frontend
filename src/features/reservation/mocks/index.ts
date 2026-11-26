@@ -1,4 +1,4 @@
-// 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 15~19의 사본이며 계약의 기준은 08이다.
+// 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 15~21의 사본이며 계약의 기준은 08이다.
 // 값은 07 7.1~7.3 시드(seed.json). 예약 날짜는 오늘(서울) 기준으로 계산하고, 바뀐 상태는 메모리에만 둔다(새로 고치면 처음으로).
 // 패널(17)의 최근 방문·총 방문 수는 07 7.2 기록(seed.json visits, #26)으로 만든다(11 모양, 최신순 2회, 외부만 있는 방문은 세지 않음 POL-45).
 // LIMIT: 점검 주기(itemStatuses)는 단순화 — 항목 상태 모두 미확인. 상태 판정은 서버(cycle)의 일이라 Mock에서 계산하지 않는다. 실제 값은 백엔드 연결로 확인한다.
@@ -13,6 +13,7 @@ import type {
   ReservationPanel,
   ReservationPeriodQuery,
   ReservationStatus,
+  ReservationStatusChangeRequest,
   ReservationUpdateRequest,
   RecentVisit,
   VisitRecord,
@@ -239,6 +240,35 @@ export function mockComplete(reservationId: number, body: ReservationCompleteReq
   const versionError = checkVersion(body.version, r)
   if (versionError) return versionError
   r.status = 'COMPLETED'
+  r.version += 1
+  return ok({ reservationId: r.reservationId, status: r.status, vehicleId: r.vehicleId, version: r.version })
+}
+
+/** 08 20 — 형식(400) → 소유(404) → 상태(RESERVED·IN_PROGRESS) → version 순. 시각 전·후 모두 */
+export function mockCancel(reservationId: number, body: ReservationStatusChangeRequest): MockResponse {
+  const invalid = invalidVersion(body?.version)
+  if (invalid) return invalid
+  const r = reservations().find((x) => x.reservationId === reservationId)
+  if (!r) return notFound()
+  if (r.status !== 'RESERVED' && r.status !== 'IN_PROGRESS') return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
+  const versionError = checkVersion(body.version, r)
+  if (versionError) return versionError
+  r.status = 'CANCELED'
+  r.version += 1
+  return ok({ reservationId: r.reservationId, status: r.status, vehicleId: r.vehicleId, version: r.version })
+}
+
+/** 08 21 — 형식 → 소유 → 상태(RESERVED만) → version → 시각(지났는지, R6) 순 */
+export function mockNoShow(reservationId: number, body: ReservationStatusChangeRequest): MockResponse {
+  const invalid = invalidVersion(body?.version)
+  if (invalid) return invalid
+  const r = reservations().find((x) => x.reservationId === reservationId)
+  if (!r) return notFound()
+  if (r.status !== 'RESERVED') return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
+  const versionError = checkVersion(body.version, r)
+  if (versionError) return versionError
+  if (!(r.reservedAt < nowSeoul())) return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
+  r.status = 'NO_SHOW'
   r.version += 1
   return ok({ reservationId: r.reservationId, status: r.status, vehicleId: r.vehicleId, version: r.version })
 }

@@ -52,6 +52,41 @@ export function canEdit(status: ReservationStatus): boolean {
   return status === 'RESERVED'
 }
 
+/** [취소](08 20)는 상태 "예약"·"진행중", 시각 전·후 모두 (09 S-02 5번) */
+export function canCancel(status: ReservationStatus): boolean {
+  return status === 'RESERVED' || status === 'IN_PROGRESS'
+}
+
+/**
+ * [노쇼](08 21)는 상태 "예약"이고 시각이 지난 예약만(R6). 시각이 지났는지는 서버가 준 needsAction으로 본다 —
+ * 08 needsAction 정의(RESERVED이고 reservedAt이 현재보다 이전)가 노쇼 조건과 같다. 화면에서 시각을 계산하지 않는다.
+ */
+export function canNoShow(status: ReservationStatus, needsAction: boolean): boolean {
+  return status === 'RESERVED' && needsAction
+}
+
+/** 확인 대화상자를 거치는 패널 행동 (09 S-02 「취소·노쇼…는 확인 대화상자를 거친다」) */
+export type ConfirmAction = 'cancel' | 'noShow'
+
+/** 확인 대화상자 문구 (디자인 v3.0 Home-Confirm-Cancel·NoShow) */
+export const CONFIRM_TEXT: Record<ConfirmAction, { title: string; description: string; confirmLabel: string; done: string }> = {
+  cancel: {
+    title: '예약을 취소할까요?',
+    description: '취소한 예약은 정정으로만 되돌릴 수 있습니다.',
+    confirmLabel: '예약 취소',
+    done: '예약을 취소했습니다.',
+  },
+  noShow: {
+    title: '노쇼로 처리할까요?',
+    description: '시각이 지난 예약만 노쇼로 처리할 수 있습니다.',
+    confirmLabel: '노쇼 처리',
+    done: '노쇼로 처리했습니다.',
+  },
+}
+
+/** 확인 대화상자의 [돌아가기] */
+export const CONFIRM_BACK_LABEL = '돌아가기'
+
 export function canOpenVehicleDetail(totalVisitCount: number): boolean {
   return totalVisitCount >= VEHICLE_DETAIL_MIN_VISITS
 }
