@@ -60,17 +60,22 @@ function renderPage(entry = '/customers') {
   )
 }
 
+/** 대기 중인 Promise·상태 갱신을 끝까지 */
+const settle = () => act(async () => {})
+
 /** 검색 멈춤(0.3초) + URL 반영 + 응답까지 */
 const waitSearch = () => act(() => new Promise((resolve) => setTimeout(resolve, 400)))
 
-function typeSearch(value) {
-  const input = document.querySelector('input[type="search"]')
+/** React 제어 입력에 사람이 친 것처럼 값 넣기 */
+function typeInto(input, value) {
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
   act(() => {
     setter.call(input, value)
     input.dispatchEvent(new Event('input', { bubbles: true }))
   })
 }
+
+const typeSearch = (value) => typeInto(document.querySelector('input[type="search"]'), value)
 
 const button = (text) => Array.from(document.querySelectorAll('button')).find((b) => b.textContent.trim() === text)
 
@@ -149,6 +154,26 @@ describe('S-05 고객·차량 목록', () => {
     await waitSearch()
     expect(new URLSearchParams(location.search).get('page')).toBe('3')
     expect(fetchMock.mock.calls.at(-1)[0]).toBe(`/api/customers?q=${encodeURIComponent('김')}&page=2`)
+  })
+
+  it('M-01 같은 연락처 기존 고객 → "이 고객에 차량 추가": M-01을 닫고 S-06으로, 차량 추가를 연 채 (09 M-01 ①, #21)', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([OH]))))
+    renderPage('/customers?q=%EC%98%A4')
+    await waitSearch()
+    click(button('+ 신규 고객·차량 등록'))
+    await settle() // Button은 두 번 눌림을 막으려고 onClick을 한 틱 뒤에 부른다
+    const phone = document.querySelector('[role="dialog"] input[placeholder="010-0000-0000"]')
+    typeInto(phone, '010-0000-0010')
+    act(() => phone.dispatchEvent(new FocusEvent('focusout', { bubbles: true })))
+    await waitSearch()
+
+    expect(document.body.textContent).toContain('이미 있는 고객이면 고르세요')
+    expect(button('차량 보기')).toBeUndefined() // 목록에서는 차량 추가만 연결(09 M-01)
+    click(button('이 고객에 차량 추가'))
+    await settle()
+    expect(location.pathname).toBe('/customers/10')
+    expect(location.state).toEqual({ listSearch: '?q=%EC%98%A4', openAddVehicle: true })
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
   })
 
   it('등록된 고객이 없으면 "등록된 고객이 없습니다."', async () => {
