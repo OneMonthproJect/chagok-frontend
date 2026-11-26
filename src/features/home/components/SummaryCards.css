@@ -1,0 +1,82 @@
+/* 홈 요약 숫자 — 디자인 v3.0 home-summary-row·home-summary-tile·summary-card. 색·크기는 --ck-* (#18) */
+.summary-cards {
+  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 12px;
+}
+.summary-card {
+  box-sizing: border-box;
+  width: min(250px, 28%);
+  min-height: 92px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid #ecedf1d9;
+  border-radius: 14px;
+  background: var(--ck-surface);
+  color: var(--ck-text-1);
+  box-shadow: 0 8px 24px #11182709;
+}
+.summary-card p {
+  margin: 0;
+  color: var(--ck-text-4);
+  font-size: var(--ck-fs-meta);
+}
+.summary-card__row {
+  margin-top: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+}
+.summary-card strong {
+  font-size: 25px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.summary-card strong span {
+  margin-left: 3px;
+  color: var(--ck-text-4);
+  font-size: var(--ck-fs-small);
+  font-weight: 500;
+}
+.summary-card__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ck-brand);
+  font: inherit;
+  font-size: var(--ck-fs-meta);
+  font-weight: 700;
+  cursor: pointer;
+}
+.summary-card--brand {
+  border-color: transparent;
+  background: var(--ck-brand);
+  color: #fff;
+  box-shadow: 0 10px 25px #1f2bff38;
+}
+.summary-card--brand p,
+.summary-card--brand strong span { color: #ffffffe6; }
+.summary-card__pill {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--ck-radius-pill);
+  background: #fff;
+  color: var(--ck-brand);
+  font: inherit;
+  font-size: var(--ck-fs-meta);
+  font-weight: 700;
+  cursor: pointer;
+}
+.summary-card__link:focus-visible,
+.summary-card__pill:focus-visible { outline: 3px solid var(--ck-brand-ring); outline-offset: 2px; }
+.summary-cards--error { display: block; }
+
+@media (max-width: 1023px) {
+  .summary-card { width: calc(50% - 6px); }
+}

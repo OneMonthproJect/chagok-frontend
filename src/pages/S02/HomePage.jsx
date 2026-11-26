@@ -8,12 +8,15 @@ import { formatFullDate, isValidDate, todaySeoul } from '@/features/reservation/
 import { parseReservationId } from '@/features/reservation/panelFlow'
 import { useDayReservations } from '@/features/reservation/useDayReservations'
 import { useReservationPanel } from '@/features/reservation/useReservationPanel'
+import SummaryCards from '@/features/home/components/SummaryCards.jsx'
+import { useHomeSummary } from '@/features/home/useHomeSummary'
 import VehiclePicker from '@/features/customer/components/VehiclePicker.jsx'
 import CustomerVehicleFormModal from '@/features/customer/components/CustomerVehicleFormModal.jsx'
 import Button from '@/shared/ui/Button.jsx'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import { PATHS, QUERY, vehiclePath } from '@/app/paths'
+import { appRoutes } from '@/app/routes'
 import { emptyDayMessage, listTitle } from './homeText'
 import { useServiceItems } from './useServiceItems'
 import mascotLaptop from './assets/home-mascot-laptop.png'
@@ -27,10 +30,20 @@ import './HomePage.css'
 //   [상세 이동]은 S-07(/vehicles/:vehicleId). [변경]은 M-02 변경 모드(#25).
 // - [예약 등록](머리·빈 날) → M-02 (#25). 차량은 customer의 VehiclePicker, 신규는 M-01(CustomerVehicleFormModal), 항목은 13 —
 //   여기서 조립한다(feature끼리 import 금지). 등록·변경되면 그 날짜 목록으로 옮겨 다시 불러온다.
-// - 다음 이슈가 이어서 고친다: 요약 숫자(#28), 캘린더(P0-나머지 #30·#36).
+// - 요약 숫자(#28, 08 04): 오늘 예약·오늘 연락할 고객. 다른 날짜를 볼 때만 "목록 →"(오늘로), [보기 →]는 S-04 라우트가 있을 때만(→ /targets).
+//   예약이 바뀌면(등록·변경·409) 함께 다시 부른다.
+// - 다음 이슈가 이어서 고친다: 캘린더(P0-나머지 #30·#36).
 
 /** 패널을 목록에서 열었는지(이때만 닫기 = 뒤로 가기). 주소로 바로 들어왔으면 쿼리만 지운다 */
 const PANEL_FROM_LIST = 'panelFromList'
+
+/**
+ * S-04 화면이 있을 때만 [보기 →]를 그린다(연결 안 된 버튼 없음).
+ * app/routes는 이 파일(S-02 route.jsx)을 불러오면서 만들어지므로(순환), 모듈을 읽는 시점이 아니라 그릴 때 확인한다.
+ */
+function hasTargetsPage() {
+  return appRoutes.some((route) => route.path === PATHS.TARGETS)
+}
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -39,7 +52,8 @@ export default function HomePage() {
   const today = todaySeoul()
   const queryDate = searchParams.get(QUERY.DATE)
   const date = isValidDate(queryDate) ? queryDate : today
-  const { state, reload } = useDayReservations(date)
+  const { state, reload: reloadList } = useDayReservations(date)
+  const summary = useHomeSummary()
   const reservationId = parseReservationId(searchParams.get(QUERY.RESERVATION)) // undefined면 패널 닫힘
   const panelOpen = reservationId !== undefined
   const openedFromList = location.state?.[PANEL_FROM_LIST] === true
@@ -47,6 +61,12 @@ export default function HomePage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [registerQuery, setRegisterQuery] = useState(null) // M-01을 열 때의 검색어 (null = 닫힘)
   const pickVehicleRef = useRef(null) // M-02 안의 차량 선택 함수 (M-01로 새로 등록한 차량을 채울 때)
+
+  /** 목록과 요약을 함께 다시 부른다 (예약이 바뀐 뒤) */
+  function reload() {
+    reloadList()
+    summary.reload()
+  }
 
   function changeDate(next) {
     const params = new URLSearchParams(searchParams)
@@ -78,7 +98,10 @@ export default function HomePage() {
   function showSaved(saved) {
     const savedDate = saved.reservedAt.slice(0, 10)
     if (savedDate === date) reload()
-    else changeDate(savedDate)
+    else {
+      changeDate(savedDate) // 날짜가 바뀌면 목록은 새로 불린다
+      summary.reload()
+    }
   }
 
   function handleCreated(saved) {
@@ -109,6 +132,13 @@ export default function HomePage() {
         </div>
       </header>
 
+      <SummaryCards
+        state={summary.state}
+        onReload={summary.reload}
+        onShowToday={date !== today ? () => changeDate(today) : undefined}
+        onShowTargets={hasTargetsPage() ? () => navigate(PATHS.TARGETS) : undefined}
+      />
+
       <div className="home-layout">
         <section className="home-card" aria-labelledby="home-list-title">
           <div className="home-card__head">
@@ -123,7 +153,7 @@ export default function HomePage() {
             {state.kind === 'loading' && <p className="home-state">예약을 불러오는 중…</p>}
 
             {state.kind === 'error' && (
-              <ErrorNotice title="예약을 불러오지 못했습니다." error={state.error} onRetry={reload} />
+              <ErrorNotice title="예약을 불러오지 못했습니다." error={state.error} onRetry={reloadList} />
             )}
 
             {state.kind === 'ok' && state.items.length === 0 && (

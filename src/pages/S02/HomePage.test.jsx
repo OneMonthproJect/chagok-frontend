@@ -393,3 +393,39 @@ describe('S-02 예약 등록·변경 (M-02)', () => {
     expect(button('변경', panel())).toBeUndefined()
   })
 })
+
+// 요약 숫자 (chagok-frontend#28, 08 04): 서버 숫자 그대로, 다른 날짜에서만 "목록 →", 04 실패해도 목록·패널은 그대로
+describe('S-02 요약 숫자', () => {
+  const home = { date: '2026-11-23', todayReservationCount: 2, todayContactCount: 5, todayReservations: [] }
+  const withHome = (respond) => {
+    const base = fetchMock.getMockImplementation()
+    fetchMock.mockImplementation((url, init) => (url === '/api/home' ? Promise.resolve(respond()) : base(url, init)))
+  }
+
+  it('오늘 예약 2건·오늘 연락할 고객 5명 (07 7.5)', async () => {
+    withHome(() => ok(home))
+    renderHome('/')
+    await settle()
+    const cards = document.querySelector('.summary-cards').textContent
+    expect(cards).toContain('2건')
+    expect(cards).toContain('5명')
+    expect(button('목록 →')).toBeUndefined() // 오늘을 보고 있으면 오늘로 갈 버튼이 없다
+  })
+
+  it('다른 날짜를 보고 있으면 "목록 →"으로 오늘로 돌아온다', async () => {
+    withHome(() => ok(home))
+    renderHome('/?date=2026-01-05')
+    await settle()
+    click(button('목록 →'))
+    await settle()
+    expect(location.search).toBe('')
+  })
+
+  it('04가 실패해도 목록은 그대로 보이고, 요약만 안내 + 다시 시도', async () => {
+    withHome(() => fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.'))
+    renderHome('/')
+    await settle()
+    expect(document.body.textContent).toContain('요약 숫자를 불러오지 못했습니다.')
+    expect(document.querySelectorAll('.rsv-row').length).toBe(1)
+  })
+})
