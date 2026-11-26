@@ -80,11 +80,15 @@ beforeEach(() => {
     list: () => ok({ from: 'x', to: 'x', items: [LIST_ITEM] }),
     panel: () => ok(panelExample()),
     complete: () => ok({ reservationId: 4, status: 'COMPLETED', vehicleId: 10, version: 1 }),
+    cancel: () => ok({ reservationId: 4, status: 'CANCELED', vehicleId: 10, version: 1 }),
+    noShow: () => ok({ reservationId: 4, status: 'NO_SHOW', vehicleId: 10, version: 1 }),
   }
   fetchMock = vi.fn((url, init) => {
     if (url.startsWith('/api/reservations?')) return Promise.resolve(handlers.list())
     if (url === '/api/reservations/4/panel') return Promise.resolve(handlers.panel())
     if (url === '/api/reservations/4/complete' && init.method === 'POST') return Promise.resolve(handlers.complete(init))
+    if (url === '/api/reservations/4/cancel' && init.method === 'POST') return Promise.resolve(handlers.cancel(init))
+    if (url === '/api/reservations/4/no-show' && init.method === 'POST') return Promise.resolve(handlers.noShow(init))
     return Promise.resolve(fail(404, 'NOT_FOUND', '찾을 수 없습니다.'))
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -120,6 +124,9 @@ const calls = (match) => fetchMock.mock.calls.filter(([url, init]) => match(url,
 const panelCalls = () => calls((url) => url === '/api/reservations/4/panel')
 const completeCalls = () => calls((url) => url.endsWith('/complete'))
 const listCalls = () => calls((url) => url.startsWith('/api/reservations?'))
+const cancelCalls = () => calls((url) => url.endsWith('/cancel'))
+const noShowCalls = () => calls((url) => url.endsWith('/no-show'))
+const dialog = () => document.querySelector('.modal')
 
 describe('S-02 예약 상세 패널', () => {
   it('줄을 누르면 ?reservation=으로 패널을 열고 17을 부른다, 닫기는 쿼리를 지운다(뒤로 가기)', async () => {
@@ -391,6 +398,129 @@ describe('S-02 예약 등록·변경 (M-02)', () => {
     renderHome('/?reservation=4')
     await settle()
     expect(button('변경', panel())).toBeUndefined()
+  })
+})
+
+// 취소·노쇼 (chagok-frontend#31, 08 20·21, 09 S-02 5번): 확인 대화상자 → 읽은 version 전송 → 성공·409 모두 패널·목록 다시 조회
+describe('S-02 예약 취소·노쇼', () => {
+  it('[취소] → 확인 대화상자(대상·문구, 처음 초점은 돌아가기) → 확인하면 version을 한 번 보내고 패널·목록을 다시 부른다', async () => {
+    let status = 'RESERVED'
+    handlers.panel = () => ok(panelExample({ reservation: { status, version: status === 'RESERVED' ? 3 : 4, needsAction: false } }))
+    handlers.cancel = () => {
+      status = 'CANCELED'
+      return ok({ reservationId: 4, status: 'CANCELED', vehicleId: 10, version: 4 })
+    }
+    renderHome('/?reservation=4')
+    await settle()
+    const listBefore = listCalls().length
+    click(button('취소', panel()))
+    await settle()
+
+    expect(cancelCalls()).toHaveLength(0) // 확인 전에는 보내지 않는다
+    expect(dialog().textContent).toContain('예약을 취소할까요?')
+    expect(dialog().textContent).toContain('55차0010 · 오세훈')
+    expect(dialog().textContent).toContain('11월 23일 (월) 15:00')
+    expect(dialog().textContent).toContain('취소한 예약은 정정으로만 되돌릴 수 있습니다.')
+    expect(document.activeElement.textContent).toBe('돌아가기')
+
+    click(button('예약 취소', dialog()))
+    await settle()
+    await settle()
+
+    expect(cancelCalls()).toHaveLength(1)
+    expect(JSON.parse(cancelCalls()[0][1].body)).toEqual({ version: 3 })
+    expect(dialog()).toBeNull()
+    expect(panelCalls()).toHaveLength(2)
+    expect(listCalls().length).toBe(listBefore + 1)
+    expect(panel().querySelector('.rsv-status').textContent).toBe('취소')
+    expect(panel().querySelector('.error-notice--info').textContent).toContain('예약을 취소했습니다.')
+    expect(button('취소', panel())).toBeUndefined() // 끝난 예약은 버튼 없음
+  })
+
+  it('[돌아가기]는 보내지 않고 닫는다', async () => {
+    renderHome('/?reservation=4')
+    await settle()
+    click(button('취소', panel()))
+    await settle()
+    click(button('돌아가기', dialog()))
+    await settle()
+    expect(dialog()).toBeNull()
+    expect(cancelCalls()).toHaveLength(0)
+    expect(panel()).not.toBeNull() // 패널은 그대로
+  })
+
+  it('[노쇼] → 확인하면 21을 보낸다', async () => {
+    renderHome('/?reservation=4')
+    await settle()
+    click(button('노쇼', panel()))
+    await settle()
+    expect(dialog().textContent).toContain('노쇼로 처리할까요?')
+    click(button('노쇼 처리', dialog()))
+    await settle()
+    expect(noShowCalls()).toHaveLength(1)
+    expect(JSON.parse(noShowCalls()[0][1].body)).toEqual({ version: 0 })
+  })
+
+  it('409 INVALID_STATUS_TRANSITION: 패널·목록을 다시 불러 최신 상태를 보이고 다시 보내지 않는다', async () => {
+    let status = 'RESERVED'
+    handlers.panel = () => ok(panelExample({ reservation: { status, needsAction: status === 'RESERVED' } }))
+    handlers.noShow = () => {
+      status = 'COMPLETED' // 다른 직원이 이미 방문 완료
+      return fail(409, 'INVALID_STATUS_TRANSITION', '지금 상태에서는 할 수 없는 변경입니다.')
+    }
+    renderHome('/?reservation=4')
+    await settle()
+    const listBefore = listCalls().length
+    click(button('노쇼', panel()))
+    await settle()
+    click(button('노쇼 처리', dialog()))
+    await settle()
+    await settle()
+
+    expect(noShowCalls()).toHaveLength(1) // 자동 재전송 없음
+    expect(panelCalls()).toHaveLength(2)
+    expect(listCalls().length).toBe(listBefore + 1)
+    expect(panel().querySelector('.rsv-status').textContent).toBe('방문 완료')
+    expect(panel().querySelector('.error-notice--warn').textContent).toContain('지금 상태에서는 할 수 없는 변경입니다.')
+    expect(button('노쇼', panel())).toBeUndefined()
+  })
+
+  it('500: 오류 안내만, 재조회·재전송 없음', async () => {
+    handlers.cancel = () => fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.')
+    renderHome('/?reservation=4')
+    await settle()
+    click(button('취소', panel()))
+    await settle()
+    click(button('예약 취소', dialog()))
+    await settle()
+    await settle()
+    expect(cancelCalls()).toHaveLength(1)
+    expect(panelCalls()).toHaveLength(1)
+    expect(panel().querySelector('.error-notice--error').textContent).toContain('일시적인 오류가 발생했습니다.')
+  })
+
+  it('노쇼는 시각이 지난 "예약"(needsAction)만, 취소는 "예약"·"진행중"', async () => {
+    handlers.panel = () => ok(panelExample({ reservation: { status: 'RESERVED', needsAction: false } }))
+    renderHome('/?reservation=4')
+    await settle()
+    expect(button('취소', panel())).toBeDefined()
+    expect(button('노쇼', panel())).toBeUndefined() // 시각 전
+
+    cleanup()
+    handlers.panel = () => ok(panelExample({ reservation: { status: 'IN_PROGRESS', needsAction: false } }))
+    renderHome('/?reservation=4')
+    await settle()
+    expect(button('취소', panel())).toBeDefined()
+    expect(button('노쇼', panel())).toBeUndefined() // 진행중은 노쇼 불가
+
+    for (const status of ['COMPLETED', 'CANCELED', 'NO_SHOW']) {
+      cleanup()
+      handlers.panel = () => ok(panelExample({ reservation: { status, needsAction: false } }))
+      renderHome('/?reservation=4')
+      await settle()
+      expect(button('취소', panel())).toBeUndefined()
+      expect(button('노쇼', panel())).toBeUndefined()
+    }
   })
 })
 

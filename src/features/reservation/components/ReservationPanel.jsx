@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Button from '@/shared/ui/Button.jsx'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
@@ -17,6 +17,7 @@ import {
   reservedAtText,
 } from '../panelFlow'
 import PanelActions from './PanelActions.jsx'
+import PanelConfirmDialog from './PanelConfirmDialog.jsx'
 import RecentVisits from './RecentVisits.jsx'
 import ReservationStatusBadge from './ReservationStatusBadge.jsx'
 import './ReservationPanel.css'
@@ -25,12 +26,21 @@ import './ReservationPanel.css'
 // 순서: 예약(일시·상태·목적) → 고객·차량(전체 연락처, D-40) → 점검 주기 요약 → 최근 방문 2회 + [상세 이동] → 버튼.
 // 데이터·요청은 쓰는 화면이 useReservationPanel로 들고 넘긴다. 이동(S-07·S-08)과 닫기도 화면이 정한다(features는 경로를 모름).
 // 넓은 화면(1024px 이상)은 목록 오른쪽, 좁은 화면은 화면 전체를 덮는다(CSS). Esc·닫기 버튼으로 닫는다.
-// panel: useReservationPanel 결과 { status, data, error, notice, reload, complete }
+// panel: useReservationPanel 결과 { status, data, error, notice, reload, complete, changeStatus }
 // onEdit(data): 있으면 상태 "예약"에서 [변경]을 보인다(M-02 변경 모드는 쓰는 화면이 연다, #25)
-export default function ReservationPanel({ panel, onClose, onComplete, onEdit, onOpenVehicle }) {
+// onStatusChange(action): 있으면 [취소]·[노쇼]를 보인다(#31). 확인 대화상자에서 확인하면 부른다(Promise) — 요청·목록 갱신은 쓰는 화면이 한다.
+export default function ReservationPanel({ panel, onClose, onComplete, onEdit, onStatusChange, onOpenVehicle }) {
   const { status, data, error, notice, reload } = panel
   const headingRef = useRef(null)
   const reservationId = data?.reservation.reservationId
+  const [confirming, setConfirming] = useState(null) // 'cancel' | 'noShow' | null
+
+  // 다른 예약으로 바뀌면 열린 확인 대화상자를 닫는다(대상이 바뀐 채 확인되지 않게)
+  const [confirmFor, setConfirmFor] = useState(reservationId)
+  if (confirmFor !== reservationId) {
+    setConfirmFor(reservationId)
+    setConfirming(null)
+  }
 
   // 패널을 열거나 다른 예약으로 바뀌면 제목에 초점(화면 읽기 프로그램이 새 내용을 읽게)
   useEffect(() => {
@@ -38,7 +48,8 @@ export default function ReservationPanel({ panel, onClose, onComplete, onEdit, o
   }, [reservationId])
 
   function handleKeyDown(event) {
-    if (event.key === 'Escape') onClose()
+    // 확인 대화상자의 Esc는 대화상자만 닫는다(포털이라도 React 이벤트는 패널로 올라온다)
+    if (event.key === 'Escape' && !confirming) onClose()
   }
 
   return (
@@ -53,7 +64,8 @@ export default function ReservationPanel({ panel, onClose, onComplete, onEdit, o
       </header>
 
       <div className="rsv-panel__scroll">
-        {notice && (
+        {notice?.tone === 'info' && <ErrorNotice tone="info" title={notice.message} />}
+        {notice && notice.tone !== 'info' && (
           <ErrorNotice
             tone={notice.tone}
             error={notice.error}
@@ -68,11 +80,22 @@ export default function ReservationPanel({ panel, onClose, onComplete, onEdit, o
         <footer className="rsv-panel__footer">
           <PanelActions
             status={data.reservation.status}
+            needsAction={data.reservation.needsAction}
             disabled={status !== 'ready'}
             onComplete={onComplete}
             onEdit={onEdit ? () => onEdit(data) : undefined}
+            onConfirm={onStatusChange ? setConfirming : undefined}
           />
         </footer>
+      )}
+
+      {confirming && data && (
+        <PanelConfirmDialog
+          action={confirming}
+          target={{ plateNumber: data.vehicle.plateNumber, customerName: data.customer.name, reservedAt: data.reservation.reservedAt }}
+          onConfirm={() => onStatusChange(confirming)}
+          onClose={() => setConfirming(null)}
+        />
       )}
     </aside>
   )

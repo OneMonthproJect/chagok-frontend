@@ -4,7 +4,7 @@ import { getReservations } from './api'
 import { addDays, formatDayLabel, formatFullDate, formatTime, isValidDate, nowSeoul, todaySeoul } from './dates'
 import { reservationStatusLabel } from './status'
 import {
-  mockComplete, mockCreateReservation, mockGetPanel, mockGetReservations, mockUpdate, resetReservationMocks,
+  mockCancel, mockComplete, mockCreateReservation, mockGetPanel, mockGetReservations, mockNoShow, mockUpdate, resetReservationMocks,
 } from './mocks'
 import type { ReservationPeriodResponse } from './types'
 
@@ -119,6 +119,28 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
     expect((mockUpdate(1, { version: 1, purpose: { memo: '메모' } }).body as { error: { code: string } }).error.code).toBe('INVALID_STATUS_TRANSITION')
     expect(mockUpdate(3, { version: 0 }).status).toBe(400) // 바꿀 필드 없음 (R14)
     expect(mockUpdate(3, { version: 0, purpose: { memo: '메모' } }).status).toBe(200)
+  })
+
+  it('20·21: 취소는 예약·진행중(시각 무관), 노쇼는 시각이 지난 예약만. 상태 → version → 시각 순', () => {
+    const code = (r: { body: unknown }) => (r.body as { error: { code: string } }).error.code
+    expect(code(mockCancel(3, {} as never))).toBe('INVALID_INPUT')
+    expect(mockCancel(999, { version: 0 }).status).toBe(404)
+    expect(code(mockCancel(3, { version: 5 }))).toBe('CONCURRENT_MODIFICATION')
+    const canceled = mockCancel(3, { version: 0 }) // 이틀 뒤 예약도 취소 가능
+    expect(canceled.status).toBe(200)
+    expect((canceled.body as { data: unknown }).data).toEqual({ reservationId: 3, status: 'CANCELED', vehicleId: 2, version: 1 })
+    expect(code(mockCancel(3, { version: 1 }))).toBe('INVALID_STATUS_TRANSITION') // 끝난 예약
+
+    expect(code(mockNoShow(1, { version: 5 }))).toBe('CONCURRENT_MODIFICATION') // version이 시각보다 먼저
+    expect(code(mockNoShow(4, { version: 5 }))).toBe('CONCURRENT_MODIFICATION')
+    expect((mockNoShow(4, { version: 0 }).body as { data: { status: string } }).data.status).toBe('NO_SHOW') // 어제 예약
+    expect(code(mockNoShow(4, { version: 1 }))).toBe('INVALID_STATUS_TRANSITION')
+    const panel = mockGetPanel(4).body as { data: { reservation: { status: string; needsAction: boolean } } }
+    expect(panel.data.reservation).toMatchObject({ status: 'NO_SHOW', needsAction: false })
+  })
+
+  it('21: 시각 전 예약은 노쇼 409', () => {
+    expect((mockNoShow(3, { version: 0 }).body as { error: { code: string } }).error.code).toBe('INVALID_STATUS_TRANSITION')
   })
 
   it('17: 패널은 08 모양, 없는 예약은 404', () => {
