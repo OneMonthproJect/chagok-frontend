@@ -5,6 +5,7 @@ import {
   CUSTOMER_STATEMENT_LABEL,
   MORE_FAILED_MESSAGE,
   NO_HISTORY_MESSAGE,
+  RECORD_VISIT_LABEL,
   RECORD_TYPE_LABELS,
   SHOW_MORE_LABEL,
   dateText,
@@ -17,10 +18,10 @@ import './visitHistory.css'
 // - 순서는 서버가 준 순서 그대로(visitDate 내림차순, 같으면 나중에 저장한 방문 먼저). 화면이 다시 정렬하지 않는다.
 // - 방문 한 줄: 방문일 · 주행거리 · 담당 정비사, 그 아래 기록(항목 · 구분 · 메모). 외부 기록은 "고객 진술" 꼬리표.
 //   기록마다 자기 날짜가 있다(외부는 고객이 말한 날짜) — 방문일과 다르면 기록 옆에 보인다.
-// - 이력이 없으면 "정비 이력이 없습니다." 이어지는 "방문 기록" 버튼은 S-08(#23) 머지 뒤 #22 후속 PR이 붙인다(연결 안 된 버튼 금지, 09 0장).
+// - 이력이 없으면 "정비 이력이 없습니다." + "방문 기록"(09 5장). 버튼은 화면이 onRecordVisit을 넘길 때만 그린다(연결 안 된 버튼 금지, 09 0장).
 // - 더 보기는 사람이 누를 때만 다음 쪽을 받는다. 실패하면 받은 이력은 그대로 두고 그 자리에서 다시 누르게 한다(POL-125).
 // - 수정 버튼·"수정됨"·출처 "우리 정비소"(P0-나머지 #34)는 그 이슈가 더한다.
-// props: visits(08 11 items[] 이어 붙인 것), totalElements, hasMore, loadingMore, moreError, onLoadMore
+// props: visits(08 11 items[] 이어 붙인 것), totalElements, hasMore, loadingMore, moreError, onLoadMore, onRecordVisit(선택)
 
 function RecordLine({ record, visitDate }) {
   const external = record.type === 'EXTERNAL'
@@ -35,7 +36,15 @@ function RecordLine({ record, visitDate }) {
   )
 }
 
-export default function VisitHistory({ visits, totalElements, hasMore = false, loadingMore = false, moreError = null, onLoadMore }) {
+export default function VisitHistory({
+  visits,
+  totalElements,
+  hasMore = false,
+  loadingMore = false,
+  moreError = null,
+  onLoadMore,
+  onRecordVisit,
+}) {
   return (
     <section className="visit-history" aria-labelledby="visit-history-title">
       <header className="visit-history__header">
@@ -45,7 +54,11 @@ export default function VisitHistory({ visits, totalElements, hasMore = false, l
         <p className="visit-history__meta">{visitCountText(totalElements)}</p>
       </header>
       {visits.length === 0 ? (
-        <EmptyState title={NO_HISTORY_MESSAGE} compact />
+        <EmptyState
+          title={NO_HISTORY_MESSAGE}
+          compact
+          action={onRecordVisit ? { label: RECORD_VISIT_LABEL, onClick: onRecordVisit } : undefined}
+        />
       ) : (
         <ol className="visit-history__list">
           {visits.map((visit) => (

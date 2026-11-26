@@ -7,7 +7,8 @@ import VehicleDetailPage from './VehicleDetailPage.jsx'
 
 // S-07 차량 상세 (09 S-07·5장, 04 F-CUS-05, 08 09·10·11, #22 테스트):
 // 차량·고객(전체 연락처, 고객명 → S-06), 점검 주기 표(상태 서버 값 그대로, "정상·불량" 표현 없음), 방문 이력(최신순·더 보기·"고객 진술"),
-// 이력 없음 문구, 404(남의 차량 X2·X6) → 찾을 수 없음, 조회 실패 → 사람이 누르는 다시 불러오기, 연결 안 된 버튼 없음
+// 이력 없음 문구 + "방문 기록", 404(남의 차량 X2·X6) → 찾을 수 없음, 조회 실패 → 사람이 누르는 다시 불러오기,
+// [방문 기록] → S-08, [예약] → M-02(차량 채움), 연결 안 된 버튼(수정·비활성화) 없음
 
 let fetchMock
 let location
@@ -107,6 +108,7 @@ function renderPage(entry = '/vehicles/4') {
         <Route path="/customers/:customerId" element={<p>S-06</p>} />
         <Route path="/customers" element={<p>S-05</p>} />
         <Route path="/" element={<p>S-02</p>} />
+        <Route path="/visits/new" element={<p>S-08</p>} />
       </Routes>
       <LocationProbe />
     </MemoryRouter>,
@@ -191,21 +193,59 @@ describe('S-07 차량 상세', () => {
     expect(second.querySelector('.visit-record__date')).toBeNull() // 방문일과 같으면 다시 쓰지 않음
   })
 
-  it('이력이 없으면 "정비 이력이 없습니다." — 방문 기록 버튼은 아직 없다 (S-08 #23 머지 전)', async () => {
+  it('이력이 없으면 "정비 이력이 없습니다." + "방문 기록" → S-08 (09 5장)', async () => {
     serve({ visits: ok(VISITS_PAGE([])) })
     renderPage()
     await settle()
-    expect(document.querySelector('.visit-history').textContent).toContain('정비 이력이 없습니다.')
+    const historyBox = document.querySelector('.visit-history')
+    expect(historyBox.textContent).toContain('정비 이력이 없습니다.')
     expect(visitItems()).toHaveLength(0)
-    expect(document.querySelectorAll('button')).toHaveLength(0)
+    click(historyBox.querySelector('button'))
+    expect(location.pathname).toBe('/visits/new')
+    expect(location.search).toBe('?vehicleId=4')
   })
 
-  it('연결 안 된 버튼이 없다: 방문 기록·예약·수정·비활성화 (09 0장)', async () => {
+  it('머리 버튼은 [예약]·[방문 기록]만 — 수정(P0-나머지)·비활성화(P1)는 없다 (09 S-07·0장)', async () => {
     serve()
     renderPage()
     await settle()
-    expect(document.querySelectorAll('button')).toHaveLength(0)
-    for (const label of ['방문 기록', '예약', '수정', '비활성화']) expect(button(label)).toBeUndefined()
+    const labels = Array.from(document.querySelectorAll('.s07__actions button')).map((b) => b.textContent.trim())
+    expect(labels).toEqual(['예약', '방문 기록'])
+    for (const label of ['수정', '비활성화']) expect(button(label)).toBeUndefined()
+  })
+
+  it('[방문 기록] → S-08 `/visits/new?vehicleId=4` (09 S-07 → S-08)', async () => {
+    serve()
+    renderPage()
+    await settle()
+    click(button('방문 기록'))
+    await settle() // 공용 Button은 누른 뒤 한 번 비동기로 처리한다
+    expect(location.pathname).toBe('/visits/new')
+    expect(location.search).toBe('?vehicleId=4')
+  })
+
+  it('[예약] → M-02가 이 차량을 채워 열리고, 항목(08 13)은 열 때만 부른다. 닫으면 S-07 그대로', async () => {
+    serve()
+    routes['/api/items'] = ok([
+      { itemId: 1, code: 'ENGINE_OIL', name: '엔진오일', cycleMonths: 6, cycleKm: 10000, active: true, sortOrder: 1 },
+    ])
+    renderPage()
+    await settle()
+    expect(calledPaths()).not.toContain('/api/items')
+
+    click(button('예약'))
+    await settle()
+    const dialog = document.querySelector('[role="dialog"]')
+    expect(dialog.textContent).toContain('예약 등록')
+    expect(dialog.textContent).toContain('78라0004')
+    expect(dialog.textContent).toContain('최지은')
+    expect(calledPaths()).toContain('/api/items')
+    expect(dialog.textContent).toContain('엔진오일')
+
+    click(button('취소'))
+    await settle()
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
+    expect(location.pathname).toBe('/vehicles/4')
   })
 
   it('더 보기: 사람이 누를 때 다음 쪽을 받아 뒤에 붙이고, 마지막 쪽이면 버튼이 사라진다', async () => {
@@ -251,6 +291,8 @@ describe('S-07 차량 상세', () => {
     expect(document.querySelector('.vehicle-header')).toBeNull()
     expect(document.querySelector('.item-status-list')).toBeNull()
     expect(button('다시 불러오기')).toBeUndefined()
+    expect(button('예약')).toBeUndefined() // 남의 차량에는 예약·방문 기록을 열지 않는다
+    expect(button('방문 기록')).toBeUndefined()
 
     click(button('홈으로'))
     expect(location.pathname).toBe('/')

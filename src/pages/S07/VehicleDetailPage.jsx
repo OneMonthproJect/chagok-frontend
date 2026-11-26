@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { PATHS, customerPath } from '@/app/paths'
+import { PATHS, QUERY, customerPath } from '@/app/paths'
+import Button from '@/shared/ui/Button.jsx'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import ItemStatusList from '@/shared/ui/ItemStatusList.jsx'
@@ -14,9 +16,11 @@ import {
 import { LOAD_FAILED_MESSAGE, RELOAD_LABEL } from '@/features/customer/searchFlow'
 import { useVehicleDetail } from '@/features/customer/useVehicleDetail'
 import VisitHistory from '@/features/maintenance/components/VisitHistory.jsx'
-import { ITEM_STATUS_NOTE, itemStatusTableRows } from '@/features/maintenance/maintenanceFlow'
+import { ITEM_STATUS_NOTE, RECORD_VISIT_LABEL, itemStatusTableRows } from '@/features/maintenance/maintenanceFlow'
 import { useItemStatus } from '@/features/maintenance/useItemStatus'
 import { useVisitHistory } from '@/features/maintenance/useVisitHistory'
+import ReservationFormModal from '@/features/reservation/components/ReservationFormModal.jsx'
+import { useServiceItems } from '@/pages/S02/useServiceItems'
 import './VehicleDetailPage.css'
 
 // S-07 차량 상세 (09 S-07·5장, F-CUS-05, 08 09·10·11, 디자인 v3.0 S-07-vehicle-detail).
@@ -26,9 +30,10 @@ import './VehicleDetailPage.css'
 // - 404(없는 차량·다른 정비소 차량, X2·X6)는 셋 중 하나라도 404면 "찾을 수 없습니다." + "홈으로"(09 5장, 있는지 드러내지 않음).
 //   그 밖의 실패는 영역마다 "불러오지 못했습니다." + 사람이 누르는 "다시 불러오기"(POL-125).
 // - 위쪽 "고객·차량"은 S-05로, 고객명은 S-06으로. S-05에서 이어 왔으면 그때의 검색어·쪽(`listSearch`)을 넘긴다.
-// - 아직 연결하지 않는 것(연결 안 된 버튼 금지, 09 0장):
-//   [방문 기록 → S-08]·이력 없음의 "방문 기록", [예약 → M-02] — S-08(#23)·M-02(#25) 머지 뒤 #22 후속 PR이 이 화면에 붙인다(#23·#25 범위에는 S-07이 없음).
-//   [수정](#32)·기록 수정(#34)은 그 이슈가, [비활성화]·약식 도면은 P1.
+// - 머리 오른쪽 버튼(09 S-07 버튼, 디자인 v3.0): [예약] → M-02(차량을 채워 염, 09 M-02) · [방문 기록] → S-08(`/visits/new?vehicleId=`).
+//   이력이 없을 때의 "방문 기록"(09 5장)도 S-08로. 차량을 불러온 뒤에만 보인다(찾을 수 없음·실패 때는 없음).
+//   M-02 저장 뒤 이동은 09에 없어 S-04처럼 닫기만 한다. 같은 차량의 유효 예약(409)이면 S-04처럼 S-02 그 예약 패널로.
+// - 아직 연결하지 않는 것(연결 안 된 버튼 금지, 09 0장): [수정](#32)·기록 수정(#34)은 그 이슈가, [비활성화]·약식 도면은 P1.
 
 export default function VehicleDetailPage() {
   const { vehicleId: rawId } = useParams()
@@ -38,21 +43,69 @@ export default function VehicleDetailPage() {
   const itemStatus = useItemStatus(vehicleId)
   const history = useVisitHistory(vehicleId)
   const listSearch = listSearchFrom(location.state)
+  const navigate = useNavigate()
+  const [reserving, setReserving] = useState(false)
+
+  const notFound = [vehicle.status, itemStatus.status, history.status].includes('notFound')
+  const loaded = vehicle.data && !notFound ? vehicle.data : null
+  const recordVisit = () =>
+    navigate(`${PATHS.VISIT_NEW}?${new URLSearchParams({ [QUERY.VEHICLE_ID]: String(loaded.vehicleId) })}`)
 
   return (
     <div className="s07">
       <header className="s07__header">
-        <Link className="s07__back" to={`${PATHS.CUSTOMERS}${listSearch}`}>
-          <span aria-hidden="true">‹</span> 고객·차량
-        </Link>
-        <h1 className="s07__title">차량 상세</h1>
+        <div>
+          <Link className="s07__back" to={`${PATHS.CUSTOMERS}${listSearch}`}>
+            <span aria-hidden="true">‹</span> 고객·차량
+          </Link>
+          <h1 className="s07__title">차량 상세</h1>
+        </div>
+        {loaded && (
+          <div className="s07__actions">
+            <Button variant="secondary" onClick={() => setReserving(true)}>
+              예약
+            </Button>
+            <Button onClick={recordVisit}>{RECORD_VISIT_LABEL}</Button>
+          </div>
+        )}
       </header>
-      <VehicleDetailBody vehicle={vehicle} itemStatus={itemStatus} history={history} listSearch={listSearch} />
+      <VehicleDetailBody
+        vehicle={vehicle}
+        itemStatus={itemStatus}
+        history={history}
+        listSearch={listSearch}
+        onRecordVisit={loaded ? recordVisit : undefined}
+      />
+      {loaded && reserving && (
+        <ReserveModal
+          vehicle={loaded}
+          onClose={() => setReserving(false)}
+          onOpenExisting={(reservationId) => {
+            setReserving(false)
+            navigate(`${PATHS.HOME}?${new URLSearchParams({ [QUERY.RESERVATION]: String(reservationId) })}`)
+          }}
+        />
+      )}
     </div>
   )
 }
 
-function VehicleDetailBody({ vehicle, itemStatus, history, listSearch }) {
+/** M-02 (차량을 채워 염). 예약 목적 항목(08 13)은 M-02를 열 때만 부른다 */
+function ReserveModal({ vehicle, onClose, onOpenExisting }) {
+  const items = useServiceItems()
+  return (
+    <ReservationFormModal
+      mode="create"
+      initialVehicle={{ vehicleId: vehicle.vehicleId, plateNumber: vehicle.plateNumber, customerName: vehicle.customer.name }}
+      items={items}
+      onSaved={onClose}
+      onClose={onClose}
+      onOpenExisting={onOpenExisting}
+    />
+  )
+}
+
+function VehicleDetailBody({ vehicle, itemStatus, history, listSearch, onRecordVisit }) {
   const navigate = useNavigate()
 
   if ([vehicle.status, itemStatus.status, history.status].includes('notFound')) {
@@ -104,7 +157,7 @@ function VehicleDetailBody({ vehicle, itemStatus, history, listSearch }) {
           <ItemStatusSection itemStatus={itemStatus} />
         </section>
         <section className="s07__card">
-          <VisitHistorySection history={history} />
+          <VisitHistorySection history={history} onRecordVisit={onRecordVisit} />
         </section>
       </div>
     </div>
@@ -126,7 +179,7 @@ function ItemStatusSection({ itemStatus }) {
   return <ItemStatusList variant="table" items={itemStatusTableRows(data.items)} loading={status === 'loading'} />
 }
 
-function VisitHistorySection({ history }) {
+function VisitHistorySection({ history, onRecordVisit }) {
   const { status, visits, last, error, reload, hasMore, loadingMore, moreError, loadMore } = history
   if (status === 'error') {
     return (
@@ -146,6 +199,7 @@ function VisitHistorySection({ history }) {
       loadingMore={loadingMore}
       moreError={moreError}
       onLoadMore={loadMore}
+      onRecordVisit={onRecordVisit}
     />
   )
 }
