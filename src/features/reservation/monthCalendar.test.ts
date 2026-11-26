@@ -57,15 +57,17 @@ describe('브라우저 시간대가 달라도 같은 칸 (08 0.1, #30 시간대 
   })
 })
 
-describe('Mock 42 (08 7.1 본문 모양) · 15 assignee', () => {
+describe('Mock 42 (08 7.1 JSON 예시 모양) · 15 assignee', () => {
   beforeEach(() => resetReservationMocks())
 
   const summary = (from: string, to: string) =>
-    (mockGetReservationSummary({ from, to }).body as { data: ReservationDaySummary[] }).data
+    (mockGetReservationSummary({ from, to }).body as { data: { from: string; to: string; items: ReservationDaySummary[] } }).data
 
   it('07 7.3 시드: 어제 1·오늘 2·D+2 1, 예약이 없는 날은 넣지 않는다', () => {
     const today = todaySeoul()
-    const days = summary(addDays(today, -1), addDays(today, 2))
+    const data = summary(addDays(today, -1), addDays(today, 2))
+    expect([data.from, data.to]).toEqual([addDays(today, -1), addDays(today, 2)]) // 요청 기간 그대로
+    const days = data.items
     const byDate = Object.fromEntries(days.map((d) => [d.date, d]))
     expect(byDate[today]).toEqual({ date: today, total: 2, reserved: 2, inProgress: 0, completed: 0, canceled: 0, noShow: 0 })
     expect(byDate[addDays(today, -1)].total).toBe(1)
@@ -74,10 +76,16 @@ describe('Mock 42 (08 7.1 본문 모양) · 15 assignee', () => {
     expect(days.map((d) => d.date)).toEqual([...days.map((d) => d.date)].sort())
   })
 
-  it('42일까지 받고 43일이면 400, from > to도 400', () => {
+  it('42일까지 받고 43일이면 400(to), from > to는 400(from), 누락은 그 파라미터 (08 7.1 42)', () => {
+    const field = (from: string, to: string) => {
+      const res = mockGetReservationSummary({ from, to })
+      return [res.status, (res.body as { error: { fieldErrors: { field: string }[] } | null }).error?.fieldErrors[0]?.field]
+    }
     expect(mockGetReservationSummary({ from: '2026-11-01', to: '2026-12-12' }).status).toBe(200)
-    expect(mockGetReservationSummary({ from: '2026-11-01', to: '2026-12-13' }).status).toBe(400)
-    expect(mockGetReservationSummary({ from: '2026-11-02', to: '2026-11-01' }).status).toBe(400)
+    expect(field('2026-11-01', '2026-12-13')).toEqual([400, 'to'])
+    expect(field('2026-11-02', '2026-11-01')).toEqual([400, 'from'])
+    expect(field('', '2026-11-01')).toEqual([400, 'from'])
+    expect(field('2026-11-01', '')).toEqual([400, 'to'])
   })
 
   it('15 목록에 07 7.3 담당(이름·colorIndex), 담당 없이 등록하면 Mock 기본 담당', () => {

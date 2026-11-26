@@ -165,9 +165,8 @@ export interface ReservationUpdateRequest {
 }
 
 // ---- 42 GET /api/reservations/summary?from=&to= (P0-나머지, F-RSV-05 월 보기) ----
-// 08 7.1 본문 그대로: 응답 data는 날짜별 요약의 배열. from·to 규칙은 15와 같다(최대 42일).
-// ❓ 08에 JSON 예시가 아직 없다("상세 JSON은 각 기능 착수 PR"). 모양·예약이 없는 날을 넣는지는 chagok-backend#40과 확인 중이며,
-//    확정되면 이 타입과 mocks를 08 예시에 맞춘다(chagok-frontend#30).
+// 08 7.1 42 JSON 예시(chagok-docs#143): data는 15와 같은 { from, to, items }. from·to 규칙은 15와 같다(최대 42일).
+// 예약이 한 건도 없는 날짜는 items에 없다(0건으로 본다). 취소만 있는 날은 들어가고 total 0. items는 date 오름차순.
 
 export interface ReservationSummaryQuery {
   from: string // YYYY-MM-DD
@@ -185,4 +184,8 @@ export interface ReservationDaySummary {
   noShow: number
 }
 
-export type ReservationSummaryResponse = ReservationDaySummary[]
+export interface ReservationSummaryResponse {
+  from: string // 요청 그대로
+  to: string
+  items: ReservationDaySummary[]
+}

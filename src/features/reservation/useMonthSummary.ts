@@ -20,10 +20,10 @@ export function useMonthSummary(date: string): { state: MonthSummaryState; reloa
     const requestId = ++requestRef.current
     setState({ kind: 'loading' })
     getReservationSummary({ from, to })
-      .then((days) => {
+      .then(({ items }) => {
         if (requestRef.current !== requestId) return
         const byDate: Record<string, ReservationDaySummary> = {}
-        for (const day of days) byDate[day.date] = day
+        for (const day of items) byDate[day.date] = day
         setState({ kind: 'ok', byDate })
       })
       .catch((error) => { if (requestRef.current === requestId) setState({ kind: 'error', error }) })

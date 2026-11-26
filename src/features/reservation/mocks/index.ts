@@ -131,12 +131,12 @@ export function mockGetReservations(query: ReservationPeriodQuery): MockResponse
   return ok({ from, to, items })
 }
 
-/** 08 42 — 날짜별 건수. total은 취소만 제외(진행중·노쇼 포함). 예약이 하나도 없는 날은 넣지 않는다(❓ #40 확인 중, types.ts) */
+/** 08 42 — 날짜별 건수. total은 취소만 제외(진행중·노쇼 포함). 예약이 하나도 없는 날은 넣지 않는다.
+ *  기간 위반의 fieldErrors 필드(08 7.1 42): 누락은 그 파라미터, from > to는 from, 42일 초과는 to */
 export function mockGetReservationSummary(query: ReservationSummaryQuery): MockResponse {
   const { from, to } = query
-  if (!from || !to || from > to || addDays(from, MAX_DAYS - 1) < to) {
-    return fail(400, 'INVALID_INPUT', '조회 기간을 확인해 주세요.', !from ? 'from' : 'to')
-  }
+  const invalidField = !from ? 'from' : !to ? 'to' : from > to ? 'from' : addDays(from, MAX_DAYS - 1) < to ? 'to' : null
+  if (invalidField) return fail(400, 'INVALID_INPUT', '조회 기간을 확인해 주세요.', invalidField)
   const byDate = new Map<string, ReservationDaySummary>()
   for (const r of reservations()) {
     const date = r.reservedAt.slice(0, 10)
@@ -150,7 +150,7 @@ export function mockGetReservationSummary(query: ReservationSummaryQuery): MockR
     else if (r.status === 'NO_SHOW') day.noShow += 1
     byDate.set(date, day)
   }
-  return ok([...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)))
+  return ok({ from, to, items: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)) })
 }
 
 /** 08 16 (P0-핵심: 담당은 서버가 채움) */

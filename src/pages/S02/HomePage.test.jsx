@@ -17,6 +17,8 @@ let handlers
 const jsonResponse = (status, body) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 const ok = (data) => jsonResponse(200, { success: true, data, error: null })
+/** 08 42 응답: data = { from, to, items } (from·to는 요청 그대로라 테스트에서는 보지 않음) */
+const summaryOk = (items) => ok({ from: 'x', to: 'x', items })
 const fail = (status, code, message) =>
   jsonResponse(status, { success: false, data: null, error: { code, message, fieldErrors: [], details: null } })
 
@@ -79,7 +81,7 @@ const LIST_ITEM = {
 beforeEach(() => {
   handlers = {
     list: () => ok({ from: 'x', to: 'x', items: [LIST_ITEM] }),
-    summary: () => ok([]),
+    summary: () => summaryOk([]),
     panel: () => ok(panelExample()),
     complete: () => ok({ reservationId: 4, status: 'COMPLETED', vehicleId: 10, version: 1 }),
   }
@@ -464,7 +466,7 @@ describe('S-02 월 캘린더 (F-RSV-05, #30)', () => {
   const day = (date, counts = {}) => ({ date, total: 0, reserved: 0, inProgress: 0, completed: 0, canceled: 0, noShow: 0, ...counts })
 
   it('그 달 42칸(일요일 시작)으로 42를 한 번 부르고, 칸의 숫자는 서버 값 그대로', async () => {
-    handlers.summary = () => ok([
+    handlers.summary = () => summaryOk([
       // total은 서버 값(취소 제외) — 화면이 상태별 숫자를 더해 6으로 만들지 않는다
       day('2030-03-10', { total: 3, reserved: 1, inProgress: 1, canceled: 2, noShow: 1 }),
       day('2030-03-11', { canceled: 1 }), // 취소만 있는 날: 총 건수 없이 취소 1
@@ -537,7 +539,7 @@ describe('S-02 월 캘린더 (F-RSV-05, #30)', () => {
     await settle()
     expect(summaryCalls()).toHaveLength(1)
 
-    handlers.summary = () => ok([day('2030-03-10', { total: 1, reserved: 1 })])
+    handlers.summary = () => summaryOk([day('2030-03-10', { total: 1, reserved: 1 })])
     click(button('다시 시도', document.querySelector('.mcal')))
     await settle()
     expect(summaryCalls()).toHaveLength(2)
@@ -565,12 +567,12 @@ describe('S-02 월 캘린더 (F-RSV-05, #30)', () => {
     handlers.summary = () => new Promise((resolve) => { resolveMarch = resolve })
     renderHome('/?date=2030-03-10')
     await settle()
-    handlers.summary = () => ok([day('2030-04-15', { total: 1, reserved: 1 })])
+    handlers.summary = () => summaryOk([day('2030-04-15', { total: 1, reserved: 1 })])
     click(document.querySelector('[aria-label="다음 달"]'))
     await settle()
     expect(cell('2030-04-15').querySelector('.mcal-day__total').textContent).toBe('1건')
 
-    resolveMarch(ok([day('2030-04-15', { total: 9, reserved: 9 })])) // 3월 달력 응답이 늦게 도착
+    resolveMarch(summaryOk([day('2030-04-15', { total: 9, reserved: 9 })])) // 3월 달력 응답이 늦게 도착
     await settle()
     expect(cell('2030-04-15').querySelector('.mcal-day__total').textContent).toBe('1건')
   })
