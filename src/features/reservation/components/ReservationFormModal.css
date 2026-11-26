@@ -1,0 +1,144 @@
+/* M-02 예약 등록·변경 — 디자인 v3.0 Modal-Create·Modal-Edit. 틀(머리·바닥·크기)은 공통 Modal(#18), 여기는 안쪽 배치만 */
+.rsv-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.rsv-form__section { display: flex; flex-direction: column; gap: 8px; }
+.rsv-form__label {
+  margin: 0;
+  color: var(--ck-text-2);
+  font-size: var(--ck-fs-meta);
+  font-weight: 700;
+}
+.rsv-form__vehicle {
+  margin: 0;
+  padding: 10px 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-brand-tint);
+  font-size: var(--ck-fs-small);
+}
+.rsv-form__vehicle b { color: var(--ck-text-1); font-size: var(--ck-fs-body); }
+.rsv-form__vehicle span { color: var(--ck-text-3); }
+.rsv-form__error {
+  margin: 0;
+  color: var(--ck-due-fg);
+  font-size: var(--ck-fs-meta);
+  font-weight: 600;
+}
+
+.rsv-form__notice {
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-radius: var(--ck-radius-md);
+  font-size: var(--ck-fs-small);
+}
+.rsv-form__notice p { margin: 0; }
+.rsv-form__notice--warn { border: 1px solid #f59e0b66; background: #fff9ec; color: #9a5800; }
+.rsv-form__link {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ck-brand);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.rsv-form__when {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.6fr) minmax(0, 1.4fr);
+  gap: 20px;
+  align-items: start;
+}
+.rsv-form__when input[type='date'] {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--ck-control-h);
+  padding: 0 12px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-md);
+  font: inherit;
+}
+.rsv-form__time { display: flex; flex-direction: column; gap: 8px; }
+
+/* 시각 */
+.time-slots { display: flex; flex-direction: column; gap: 10px; }
+.time-slots__grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+.time-slots__slot {
+  min-height: 40px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-sm);
+  background: var(--ck-surface);
+  color: var(--ck-text-1);
+  font: inherit;
+  font-size: var(--ck-fs-meta);
+  font-weight: 600;
+  cursor: pointer;
+}
+.time-slots__slot:hover:not(:disabled) { border-color: var(--ck-brand); }
+.time-slots__slot.is-selected { border-color: var(--ck-brand); background: var(--ck-brand); color: #fff; }
+.time-slots__slot:disabled { background: var(--ck-surface-muted); color: var(--ck-text-disabled); cursor: not-allowed; }
+.time-slots__slot:focus-visible,
+.purpose-chip:focus-within { outline: 3px solid var(--ck-brand-ring); outline-offset: 2px; }
+.time-slots__other {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ck-text-3);
+  font-size: var(--ck-fs-meta);
+}
+.time-slots__other select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-sm);
+  font: inherit;
+}
+
+/* 예약 목적 */
+.purpose-fields { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; }
+.purpose-fields legend { padding: 0; margin-bottom: 8px; color: var(--ck-text-2); font-size: var(--ck-fs-meta); font-weight: 700; }
+.purpose-fields legend small { color: var(--ck-text-4); font-weight: 500; }
+.purpose-fields__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.purpose-chip {
+  min-height: 40px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-pill);
+  background: var(--ck-surface);
+  font-size: var(--ck-fs-small);
+  cursor: pointer;
+}
+.purpose-chip.is-checked { border-color: var(--ck-brand); background: var(--ck-brand-tint); color: var(--ck-brand); font-weight: 600; }
+.purpose-fields__memo { margin-top: 6px; color: var(--ck-text-2); font-size: var(--ck-fs-meta); font-weight: 700; }
+.purpose-fields textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-radius-md);
+  font: inherit;
+  resize: vertical;
+}
+.purpose-fields__count { margin: 0; color: var(--ck-text-4); font-size: var(--ck-fs-caption); text-align: right; }
+
+@media (max-width: 1023px) {
+  .rsv-form__when { grid-template-columns: 1fr; }
+  .time-slots__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

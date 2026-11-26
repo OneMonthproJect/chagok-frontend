@@ -28,6 +28,14 @@
   font-size: var(--ck-fs-small, 14px);
 }
 
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
 .home-card {
   overflow: hidden;
   border: 1px solid #ecedf1d9;
