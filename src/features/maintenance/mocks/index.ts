@@ -1,6 +1,8 @@
 // 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 10~13의 사본이며 계약의 기준은 08이다.
 // 값은 07 7.2 A 정비소 시드의 「기대」 칸과 08 JSON 예시를 오늘(D) = 2026-11-24(08 0.1 예시 값)로 옮긴 고정 값이다.
 //   - item-status.json: 차량 id → 08 10 data (주행거리 없이 부른 결과). 상태·다음 정비일·다음 km는 시드 기대값을 적은 것이다(Mock이 계산하지 않음).
+//   - item-status-preview.json: 차량 id → mileage → 08 10 data (저장 전 미리보기, F-VIS-01). 08 10 JSON 예시 하나뿐이다:
+//     차량 4(78라0004, 시나리오 B)에 55,000 → 엔진오일 도래(KM, T8). 나머지 항목은 item-status.json 차량 4와 같다.
 //   - visits.json: 차량 id → 08 11 items[] 전체(최신순). 차량 10의 첫 방문은 08 11 JSON 예시와 같다.
 //   - items.json: 08 13 JSON 예시 그대로.
 // 로그인은 A 정비소 기준이고, A에 없는 차량 id(B 정비소 차량 12 포함, 07 7.4)는 404 NOT_FOUND(격리).
@@ -9,11 +11,13 @@
 
 import type { FieldError, MockResponse } from '@/shared/api/client'
 import type { ItemStatusResponse, Visit, VisitListParams, VisitSaveRequest } from '../types'
+import itemStatusPreviewFixture from './item-status-preview.json'
 import itemStatusFixture from './item-status.json'
 import itemsOk from './items.json'
 import visitsFixture from './visits.json'
 
 const ITEM_STATUS = itemStatusFixture as Record<string, ItemStatusResponse>
+const ITEM_STATUS_PREVIEW = itemStatusPreviewFixture as Record<string, Record<string, ItemStatusResponse>>
 const VISITS = visitsFixture as Record<string, Visit[]>
 const ACTIVE_ITEM_IDS = new Set(itemsOk.data.filter((item) => item.active).map((item) => item.itemId))
 
@@ -67,7 +71,8 @@ function todaySeoul(): string {
 
 /**
  * 08 10. mileage를 주면 범위만 확인하고 요청 값을 inputMileage로 돌려준다. 서버처럼 mileage 검사(400)가 차량 소속(404)보다 먼저.
- * LIMIT: km 판정은 흉내 내지 않는다(항목 상태는 날짜 기준 그대로) / 저장 전 미리보기 Mock은 #35(S-08 미리보기)가 더한다.
+ * 차량·mileage가 item-status-preview.json에 있으면(08 10 예시: 차량 4 · 55,000) 그 값을 그대로 돌려준다.
+ * LIMIT: km 판정은 흉내 내지 않는다 — 그 밖의 mileage는 항목 상태가 날짜 기준 그대로다(차량 4에 60,000을 넣어도 엔진오일 여유).
  */
 export function mockGetItemStatus(vehicleId: number, mileage?: number | null): MockResponse {
   if (mileage != null && !Number.isInteger(mileage)) return invalid([{ field: 'mileage', reason: M.TYPE_MISMATCH }])
@@ -75,6 +80,8 @@ export function mockGetItemStatus(vehicleId: number, mileage?: number | null): M
     return invalid([{ field: 'mileage', reason: M.QUERY_MILEAGE_RANGE }])
   }
   if (!isOwnedVehicle(vehicleId)) return notFound()
+  const preview = mileage == null ? undefined : ITEM_STATUS_PREVIEW[String(vehicleId)]?.[String(mileage)]
+  if (preview) return ok(preview)
   return ok({ ...ITEM_STATUS[String(vehicleId)], inputMileage: mileage ?? null })
 }
 

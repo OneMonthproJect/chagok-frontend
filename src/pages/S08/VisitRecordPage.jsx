@@ -14,6 +14,7 @@ import { useVehicleDetail } from '@/features/customer/useVehicleDetail'
 import { saveVisit } from '@/features/maintenance/api'
 import ItemRecordRows from '@/features/maintenance/components/ItemRecordRows.jsx'
 import VisitInfoForm from '@/features/maintenance/components/VisitInfoForm.jsx'
+import VisitPreview from '@/features/maintenance/components/VisitPreview.jsx'
 import { useServiceItems } from '@/features/maintenance/useServiceItems'
 import {
   VISIT_MESSAGES as M,
@@ -43,7 +44,8 @@ import './VisitRecordPage.css'
 //   응답 없음(NETWORK_ERROR)은 실제로는 저장됐을 수 있다(12는 요청마다 새 방문, 삭제 없음). 그래서 S-07을 새 창으로 여는 링크를 함께 보여
 //   입력값을 잃지 않고 이력에서 저장 여부를 확인한 뒤 다시 시도하게 한다(08 0.2 표).
 // - 차량을 바꾸면 입력을 처음으로 되돌린다(앞 차량의 주행거리·기록이 다른 차량에 저장되지 않게).
-// - 이번 이슈에 없는 것(09 0장 연결 안 된 버튼 금지): 저장 전 미리보기(#35), 거절·외부·점검 결과·담당 정비사(P0-나머지).
+// - 저장 전 미리보기(08 10, F-VIS-01, #35)는 VisitPreview가 주행거리 칸을 따라 부른다. 실패해도 입력·저장을 막지 않는다.
+// - 이번 이슈에 없는 것(09 0장 연결 안 된 버튼 금지): 거절·외부·점검 결과·담당 정비사(P0-나머지).
 //   디자인의 이탈 확인 대화상자·저장 토스트·관련 예약 표시는 09에 없어 넣지 않았다.
 
 const INFO_FIELDS = ['visitDate', 'mileage', 'modelYear']
@@ -220,6 +222,10 @@ export default function VisitRecordPage() {
                 onChange={changeField}
               />
             </div>
+          </section>
+
+          <section className="s08__card s08__card--padded" aria-labelledby="visit-preview-title">
+            <VisitPreview key={vehicleData.vehicleId} vehicleId={vehicleData.vehicleId} mileage={form.mileage} />
           </section>
 
           <section className="s08__card s08__card--padded" aria-labelledby="s08-records-title">

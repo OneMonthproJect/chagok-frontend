@@ -8,7 +8,8 @@ import VisitRecordPage from './VisitRecordPage.jsx'
 // S-08 방문·정비 기록 (09 S-08·5장, 04 F-MNT-01, 08 09·12·13, 05 POL-30·120~125, D-58, #23 테스트):
 // 차량 채움·검색, 방문일 기본 서울 오늘, 고른 항목만 12로 저장 → S-07, 0개면 저장 비활성, 저장 중 비활성·한 번만,
 // 400 칸 옆·입력값 유지, 500·네트워크는 사람이 누르는 다시 시도(자동 재전송 없음), 연식·주행거리 빈 차량(D-58),
-// 주행거리 경계(0·2,000,000 / 2,000,001·-1), 미래 방문일, 404 → 찾을 수 없음, 미리보기(10)는 부르지 않음(#35)
+// 주행거리 경계(0·2,000,000 / 2,000,001·-1), 미래 방문일, 404 → 찾을 수 없음,
+// 저장 전 미리보기(10, #35)는 방문 정보 아래에 있고 실패해도 저장을 막지 않음(자세한 동작은 VisitPreview.test.jsx)
 
 let fetchMock
 let location
@@ -24,6 +25,7 @@ beforeEach(() => {
     const handler = routes[`${method} ${path}`] ?? (method === 'GET' ? routes[path] : undefined)
     if (handler) return handler(init)
     if (method === 'GET' && path.startsWith('/api/customers')) return routes.customers?.() ?? Promise.reject(new Error(`unexpected ${path}`))
+    if (method === 'GET' && /^\/api\/vehicles\/\d+\/item-status/.test(path)) return (routes.itemStatus ?? ok(ITEM_STATUS))(init)
     return Promise.reject(new Error(`unexpected ${method} ${path}`))
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -71,6 +73,13 @@ const ITEMS = [
   item(5, 'TIRE', '타이어 상태 점검', 5),
 ]
 const SAVED = { vehicleId: 4, visitKey: '3f1c2b9e-0000-4000-8000-000000000012', savedCount: 2 }
+/** 08 10 (주행거리 없이). 미리보기 자체는 VisitPreview.test.jsx가 본다 */
+const ITEM_STATUS = {
+  vehicleId: 4,
+  asOf: '2026-11-24',
+  inputMileage: null,
+  items: ITEMS.map((i) => ({ itemId: i.itemId, code: i.code, name: i.name, status: 'UNKNOWN', dueReason: null, baseRecord: null, nextDueDate: null, nextDueMileage: null })),
+}
 
 function serve({ vehicle = ok(VEHICLE), items = ok(ITEMS), save = ok(SAVED), id = 4 } = {}) {
   routes[`/api/vehicles/${id}`] = vehicle
@@ -120,13 +129,17 @@ function choose(itemId, choice) {
 }
 
 describe('S-08 방문·정비 기록', () => {
-  it('차량(09)과 항목(13)을 불러 채운다 — 방문일 기본은 서울 오늘, 항목은 쓰는 것만 sortOrder 순, 미리보기(10)는 부르지 않음', async () => {
+  it('차량(09)과 항목(13)을 불러 채운다 — 방문일 기본은 서울 오늘, 항목은 쓰는 것만 sortOrder 순, 미리보기(10)는 날짜 기준으로', async () => {
     serve({ items: ok([...ITEMS, item(7, 'ENGINE_OIL', '쓰지 않는 항목', 7, false)]) })
     renderPage()
     await settle()
 
-    expect(fetchMock.mock.calls.map(([path]) => path).sort()).toEqual(['/api/items', '/api/vehicles/4'])
+    expect(fetchMock.mock.calls.map(([path]) => path).sort()).toEqual(['/api/items', '/api/vehicles/4', '/api/vehicles/4/item-status'])
     expect(document.querySelector('.vehicle-header__plate').textContent).toBe('78라0004')
+    // 순서: 방문 정보 → 미리보기 → 항목 기록 (09 S-08 2·3·4번)
+    const titles = Array.from(document.querySelectorAll('.s08 h2')).map((h) => h.textContent)
+    expect(titles.slice(-3)).toEqual(['방문 정보', '확인이 필요한 항목', '정비 항목 기록'])
+    expect(document.querySelector('.visit-preview__chip').textContent).toBe('저장 전 미리보기 — 기록되지 않음')
     expect(document.querySelector('.vehicle-header__customer').textContent).toContain('최지은')
     expect(input('visit-date').value).toBe('2026-11-24')
     expect(input('visit-date').getAttribute('max')).toBe('2026-11-24')
@@ -182,6 +195,21 @@ describe('S-08 방문·정비 기록', () => {
         { itemId: 5, type: 'INSPECT', memo: '앞 타이어 마모 확인' },
       ],
     })
+    expect(location.pathname).toBe('/vehicles/4')
+  })
+
+  it('미리보기(10) 실패는 미리보기 안에만 보이고 입력·저장을 막지 않는다', async () => {
+    serve()
+    routes.itemStatus = fail(500, 'INTERNAL_ERROR', '잠시 후 다시 시도해 주세요.')
+    renderPage()
+    await settle()
+
+    expect(document.querySelector('.visit-preview .error-notice').textContent).toContain('기록 저장에는 영향이 없습니다.')
+    expect(document.querySelectorAll('.error-notice')).toHaveLength(1)
+    choose(1, 'REPLACE')
+    click(saveButton())
+    await settle()
+    expect(posts()).toHaveLength(1)
     expect(location.pathname).toBe('/vehicles/4')
   })
 
