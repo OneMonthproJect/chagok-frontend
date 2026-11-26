@@ -53,7 +53,11 @@ const M = {
   QUERY_MILEAGE_RANGE: '0 이상 2,000,000 이하의 정수여야 합니다.',
   TYPE_MISMATCH: '형식이 올바르지 않습니다.',
   MILEAGE_RANGE: '0 이상 2,000,000 이하로 입력해 주세요.',
+  MECHANIC_NOT_IN_SHOP: '담당 정비사를 확인해 주세요.', // chagok-backend#102 resolveMechanic (머지 전, 바뀌면 맞춘다)
 } as const
+
+/** 07 7.1 A 정비소의 사장·정비사 id (08 36 예시와 같음). B 정비소 최사장(3)·없는 id는 X13 400 */
+const SHOP_STAFF_IDS = new Set([1, 2])
 
 function ok(data: unknown): MockResponse {
   return { status: 200, body: { success: true, data, error: null } }
@@ -112,13 +116,12 @@ export function mockGetVisits(vehicleId: number, params: VisitListParams = {}): 
 
 /** 08 12 요청에 P0-나머지 필드가 섞여 왔는지 보기 위한 느슨한 모양 */
 type LooseVisitSave = Partial<VisitSaveRequest> & {
-  mechanicId?: unknown
   records?: Array<Partial<VisitSaveRequest['records'][number]>>
 }
 
 /**
  * 08 12 — 검사 순서는 서버와 같다: 형식(필수·길이) → 차량 소속(404, X5) → P0-핵심에서 열지 않은 입력 → 방문일 →
- * 항목 중복 → 쓰는 항목(X11) → 차량이 비어 있을 때 필수(D-58) → 연식·주행거리 범위.
+ * 항목 중복 → 쓰는 항목(X11) → 담당 정비사(X13, #62) → 차량이 비어 있을 때 필수(D-58) → 연식·주행거리 범위.
  */
 export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockResponse {
   const request = (body ?? {}) as LooseVisitSave
@@ -143,9 +146,8 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
   // 2. 차량 소속
   if (!isOwnedVehicle(vehicleId)) return notFound()
 
-  // 3. P0-핵심에서 열지 않은 입력 (외부·거절·점검 결과·담당 지정)
+  // 3. P0-핵심에서 열지 않은 입력 (외부·거절·점검 결과). 담당 지정(mechanicId)은 #62가 열었다 → 6-1
   const notOpen: FieldError[] = []
-  if (request.mechanicId != null) notOpen.push({ field: 'mechanicId', reason: M.NOT_OPEN })
   records.forEach((r, i) => {
     if (r.type === 'EXTERNAL' || r.type === 'DECLINE') notOpen.push({ field: `records[${i}].type`, reason: M.NOT_OPEN })
     const loose = r as unknown as Record<string, unknown>
@@ -170,6 +172,11 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
   // 6. 그 정비소의 쓰는 항목 (없음·남의 것·쓰지 않음 모두 같은 응답, X11)
   if (records.some((r) => !ACTIVE_ITEM_IDS.has(r.itemId as number))) {
     return invalid([{ field: 'records[].itemId', reason: M.ITEM_NOT_USABLE }])
+  }
+
+  // 6-1. 담당 정비사 (P0-나머지, X13): 없음·남의 정비소 직원 모두 같은 400. 보내지 않으면 저장한 계정(서버)
+  if (request.mechanicId != null && !SHOP_STAFF_IDS.has(request.mechanicId)) {
+    return invalid([{ field: 'mechanicId', reason: M.MECHANIC_NOT_IN_SHOP }])
   }
 
   // 7. 차량에 비어 있는 연식·주행거리 (D-58)

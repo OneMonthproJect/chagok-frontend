@@ -87,11 +87,13 @@ export interface VisitVehicleInput {
   modelYear: number
 }
 
-/** 08 12 요청 (P0-핵심). mileage·vehicle은 조건부 필수(D-58) */
+/** 08 12 요청 (P0-핵심). mileage·vehicle은 조건부 필수(D-58). mechanicId는 P0-나머지(#62) */
 export interface VisitSaveRequest {
   visitDate: string
   mileage?: number | null
   vehicle?: VisitVehicleInput
+  /** P0-나머지. 담당 정비사 id(그 정비소의 사장·정비사, X13). 보내지 않으면 서버가 저장한 계정으로 둔다 */
+  mechanicId?: number
   records: VisitRecordInput[]
 }
 

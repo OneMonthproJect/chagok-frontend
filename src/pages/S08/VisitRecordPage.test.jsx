@@ -81,10 +81,22 @@ const ITEM_STATUS = {
   items: ITEMS.map((i) => ({ itemId: i.itemId, code: i.code, name: i.name, status: 'UNKNOWN', dueReason: null, baseRecord: null, nextDueDate: null, nextDueMileage: null })),
 }
 
-function serve({ vehicle = ok(VEHICLE), items = ok(ITEMS), save = ok(SAVED), id = 4 } = {}) {
+/** 08 7.1 36 JSON 예시 (A 정비소 사장·정비사) */
+const ASSIGNEES = {
+  items: [
+    { staffId: 1, name: '박사장', role: 'OWNER', colorIndex: 0 },
+    { staffId: 2, name: '김정비', role: 'MECHANIC', colorIndex: 1 },
+  ],
+}
+/** 08 03 — 정비사(mech_a)로 로그인. 직접 진입이면 담당 기본값 */
+const ME = { staffId: 2, name: '김정비', role: 'MECHANIC', shopId: 1, shopName: '차곡카센터' }
+
+function serve({ vehicle = ok(VEHICLE), items = ok(ITEMS), save = ok(SAVED), id = 4, assignees = ok(ASSIGNEES), me = ok(ME) } = {}) {
   routes[`/api/vehicles/${id}`] = vehicle
   routes['/api/items'] = items
   routes[`POST /api/vehicles/${id}/visits`] = save
+  routes['/api/staff/assignees'] = assignees
+  routes['/api/me'] = me
 }
 
 function LocationProbe() {
@@ -134,11 +146,18 @@ describe('S-08 방문·정비 기록', () => {
     renderPage()
     await settle()
 
-    expect(fetchMock.mock.calls.map(([path]) => path).sort()).toEqual(['/api/items', '/api/vehicles/4', '/api/vehicles/4/item-status'])
+    // 직접 진입이면 예약(17)은 부르지 않는다
+    expect(fetchMock.mock.calls.map(([path]) => path).sort()).toEqual([
+      '/api/items',
+      '/api/me',
+      '/api/staff/assignees',
+      '/api/vehicles/4',
+      '/api/vehicles/4/item-status',
+    ])
     expect(document.querySelector('.vehicle-header__plate').textContent).toBe('78라0004')
-    // 순서: 방문 정보 → 미리보기 → 항목 기록 (09 S-08 2·3·4번)
+    // 순서: 방문 정보 → 미리보기 → 항목 기록 → 담당 정비사 (09 S-08 2·3·4·5번)
     const titles = Array.from(document.querySelectorAll('.s08 h2')).map((h) => h.textContent)
-    expect(titles.slice(-3)).toEqual(['방문 정보', '확인이 필요한 항목', '정비 항목 기록'])
+    expect(titles.slice(-4)).toEqual(['방문 정보', '확인이 필요한 항목', '정비 항목 기록', '담당 정비사'])
     expect(document.querySelector('.visit-preview__chip').textContent).toBe('저장 전 미리보기 — 기록되지 않음')
     expect(document.querySelector('.vehicle-header__customer').textContent).toContain('최지은')
     expect(input('visit-date').value).toBe('2026-11-24')
@@ -190,6 +209,7 @@ describe('S-08 방문·정비 기록', () => {
     expect(postBody()).toEqual({
       visitDate: '2026-11-24',
       mileage: 55000,
+      mechanicId: 2, // 직접 진입 → 로그인 계정(#62)
       records: [
         { itemId: 1, type: 'REPLACE', memo: null },
         { itemId: 5, type: 'INSPECT', memo: '앞 타이어 마모 확인' },
@@ -382,6 +402,7 @@ describe('S-08 방문·정비 기록', () => {
       visitDate: '2026-11-24',
       mileage: 12000,
       vehicle: { modelYear: 2019 },
+      mechanicId: 2,
       records: [{ itemId: 1, type: 'REPLACE', memo: null }],
     })
     expect(location.pathname).toBe('/vehicles/11')
@@ -504,5 +525,228 @@ describe('S-08 방문·정비 기록', () => {
     click(button('취소'))
     await settle()
     expect(location.pathname).toBe('/vehicles/4')
+  })
+})
+
+// 담당 정비사 (#62, 09 S-08 5번, 04 F-MNT-01, 05 POL-59·120~129, 08 03·12·17·36, X13)
+describe('S-08 담당 정비사 (P0-나머지)', () => {
+  /** 08 17 패널 — 담당 기본값에 쓰는 reservation.assignee만 의미가 있다 */
+  const panel = (assignee) => ({
+    reservation: {
+      reservationId: 3,
+      reservedAt: '2026-11-24T10:00:00',
+      status: 'COMPLETED',
+      needsAction: false,
+      version: 1,
+      purpose: { items: [], other: false, memo: null },
+      ...(assignee === undefined ? {} : { assignee }),
+    },
+    customer: VEHICLE.customer,
+    vehicle: { vehicleId: 4, plateNumber: '78라0004', model: 'K5', modelYear: 2020, latestMileage: 45000 },
+    recentVisits: [],
+    totalVisitCount: 0,
+    itemStatuses: [],
+  })
+  const OWNER = { staffId: 1, name: '박사장', colorIndex: 0 }
+
+  const select = () => input('visit-mechanic')
+  const optionLabels = () => Array.from(select().options).filter((o) => o.value !== '').map((o) => o.textContent)
+  const infoNotice = () => document.querySelector('.error-notice--info')?.textContent ?? null
+  function pick(staffId) {
+    act(() => {
+      select().value = String(staffId)
+      select().dispatchEvent(new Event('change', { bubbles: true }))
+    })
+  }
+  const pathsCalled = (path) => fetchMock.mock.calls.filter(([p]) => p === path).length
+
+  it('직접 진입: 후보(36)를 순서대로 보이고 기본값은 로그인 계정(03), 저장 요청에 mechanicId', async () => {
+    serve()
+    renderPage()
+    await settle()
+
+    expect(optionLabels()).toEqual(['박사장 (사장)', '김정비 (정비사)'])
+    expect(select().value).toBe('2')
+    expect(select().disabled).toBe(false)
+    expect(infoNotice()).toBeNull()
+    choose(1, 'REPLACE')
+    click(saveButton())
+    await settle()
+    expect(postBody().mechanicId).toBe(2)
+  })
+
+  it('정비사도 다른 사람(사장)을 담당으로 고를 수 있다', async () => {
+    serve()
+    renderPage()
+    await settle()
+
+    pick(1)
+    expect(select().value).toBe('1')
+    choose(1, 'REPLACE')
+    click(saveButton())
+    await settle()
+    expect(postBody().mechanicId).toBe(1)
+  })
+
+  it('예약 경유: 그 예약의 담당(17 reservation.assignee)이 기본값 — 로그인 계정이 아니어도', async () => {
+    serve()
+    routes['/api/reservations/3/panel'] = ok(panel(OWNER))
+    renderPage('/visits/new?vehicleId=4&reservationId=3')
+    await settle()
+
+    expect(pathsCalled('/api/reservations/3/panel')).toBe(1)
+    expect(select().value).toBe('1')
+    expect(infoNotice()).toBeNull()
+    choose(1, 'REPLACE')
+    click(saveButton())
+    await settle()
+    expect(postBody().mechanicId).toBe(1)
+    expect(postBody()).not.toHaveProperty('reservationId') // 예약과 데이터로 잇지 않는다(POL-95)
+  })
+
+  it('예약 경유인데 예약을 읽지 못하면(17 실패) 로그인 계정 + 확인 안내, 자동으로 다시 부르지 않음', async () => {
+    serve()
+    routes['/api/reservations/3/panel'] = fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.')
+    renderPage('/visits/new?vehicleId=4&reservationId=3')
+    await settle()
+
+    expect(select().value).toBe('2')
+    expect(infoNotice()).toContain('예약의 담당을 확인하지 못해 로그인 계정으로 채웠습니다.')
+    expect(pathsCalled('/api/reservations/3/panel')).toBe(1)
+    // 사람이 고르면 안내를 거둔다
+    pick(1)
+    expect(infoNotice()).toBeNull()
+  })
+
+  it('예약 응답에 assignee가 없거나(17 #89 전) 후보에 없는 담당이면 로그인 계정 + 확인 안내', async () => {
+    for (const assignee of [undefined, { staffId: 9, name: '없는 사람', colorIndex: 0 }]) {
+      serve()
+      routes['/api/reservations/3/panel'] = ok(panel(assignee))
+      renderPage('/visits/new?vehicleId=4&reservationId=3')
+      await settle()
+      expect(select().value).toBe('2')
+      expect(infoNotice()).toContain('담당을 확인해 주세요.')
+      cleanup()
+    }
+  })
+
+  it('기본값을 정하는 동안(36 응답 전)은 칸·저장이 잠긴다', async () => {
+    let finish
+    serve({ assignees: () => new Promise((resolve) => (finish = () => resolve(new Response(JSON.stringify({ success: true, data: ASSIGNEES, error: null }), { status: 200 })))) })
+    renderPage()
+    await settle()
+
+    choose(1, 'REPLACE')
+    expect(select().disabled).toBe(true)
+    expect(saveButton().disabled).toBe(true)
+
+    await act(async () => finish())
+    await settle()
+    expect(select().value).toBe('2')
+    expect(saveButton().disabled).toBe(false)
+  })
+
+  it('후보(36) 조회 실패: 저장 막힘·입력 유지, 다시 불러오기는 사람이 누를 때만 (POL-125)', async () => {
+    let count = 0
+    serve({
+      assignees: () => {
+        count += 1
+        return count === 1 ? fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.')() : ok(ASSIGNEES)()
+      },
+    })
+    renderPage()
+    await settle()
+
+    type('visit-mileage', '55000')
+    choose(1, 'REPLACE')
+    type('record-memo-1', '엔진오일 교체')
+    expect(document.body.textContent).toContain('담당 정비사 목록을 불러오지 못했습니다.')
+    expect(select()).toBeNull()
+    expect(saveButton().disabled).toBe(true)
+    click(saveButton())
+    await settle()
+    expect(posts()).toHaveLength(0)
+    expect(count).toBe(1)
+
+    click(button('다시 불러오기'))
+    await settle()
+    expect(count).toBe(2)
+    expect(select().value).toBe('2')
+    // 입력값 그대로
+    expect(input('visit-mileage').value).toBe('55000')
+    expect(input('record-memo-1').value).toBe('엔진오일 교체')
+    expect(saveButton().disabled).toBe(false)
+  })
+
+  it('X13 400(mechanicId)은 담당 칸 옆에, 입력값 유지·이동 없음, 다시 고르면 칸 오류가 사라진다', async () => {
+    serve({ save: fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.', [{ field: 'mechanicId', reason: '담당 정비사를 확인해 주세요.' }]) })
+    renderPage()
+    await settle()
+
+    type('visit-mileage', '55000')
+    choose(1, 'REPLACE')
+    click(saveButton())
+    await settle()
+
+    expect(fieldMessage('visit-mechanic')).toContain('담당 정비사를 확인해 주세요.')
+    expect(select().getAttribute('aria-invalid')).toBe('true')
+    expect(document.querySelector('.error-notice--error').textContent).toContain('입력값을 확인해 주세요.')
+    expect(document.querySelector('.error-notice--error').textContent).not.toContain('담당 정비사를 확인해 주세요.') // 위쪽에 겹쳐 보이지 않음
+    expect(input('visit-mileage').value).toBe('55000')
+    expect(location.pathname).toBe('/visits/new')
+    expect(posts()).toHaveLength(1)
+
+    pick(1)
+    expect(fieldMessage('visit-mechanic')).toBeNull()
+  })
+
+  it('400에 담당과 다른 칸이 함께 오면 각 칸에 나눠 보인다', async () => {
+    serve({
+      save: fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.', [
+        { field: 'mileage', reason: '0 이상 2,000,000 이하로 입력해 주세요.' },
+        { field: 'mechanicId', reason: '담당 정비사를 확인해 주세요.' },
+      ]),
+    })
+    renderPage()
+    await settle()
+
+    type('visit-mileage', '2000001')
+    choose(1, 'REPLACE')
+    click(saveButton())
+    await settle()
+    expect(fieldMessage('visit-mileage')).toContain('0 이상 2,000,000 이하로 입력해 주세요.')
+    expect(fieldMessage('visit-mechanic')).toContain('담당 정비사를 확인해 주세요.')
+  })
+
+  it('로그인 계정(03)을 읽지 못하면 비워 두고, 고르지 않고 저장하면 보내지 않고 칸 오류', async () => {
+    serve({ me: fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.') })
+    renderPage()
+    await settle()
+
+    expect(select().value).toBe('')
+    choose(1, 'REPLACE')
+    click(saveButton())
+    await settle()
+    expect(posts()).toHaveLength(0)
+    expect(fieldMessage('visit-mechanic')).toContain('담당 정비사를 골라 주세요.')
+
+    pick(2)
+    click(saveButton())
+    await settle()
+    expect(postBody().mechanicId).toBe(2)
+  })
+
+  it('경계: 후보가 빈 배열이면 고를 수 없고 저장하지 않는다', async () => {
+    serve({ assignees: ok({ items: [] }) })
+    renderPage()
+    await settle()
+
+    expect(optionLabels()).toEqual([])
+    expect(select().value).toBe('')
+    choose(1, 'REPLACE')
+    click(saveButton())
+    await settle()
+    expect(posts()).toHaveLength(0)
+    expect(fieldMessage('visit-mechanic')).toContain('담당 정비사를 골라 주세요.')
   })
 })
