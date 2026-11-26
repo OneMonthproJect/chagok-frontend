@@ -18,8 +18,10 @@ export const RECORD_TYPE_LABELS: Record<RecordType, string> = {
  */
 export const CUSTOMER_STATEMENT_LABEL = '고객 진술'
 
-/** 빈 상태 (09 5장 S-07 이력 없음). 이어지는 "방문 기록" 버튼은 S-08(#23) 머지 뒤 #22 후속 PR이 연결한다 */
+/** 빈 상태 (09 5장 S-07 이력 없음) + 이어지는 버튼 */
 export const NO_HISTORY_MESSAGE = '정비 이력이 없습니다.'
+/** S-07 머리 버튼·이력 없음 버튼 (09 S-07·5장) → S-08 */
+export const RECORD_VISIT_LABEL = '방문 기록'
 
 /** 점검 주기 영역 설명 (04 F-CYC-01 기준 기록, T12·T13) */
 export const ITEM_STATUS_NOTE = '마지막 교체·외부 기록이 기준입니다. 점검·거절 기록은 기준이 아닙니다.'

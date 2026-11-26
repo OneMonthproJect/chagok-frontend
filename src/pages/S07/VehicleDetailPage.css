@@ -5,6 +5,19 @@
   gap: var(--ck-space-5);
   min-width: 0;
 }
+/* 머리: 왼쪽 제목, 오른쪽 [예약]·[방문 기록] (디자인 v3.0 S-07 머리) */
+.s07__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
+}
+.s07__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ck-space-2);
+}
 .s07__back {
   display: inline-flex;
   align-items: center;
