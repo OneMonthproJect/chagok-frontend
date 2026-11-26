@@ -339,3 +339,57 @@ describe('S-02 예약 상세 패널', () => {
     expect(panel().textContent).toContain('찾을 수 없습니다.')
   })
 })
+
+// M-02 연결 (chagok-frontend#25): 머리 [+ 예약 등록], 패널 [변경] → 변경 모드(읽은 version + 바뀐 칸) → 패널·목록 다시 조회
+describe('S-02 예약 등록·변경 (M-02)', () => {
+  const tomorrow = () => {
+    const d = new Date(Date.now() + 9 * 3600 * 1000 + 24 * 3600 * 1000)
+    return d.toISOString().slice(0, 10)
+  }
+  const patchCalls = () => calls((url, init) => url === '/api/reservations/4' && init?.method === 'PATCH')
+
+  it('[+ 예약 등록]은 M-02를 연다 (담당 정비사 칸 없음, P0-핵심)', async () => {
+    renderHome('/')
+    await settle()
+    click(button('+ 예약 등록'))
+    await settle()
+    const dialog = document.querySelector('[role="dialog"]')
+    expect(dialog.textContent).toContain('예약 등록')
+    expect(dialog.textContent).not.toContain('담당')
+  })
+
+  it('패널 [변경] → 차량 고정 변경 모드, 시각만 바꾸면 version + reservedAt만 PATCH, 저장 뒤 패널 다시 조회', async () => {
+    const day = tomorrow()
+    handlers.panel = () => ok(panelExample({ reservation: { reservedAt: `${day}T15:00:00`, needsAction: false, version: 2 } }))
+    handlers.patch = () => ok({ reservationId: 4, status: 'RESERVED', reservedAt: `${day}T16:00:00`, vehicleId: 10, version: 3 })
+    const base = fetchMock.getMockImplementation()
+    fetchMock.mockImplementation((url, init) =>
+      url === '/api/reservations/4' && init?.method === 'PATCH' ? Promise.resolve(handlers.patch()) : base(url, init))
+
+    renderHome(`/?date=${day}&reservation=4`)
+    await settle()
+    click(button('변경', panel()))
+    await settle()
+    const dialog = document.querySelector('[role="dialog"]')
+    expect(dialog.textContent).toContain('예약 변경')
+    expect(dialog.textContent).toContain('55차0010')
+    expect(button('저장', dialog).disabled).toBe(true)
+
+    const before = panelCalls().length
+    click(button('16:00', dialog))
+    click(button('저장', dialog))
+    await settle()
+
+    expect(patchCalls()).toHaveLength(1)
+    expect(JSON.parse(patchCalls()[0][1].body)).toEqual({ version: 2, reservedAt: `${day}T16:00:00` })
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
+    expect(panelCalls().length).toBeGreaterThan(before)
+  })
+
+  it('진행중·끝난 예약은 [변경]이 없다 (08 19)', async () => {
+    handlers.panel = () => ok(panelExample({ reservation: { status: 'COMPLETED', needsAction: false } }))
+    renderHome('/?reservation=4')
+    await settle()
+    expect(button('변경', panel())).toBeUndefined()
+  })
+})

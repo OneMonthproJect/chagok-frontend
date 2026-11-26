@@ -26,7 +26,8 @@ import './ReservationPanel.css'
 // 데이터·요청은 쓰는 화면이 useReservationPanel로 들고 넘긴다. 이동(S-07·S-08)과 닫기도 화면이 정한다(features는 경로를 모름).
 // 넓은 화면(1024px 이상)은 목록 오른쪽, 좁은 화면은 화면 전체를 덮는다(CSS). Esc·닫기 버튼으로 닫는다.
 // panel: useReservationPanel 결과 { status, data, error, notice, reload, complete }
-export default function ReservationPanel({ panel, onClose, onComplete, onOpenVehicle }) {
+// onEdit(data): 있으면 상태 "예약"에서 [변경]을 보인다(M-02 변경 모드는 쓰는 화면이 연다, #25)
+export default function ReservationPanel({ panel, onClose, onComplete, onEdit, onOpenVehicle }) {
   const { status, data, error, notice, reload } = panel
   const headingRef = useRef(null)
   const reservationId = data?.reservation.reservationId
@@ -65,7 +66,12 @@ export default function ReservationPanel({ panel, onClose, onComplete, onOpenVeh
 
       {data && (
         <footer className="rsv-panel__footer">
-          <PanelActions status={data.reservation.status} disabled={status !== 'ready'} onComplete={onComplete} />
+          <PanelActions
+            status={data.reservation.status}
+            disabled={status !== 'ready'}
+            onComplete={onComplete}
+            onEdit={onEdit ? () => onEdit(data) : undefined}
+          />
         </footer>
       )}
     </aside>

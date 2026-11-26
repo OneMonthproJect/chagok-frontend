@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   canComplete,
+  canEdit,
   canOpenVehicleDetail,
   itemStatusRows,
   mileageText,
@@ -23,6 +24,14 @@ describe('panelFlow', () => {
     for (const bad of ['', '0', '-1', '1.5', '4abc', 'abc', '99999999999999999999']) {
       expect(parseReservationId(bad)).toBeNull()
     }
+  })
+
+  it('변경은 예약에서만 (08 19, R9·R21)', () => {
+    expect(canEdit('RESERVED')).toBe(true)
+    expect(canEdit('IN_PROGRESS')).toBe(false)
+    expect(canEdit('COMPLETED')).toBe(false)
+    expect(canEdit('CANCELED')).toBe(false)
+    expect(canEdit('NO_SHOW')).toBe(false)
   })
 
   it('방문 완료는 예약·진행중에서만 (08 18)', () => {

@@ -47,6 +47,11 @@ export function canComplete(status: ReservationStatus): boolean {
   return COMPLETABLE.has(status)
 }
 
+/** [변경](08 19)은 상태 "예약"만 — 진행중·끝난 예약은 409 INVALID_STATUS_TRANSITION (09 S-02 5번, R9·R21) */
+export function canEdit(status: ReservationStatus): boolean {
+  return status === 'RESERVED'
+}
+
 export function canOpenVehicleDetail(totalVisitCount: number): boolean {
   return totalVisitCount >= VEHICLE_DETAIL_MIN_VISITS
 }
