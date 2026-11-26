@@ -1,0 +1,99 @@
+/* S-07 차량 상세 — 디자인 v3.0 S-07-vehicle-detail */
+.s07 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-5);
+  min-width: 0;
+}
+.s07__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ck-space-1);
+  color: var(--ck-text-2);
+  font-size: var(--ck-fs-small);
+  text-decoration: none;
+}
+.s07__back:hover {
+  color: var(--ck-text-1);
+}
+.s07__back:focus-visible {
+  outline: 2px solid var(--ck-brand);
+  outline-offset: 2px;
+}
+.s07__title {
+  margin: var(--ck-space-2) 0 0;
+  font-size: var(--ck-fs-page);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.s07__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-5);
+}
+.s07__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ck-space-5);
+  align-items: start;
+}
+@media (min-width: 1280px) {
+  .s07__columns {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+.s07__card {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--ck-radius-xl);
+  background: var(--ck-surface);
+  box-shadow: var(--ck-shadow-card);
+}
+.s07__card--padded {
+  padding: var(--ck-space-6);
+}
+.s07__card--refreshing {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.s07__section-header {
+  padding: var(--ck-space-5);
+  border-bottom: 1px solid var(--ck-border-soft);
+}
+.s07__section-title {
+  margin: 0;
+  font-size: var(--ck-fs-card-title);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.s07__section-meta {
+  margin: var(--ck-space-1) 0 0;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.s07__section-body {
+  padding: var(--ck-space-5);
+}
+.s07__section-loading {
+  display: block;
+  height: 240px;
+  margin: var(--ck-space-5);
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-surface-muted);
+}
+.s07__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-5);
+}
+.s07__skeleton-block {
+  border-radius: var(--ck-radius-xl);
+  background: var(--ck-surface);
+  box-shadow: var(--ck-shadow-card);
+}
+.s07__skeleton-block--header {
+  height: 150px;
+}
+.s07__skeleton-block--body {
+  height: 360px;
+}

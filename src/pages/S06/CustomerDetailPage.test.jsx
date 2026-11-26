@@ -51,6 +51,7 @@ function renderPage(entry = '/customers/10') {
       <Routes>
         <Route path="/customers/:customerId" element={<CustomerDetailPage />} />
         <Route path="/customers" element={<p>S-05</p>} />
+        <Route path="/vehicles/:vehicleId" element={<p>S-07</p>} />
         <Route path="/" element={<p>S-02</p>} />
       </Routes>
       <LocationProbe />
@@ -119,12 +120,25 @@ describe('S-06 고객 상세', () => {
     expect(secondCounts[1].textContent).toBe('임박 0')
   })
 
-  it('차량 줄은 아직 누를 수 없다 (S-07 이동은 #22), 차량 추가·수정 버튼도 없다', async () => {
+  it('차량 카드를 누르면 S-07 (#22) — 차량 추가·수정 버튼은 아직 없다', async () => {
     fetchMock.mockResolvedValue(ok(OH))
     renderPage()
     await settle()
-    expect(document.querySelector('.customer-vehicles a, .customer-vehicles button')).toBeNull()
+    const links = Array.from(document.querySelectorAll('.customer-vehicles a'))
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(['/vehicles/10', '/vehicles/11'])
     expect(document.querySelectorAll('button')).toHaveLength(0)
+
+    click(links[1])
+    expect(location.pathname).toBe('/vehicles/11')
+  })
+
+  it('S-07로 갈 때 S-05에서 가져온 검색을 넘긴다 (S-07의 "고객·차량"이 같은 목록으로)', async () => {
+    fetchMock.mockResolvedValue(ok(OH))
+    renderPage({ pathname: '/customers/10', state: { listSearch: '?q=%EC%98%A4' } })
+    await settle()
+    click(document.querySelector('.customer-vehicles a'))
+    expect(location.pathname).toBe('/vehicles/10')
+    expect(location.state).toEqual({ listSearch: '?q=%EC%98%A4' })
   })
 
   it('차량이 없으면 "등록된 차량이 없습니다." (버튼 없음)', async () => {

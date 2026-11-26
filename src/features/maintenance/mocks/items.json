@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "data": [
+    { "itemId": 1, "code": "ENGINE_OIL", "name": "엔진오일", "cycleMonths": 6, "cycleKm": 10000, "active": true, "sortOrder": 1 },
+    { "itemId": 2, "code": "AIR_CLEANER", "name": "에어클리너", "cycleMonths": 12, "cycleKm": 15000, "active": true, "sortOrder": 2 },
+    { "itemId": 3, "code": "AC_FILTER", "name": "에어컨필터", "cycleMonths": 6, "cycleKm": 10000, "active": true, "sortOrder": 3 },
+    { "itemId": 4, "code": "BRAKE_PAD", "name": "브레이크패드", "cycleMonths": 12, "cycleKm": 20000, "active": true, "sortOrder": 4 },
+    { "itemId": 5, "code": "TIRE", "name": "타이어 상태 점검", "cycleMonths": 6, "cycleKm": 10000, "active": true, "sortOrder": 5 },
+    { "itemId": 6, "code": "BATTERY", "name": "배터리", "cycleMonths": 36, "cycleKm": 60000, "active": true, "sortOrder": 6 }
+  ],
+  "error": null
+}
