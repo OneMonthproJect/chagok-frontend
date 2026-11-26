@@ -32,11 +32,12 @@ import './HomePage.css'
 // - 예약 상세 패널은 ?reservation=<id> (#26). 줄을 누르면 열고(기록 하나 추가), 닫기·Esc·뒤로 가기는 쿼리를 지운다.
 //   패널 안 [방문 완료](08 18)가 성공하면 S-08(/visits/new?vehicleId=&reservationId=)로, 409면 패널·목록을 다시 불러오고 이동하지 않는다.
 //   [상세 이동]은 S-07(/vehicles/:vehicleId). [변경]은 M-02 변경 모드(#25).
+//   [취소]·[노쇼](08 20·21, #31)는 확인 대화상자를 거친다. 성공·409 모두 패널·목록·요약을 다시 불러온다(자동 재전송 없음).
 // - [예약 등록](머리·빈 날) → M-02 (#25). 차량은 customer의 VehiclePicker, 신규는 M-01(CustomerVehicleFormModal), 항목은 13 —
 //   여기서 조립한다(feature끼리 import 금지). 등록·변경되면 그 날짜 목록으로 옮겨 다시 불러온다.
 // - 요약 숫자(#28, 08 04): 오늘 예약·오늘 연락할 고객. 다른 날짜를 볼 때만 "목록 →"(오늘로), [보기 →]는 S-04 라우트가 있을 때만(→ /targets).
 //   예약이 바뀌면(등록·변경·409) 함께 다시 부른다.
-// - 다음 이슈가 이어서 고친다: 주 캘린더(P0-나머지 #36).
+// - 다음 이슈가 이어서 고친다: 주 캘린더(P0-나머지 #36), 방문 접수·정정(#33).
 
 /** 패널을 목록에서 열었는지(이때만 닫기 = 뒤로 가기). 주소로 바로 들어왔으면 쿼리만 지운다 */
 const PANEL_FROM_LIST = 'panelFromList'
@@ -196,6 +197,7 @@ export default function HomePage() {
             items={items}
             onClose={closePanel}
             onConflict={reload}
+            onStatusChanged={reload}
             onEdited={showSaved}
             onCompleted={(done) => {
               const params = new URLSearchParams({
@@ -241,13 +243,20 @@ export default function HomePage() {
  * 패널이 열렸을 때만 17을 부른다. 409 뒤에는 목록도 다시 불러 같은 상태를 보인다(목록·패널이 어긋나지 않게).
  * [변경] → M-02 변경 모드: 패널이 읽은 예약(version 포함)으로 열고, 저장되면 패널·목록을 다시 불러온다.
  */
-function HomeReservationPanel({ reservationId, items, onClose, onConflict, onCompleted, onEdited, onOpenVehicle }) {
+function HomeReservationPanel({ reservationId, items, onClose, onConflict, onStatusChanged, onCompleted, onEdited, onOpenVehicle }) {
   const panel = useReservationPanel(reservationId)
   const [editTarget, setEditTarget] = useState(null)
 
   async function complete() {
     const result = await panel.complete()
     if (result.kind === 'completed') onCompleted(result.data)
+    else if (result.kind === 'conflict') onConflict()
+  }
+
+  /** [취소]·[노쇼] 확인 뒤 (#31). 패널은 hook이 다시 읽고, 목록·요약은 바뀌었거나(성공) 어긋났을 수 있어(409) 다시 부른다 */
+  async function changeStatus(action) {
+    const result = await panel.changeStatus(action)
+    if (result.kind === 'changed') onStatusChanged()
     else if (result.kind === 'conflict') onConflict()
   }
 
@@ -263,7 +272,14 @@ function HomeReservationPanel({ reservationId, items, onClose, onConflict, onCom
 
   return (
     <>
-      <ReservationPanel panel={panel} onClose={onClose} onComplete={complete} onEdit={openEdit} onOpenVehicle={onOpenVehicle} />
+      <ReservationPanel
+        panel={panel}
+        onClose={onClose}
+        onComplete={complete}
+        onEdit={openEdit}
+        onStatusChange={changeStatus}
+        onOpenVehicle={onOpenVehicle}
+      />
       {editTarget && (
         <ReservationFormModal
           mode="edit"

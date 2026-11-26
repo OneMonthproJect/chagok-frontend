@@ -156,6 +156,14 @@
 .rsv-panel__footer:empty { display: none; }
 .rsv-panel__actions { display: flex; flex-direction: column; gap: var(--ck-space-2); }
 .rsv-panel__actions .button { width: 100%; }
+/* 취소·노쇼 (#31): 방문 완료·변경 아래 한 줄에 나란히 */
+.rsv-panel__actions-row { display: flex; gap: var(--ck-space-2); }
+.rsv-panel__actions-row .button { flex: 1 1 0; }
+
+/* 확인 대화상자 (PanelConfirmDialog) */
+.rsv-confirm__target { margin: 0; display: flex; flex-direction: column; gap: 2px; color: var(--ck-text-2, #4d525a); }
+.rsv-confirm__target strong { color: var(--ck-text-1, #17191c); }
+.rsv-confirm__desc { margin: var(--ck-space-3) 0 0; color: var(--ck-text-3, #5f646d); font-size: 14px; }
 
 /* 최근 정비 이력 (RecentVisits) */
 .rsv-visits { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--ck-space-2); }

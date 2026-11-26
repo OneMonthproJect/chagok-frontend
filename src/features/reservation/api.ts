@@ -12,6 +12,8 @@ import type {
   ReservationSaved,
   ReservationSummaryQuery,
   ReservationSummaryResponse,
+  ReservationStatusChangeRequest,
+  ReservationStatusChanged,
   ReservationUpdateRequest,
 } from './types'
 
@@ -46,6 +48,22 @@ export function completeReservation(reservationId: number, body: ReservationComp
   return request<ReservationCompleted>('POST', `/api/reservations/${reservationId}/complete`, {
     body,
     mock: MOCK_ENABLED ? () => mocks().then((m) => m.mockComplete(reservationId, body)) : undefined,
+  })
+}
+
+/** 08 20 (P0-나머지). 예약·진행중에서, 시각 전·후 모두. 본문은 version만 */
+export function cancelReservation(reservationId: number, body: ReservationStatusChangeRequest): Promise<ReservationStatusChanged> {
+  return request<ReservationStatusChanged>('POST', `/api/reservations/${reservationId}/cancel`, {
+    body,
+    mock: MOCK_ENABLED ? () => mocks().then((m) => m.mockCancel(reservationId, body)) : undefined,
+  })
+}
+
+/** 08 21 (P0-나머지). 예약이고 시각이 지난 예약만. 본문은 version만 */
+export function markNoShow(reservationId: number, body: ReservationStatusChangeRequest): Promise<ReservationStatusChanged> {
+  return request<ReservationStatusChanged>('POST', `/api/reservations/${reservationId}/no-show`, {
+    body,
+    mock: MOCK_ENABLED ? () => mocks().then((m) => m.mockNoShow(reservationId, body)) : undefined,
   })
 }
 
