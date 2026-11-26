@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, NETWORK_ERROR, parseResponse } from '@/shared/api/client'
 import { getItemStatus, getItems, getVisits, itemStatusQuery, saveVisit, visitListQuery } from './api'
 import { mockGetItemStatus, mockGetItems, mockGetVisits, mockSaveVisit } from './mocks'
+import itemStatusPreviewFixture from './mocks/item-status-preview.json'
 import itemStatusFixture from './mocks/item-status.json'
 import itemsOk from './mocks/items.json'
 import visitsFixture from './mocks/visits.json'
@@ -10,10 +11,11 @@ import type { ItemStatusResponse, ServiceItem, Visit, VisitListResponse, VisitSa
 // 08 10~13: 실제 fetch 없이 확인한다 (fetch 대역, customer/api.test.ts와 같은 방식). Mock은 client의 같은 해석(parseResponse)을 거친다.
 
 // fixture가 types.ts(08) 모양과 맞는지 컴파일 때(tsc) 확인한다
-const FIXTURES: [Record<string, ItemStatusResponse>, Record<string, Visit[]>, ServiceItem[]] = [
+const FIXTURES: [Record<string, ItemStatusResponse>, Record<string, Visit[]>, ServiceItem[], Record<string, Record<string, ItemStatusResponse>>] = [
   itemStatusFixture as Record<string, ItemStatusResponse>,
   visitsFixture as Record<string, Visit[]>,
   itemsOk.data as ServiceItem[],
+  itemStatusPreviewFixture as Record<string, Record<string, ItemStatusResponse>>,
 ]
 
 function jsonResponse(status: number, body: unknown): Response {
@@ -169,6 +171,22 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     expect(parseError(mockGetItemStatus(4, 2_000_001)).code).toBe('INVALID_INPUT')
     expect(parseError(mockGetItemStatus(4, 1.5)).fieldErrors).toEqual([{ field: 'mileage', reason: '형식이 올바르지 않습니다.' }])
     expect(parseError(mockGetItemStatus(12, -1)).code).toBe('INVALID_INPUT') // 서버처럼 mileage 검사가 404보다 먼저
+  })
+
+  it('10 저장 전 미리보기: 차량 4 · 55,000은 08 10 JSON 예시 그대로 — 엔진오일 km 도래(T8), 나머지는 날짜 기준과 같다', () => {
+    const data = parse<ItemStatusResponse>(mockGetItemStatus(4, 55000))
+    const dateOnly = parse<ItemStatusResponse>(mockGetItemStatus(4))
+    expect(data.inputMileage).toBe(55000)
+    expect(data.items[0]).toEqual({
+      itemId: 1, code: 'ENGINE_OIL', name: '엔진오일',
+      status: 'DUE', dueReason: 'KM',
+      baseRecord: { date: '2026-09-24', mileage: 45000, type: 'REPLACE' },
+      nextDueDate: '2027-03-24', nextDueMileage: 55000,
+    })
+    expect(data.items.slice(1)).toEqual(dateOnly.items.slice(1))
+    // LIMIT: Mock은 km 판정을 하지 않는다 — 예시에 없는 값은 날짜 기준 그대로
+    expect(parse<ItemStatusResponse>(mockGetItemStatus(4, 60000)).items[0]).toMatchObject({ status: 'AHEAD', dueReason: null })
+    expect(parseError(mockGetItemStatus(12, 55000)).code).toBe('NOT_FOUND') // X6
   })
 
   it('11 차량 10은 08 예시처럼 최신 방문이 먼저, 방문 3회', () => {

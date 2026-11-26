@@ -1,0 +1,75 @@
+{
+  "4": {
+    "55000": {
+      "vehicleId": 4,
+      "asOf": "2026-11-24",
+      "inputMileage": 55000,
+      "items": [
+        {
+          "itemId": 1,
+          "code": "ENGINE_OIL",
+          "name": "엔진오일",
+          "status": "DUE",
+          "dueReason": "KM",
+          "baseRecord": {
+            "date": "2026-09-24",
+            "mileage": 45000,
+            "type": "REPLACE"
+          },
+          "nextDueDate": "2027-03-24",
+          "nextDueMileage": 55000
+        },
+        {
+          "itemId": 2,
+          "code": "AIR_CLEANER",
+          "name": "에어클리너",
+          "status": "UNKNOWN",
+          "dueReason": null,
+          "baseRecord": null,
+          "nextDueDate": null,
+          "nextDueMileage": null
+        },
+        {
+          "itemId": 3,
+          "code": "AC_FILTER",
+          "name": "에어컨필터",
+          "status": "UNKNOWN",
+          "dueReason": null,
+          "baseRecord": null,
+          "nextDueDate": null,
+          "nextDueMileage": null
+        },
+        {
+          "itemId": 4,
+          "code": "BRAKE_PAD",
+          "name": "브레이크패드",
+          "status": "UNKNOWN",
+          "dueReason": null,
+          "baseRecord": null,
+          "nextDueDate": null,
+          "nextDueMileage": null
+        },
+        {
+          "itemId": 5,
+          "code": "TIRE",
+          "name": "타이어 상태 점검",
+          "status": "UNKNOWN",
+          "dueReason": null,
+          "baseRecord": null,
+          "nextDueDate": null,
+          "nextDueMileage": null
+        },
+        {
+          "itemId": 6,
+          "code": "BATTERY",
+          "name": "배터리",
+          "status": "UNKNOWN",
+          "dueReason": null,
+          "baseRecord": null,
+          "nextDueDate": null,
+          "nextDueMileage": null
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,41 @@
+/* S-08 저장 전 미리보기 — 디자인 v3.0 S-08 미리보기 카드. 항목 카드 모양은 ItemStatusList preview */
+.visit-preview__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ck-space-4);
+}
+.visit-preview__chip {
+  display: inline-block;
+  padding: 2px var(--ck-space-2);
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-brand-tint);
+  color: var(--ck-brand);
+  font-size: var(--ck-fs-caption);
+  font-weight: var(--ck-fw-semibold);
+}
+.visit-preview__title {
+  margin: var(--ck-space-3) 0 0;
+  font-size: var(--ck-fs-card-title);
+  font-weight: var(--ck-fw-bold);
+  color: var(--ck-text-1);
+}
+.visit-preview__meta {
+  margin: var(--ck-space-1) 0 0;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.visit-preview__state {
+  flex-shrink: 0;
+  font-size: var(--ck-fs-caption);
+  color: var(--ck-text-3);
+}
+.visit-preview__body {
+  margin-top: var(--ck-space-4);
+}
+.visit-preview__loading {
+  display: block;
+  height: 160px;
+  border-radius: var(--ck-radius-md);
+  background: var(--ck-surface-muted);
+}

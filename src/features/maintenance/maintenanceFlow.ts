@@ -103,3 +103,27 @@ export function appendVisits(current: Visit[], next: Visit[]): Visit[] {
   const seen = new Set(current.map((visit) => visit.visitKey))
   return [...current, ...next.filter((visit) => !seen.has(visit.visitKey))]
 }
+
+/**
+ * S-08 저장 전 미리보기 문구 (09 S-08 3번, 04 F-VIS-01, 05 POL-04, 디자인 v3.0 S-08 미리보기 카드).
+ * "확인이 필요한 항목"으로 쓰고 진단 표현을 쓰지 않는다.
+ */
+export const PREVIEW_MESSAGES = {
+  CHIP: '저장 전 미리보기 — 기록되지 않음',
+  TITLE: '확인이 필요한 항목',
+  STATE_LOADING: '불러오는 중',
+  STATE_FAILED: '불러오지 못함',
+  STATE_READY: '최신',
+  FAILED: '미리보기를 불러오지 못했습니다.',
+  NO_EFFECT: '기록 저장에는 영향이 없습니다.',
+} as const
+
+/**
+ * 미리보기 판정 기준 한 줄 (디자인 v3.0). 기준일·주행거리는 서버 응답(08 10 asOf·inputMileage) 그대로 보인다.
+ * "판정 기준일 오늘(2026.11.24) · 날짜 + 입력한 주행거리 55,000 km 기준. 방문일은 미리보기 기준을 바꾸지 않습니다."
+ */
+export function previewBasisText(data: { asOf: string; inputMileage: number | null }): string {
+  const basis =
+    data.inputMileage == null ? '날짜 기준만 — 주행거리를 넣으면 거리 기준도 봅니다' : `날짜 + 입력한 주행거리 ${kmText(data.inputMileage)} 기준`
+  return `판정 기준일 오늘(${dateText(data.asOf)}) · ${basis}. 방문일은 미리보기 기준을 바꾸지 않습니다.`
+}
