@@ -159,7 +159,20 @@ describe('S-08 저장 전 미리보기', () => {
     expect(badges()).toHaveLength(6)
   })
 
-  it('400(주행거리 범위 밖)은 같은 값으로 다시 불러도 같아 다시 불러오기 버튼이 없다 — 고치면 다시 부른다', async () => {
+  it('경계: 0·2,000,000(08 0.1)도 ?mileage=로 그대로 부른다', async () => {
+    routes[`${BASE}?mileage=0`] = ok({ ...DATE_ONLY, inputMileage: 0 })
+    routes[`${BASE}?mileage=2000000`] = ok({ ...DATE_ONLY, inputMileage: 2000000 })
+    const setMileage = renderPreview()
+    await flush()
+    setMileage('0')
+    await wait(PREVIEW_DELAY_MS)
+    setMileage('2,000,000')
+    await wait(PREVIEW_DELAY_MS)
+    expect(calls()).toEqual([BASE, `${BASE}?mileage=0`, `${BASE}?mileage=2000000`])
+    expect(meta()).toContain('2,000,000 km')
+  })
+
+  it('400(주행거리 범위 밖)은 서버의 칸 이유를 보이고 다시 불러오기 버튼이 없다 — 고치면 다시 부른다', async () => {
     routes[`${BASE}?mileage=2000001`] = fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.', [
       { field: 'mileage', reason: '0 이상 2,000,000 이하의 정수여야 합니다.' },
     ])
@@ -168,7 +181,10 @@ describe('S-08 저장 전 미리보기', () => {
     setMileage('2000001')
     await wait(PREVIEW_DELAY_MS)
 
-    expect(document.querySelector('.error-notice').textContent).toContain('미리보기를 불러오지 못했습니다.')
+    const notice = document.querySelector('.error-notice').textContent
+    expect(notice).toContain('미리보기를 불러오지 못했습니다.')
+    expect(notice).toContain('0 이상 2,000,000 이하의 정수여야 합니다.')
+    expect(notice).not.toContain('기록 저장에는 영향이 없습니다.')
     expect(button('다시 불러오기')).toBeUndefined()
 
     setMileage('55000')
