@@ -126,6 +126,8 @@ export default function VisitRecordPage() {
     setForm(initialVisitRecordForm(today))
     setErrors({})
     setSaveError(null)
+    // 담당은 차량과 관계없어 고른 값을 그대로 두고, 칸 오류만 지운다
+    setMechanicError(null)
   }
 
   function clearError(field) {
@@ -301,7 +303,14 @@ export default function VisitRecordPage() {
             </h2>
             <div className="s08__section-body">
               {mechanicStatus === 'ready' && mechanicChoice == null && mechanicDefault.reservationFallback && (
-                <ErrorNotice tone="info" title={MECHANIC_MESSAGES.RESERVATION_FALLBACK} />
+                <ErrorNotice
+                  tone="info"
+                  title={
+                    mechanicDefault.mechanicId != null
+                      ? MECHANIC_MESSAGES.RESERVATION_FALLBACK
+                      : MECHANIC_MESSAGES.RESERVATION_FALLBACK_EMPTY
+                  }
+                />
               )}
               <MechanicSelect
                 status={mechanicStatus}

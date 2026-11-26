@@ -630,6 +630,17 @@ describe('S-08 담당 정비사 (P0-나머지)', () => {
     }
   })
 
+  it('예약 경유인데 예약(17)도 로그인 계정(03)도 읽지 못하면 비워 두고 "골라 주세요" 안내', async () => {
+    serve({ me: fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.') })
+    routes['/api/reservations/3/panel'] = fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.')
+    renderPage('/visits/new?vehicleId=4&reservationId=3')
+    await settle()
+
+    expect(select().value).toBe('')
+    expect(infoNotice()).toContain('예약의 담당을 확인하지 못했습니다. 담당을 골라 주세요.')
+    expect(infoNotice()).not.toContain('로그인 계정으로 채웠습니다')
+  })
+
   it('기본값을 정하는 동안(36 응답 전)은 칸·저장이 잠긴다', async () => {
     let finish
     serve({ assignees: () => new Promise((resolve) => (finish = () => resolve(new Response(JSON.stringify({ success: true, data: ASSIGNEES, error: null }), { status: 200 })))) })

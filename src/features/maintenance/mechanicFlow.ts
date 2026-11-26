@@ -24,6 +24,8 @@ export const MECHANIC_MESSAGES = {
   LOAD_FAILED_BODY: '목록을 다시 불러와야 저장할 수 있습니다. 입력한 내용은 그대로 있습니다.',
   RELOAD: '다시 불러오기',
   RESERVATION_FALLBACK: '예약의 담당을 확인하지 못해 로그인 계정으로 채웠습니다. 담당을 확인해 주세요.',
+  /** 예약의 담당도 로그인 계정도 채우지 못했을 때 */
+  RESERVATION_FALLBACK_EMPTY: '예약의 담당을 확인하지 못했습니다. 담당을 골라 주세요.',
 } as const
 
 export interface DefaultMechanicInput {

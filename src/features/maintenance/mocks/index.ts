@@ -53,7 +53,7 @@ const M = {
   QUERY_MILEAGE_RANGE: '0 이상 2,000,000 이하의 정수여야 합니다.',
   TYPE_MISMATCH: '형식이 올바르지 않습니다.',
   MILEAGE_RANGE: '0 이상 2,000,000 이하로 입력해 주세요.',
-  MECHANIC_NOT_IN_SHOP: '담당 정비사를 확인해 주세요.', // chagok-backend#102 resolveMechanic (머지 전, 바뀌면 맞춘다)
+  MECHANIC_NOT_IN_SHOP: '담당 정비사를 확인해 주세요.', // chagok-backend MaintenanceService.resolveMechanic (#102)
 } as const
 
 /** 07 7.1 A 정비소의 사장·정비사 id (08 36 예시와 같음). B 정비소 최사장(3)·없는 id는 X13 400 */
