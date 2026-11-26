@@ -124,7 +124,7 @@ export interface PanelItemStatus {
   code: string
   name: string
   status: CycleStatus
-  dueReason: 'DATE' | 'MILEAGE' | null
+  dueReason: 'DATE' | 'KM' | null // 08 0.4 (17 패널은 날짜 기준이라 DATE·null만)
   baseRecord: { date: string; mileage: number | null; type: VisitRecord['type'] } | null
   nextDueDate: string | null
   nextDueMileage: number | null
