@@ -178,3 +178,103 @@ describe('Modal 초점 가두기 (Tab)', () => {
     expect(document.activeElement).toBe(last)
   })
 })
+
+describe('Modal 숨김·비활성 요소 제외 (#18 후속, CodeRabbit)', () => {
+  it('처음 초점은 숨겨진 칸(hidden·display:none)·비활성 fieldset 안 칸을 건너뛴다', () => {
+    render(
+      <Modal open title="t" onClose={() => {}}>
+        <div hidden>
+          <input aria-label="숨김1" />
+        </div>
+        <div style={{ display: 'none' }}>
+          <input aria-label="숨김2" />
+        </div>
+        <fieldset disabled>
+          <input aria-label="비활성" />
+        </fieldset>
+        <input aria-label="보이는 칸" />
+      </Modal>,
+    )
+    expect(document.activeElement.getAttribute('aria-label')).toBe('보이는 칸')
+  })
+
+  it('맨 뒤의 숨겨진 버튼은 Tab 순환의 마지막 요소로 보지 않는다', () => {
+    render(
+      <Modal open title="t" onClose={() => {}} footer={<><button type="button">저장</button><button type="button" style={{ visibility: 'hidden' }}>숨김</button></>}>
+        <input aria-label="칸" />
+      </Modal>,
+    )
+    const save = [...document.querySelectorAll('button')].find((b) => b.textContent === '저장')
+    save.focus()
+    keyDown('Tab')
+    expect(document.activeElement.getAttribute('aria-label')).toBe('닫기')
+  })
+
+  it('보일 후보가 없으면 dialog 자체에 초점을 둔다', () => {
+    render(
+      <Modal open title="안내">
+        <div hidden>
+          <button type="button">숨김</button>
+        </div>
+      </Modal>,
+    )
+    expect(document.activeElement.getAttribute('role')).toBe('dialog')
+  })
+})
+
+describe('Modal 겹친 모달의 초점 복귀 (#18 후속, CodeRabbit)', () => {
+  // 배경 버튼 → 모달 A → A 안의 버튼 → 모달 B 순서로 연다
+  function Screen({ a, b }) {
+    return (
+      <>
+        <button type="button">배경</button>
+        <Modal open={a} title="A" onClose={() => {}}>
+          <button type="button">B 열기</button>
+        </Modal>
+        <Modal open={b} stacked title="B" onClose={() => {}}>
+          <input aria-label="B 칸" />
+        </Modal>
+      </>
+    )
+  }
+
+  function openBoth() {
+    const view = render(<Screen a={false} b={false} />)
+    const background = view.container.querySelector('button')
+    background.focus()
+    view.rerender(<Screen a b={false} />)
+    const openB = [...document.querySelectorAll('button')].find((x) => x.textContent === 'B 열기')
+    openB.focus()
+    view.rerender(<Screen a b />)
+    expect(document.activeElement.getAttribute('aria-label')).toBe('B 칸')
+    return { view, background, openB }
+  }
+
+  it('위 모달(B)을 닫으면 A 안의 연 버튼으로 돌아간다', () => {
+    const { view, openB } = openBoth()
+    view.rerender(<Screen a b={false} />)
+    expect(document.activeElement).toBe(openB)
+  })
+
+  it('아래 모달(A)만 닫히면 초점은 위 모달(B)에 그대로 있다', () => {
+    const { view } = openBoth()
+    view.rerender(<Screen a={false} b />)
+    expect(document.activeElement.getAttribute('aria-label')).toBe('B 칸')
+  })
+
+  it('A가 먼저 닫힌 뒤 B를 닫으면 배경의 원래 버튼으로 돌아간다', () => {
+    const { view, background } = openBoth()
+    view.rerender(<Screen a={false} b />)
+    view.rerender(<Screen a={false} b={false} />)
+    expect(document.activeElement).toBe(background)
+  })
+
+  it('위 모달의 연 요소가 남은 모달 밖이면 남은 모달 안으로 초점을 옮긴다', () => {
+    const view = render(<Screen a={false} b={false} />)
+    view.container.querySelector('button').focus()
+    view.rerender(<Screen a b />) // 둘 다 배경에서 열림
+    view.rerender(<Screen a b={false} />)
+    const dialogA = document.querySelector('[role="dialog"]')
+    expect(dialogA.contains(document.activeElement)).toBe(true)
+  })
+})
