@@ -42,7 +42,8 @@ export function useCustomerDetail(customerId: number | null): CustomerDetailStat
       (error: ApiError) => {
         if (!current) return
         if (error.code === 'NOT_FOUND') setResult({ status: 'notFound', data: null, error })
-        else setResult({ status: 'error', data: null, error })
+        // 다시 불러오기 실패면 이전 data를 남겨 화면(수정 입력)이 사라지지 않게 한다
+        else setResult((prev) => ({ status: 'error', data: prev.data?.customerId === customerId ? prev.data : null, error }))
       },
     )
     return () => {

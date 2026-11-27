@@ -144,13 +144,13 @@ export function useReservationPanel(reservationId: number | null): ReservationPa
     async <T,>(
       call: (id: number, version: number) => Promise<T>,
       options: SendOptions = {},
-    ): Promise<{ kind: 'ok'; data: T } | { kind: 'conflict' | 'stale' } | { kind: 'failed'; error: ApiError }> => {
+    ): Promise<{ kind: 'ok'; data: T; live: boolean } | { kind: 'conflict' | 'stale' } | { kind: 'failed'; error: ApiError }> => {
       if (!data) return { kind: 'stale' }
       const id = data.reservation.reservationId
       setNotice(null)
       try {
         const done = await call(id, data.reservation.version)
-        return aliveRef.current && idRef.current === id ? { kind: 'ok', data: done } : { kind: 'stale' }
+        return { kind: 'ok', data: done, live: aliveRef.current && idRef.current === id } // 요청은 성공 — live가 아니면 패널만 건드리지 않는다
       } catch (e) {
         const error = e as ApiError
         if (!aliveRef.current || idRef.current !== id) return { kind: 'stale' }
@@ -168,7 +168,8 @@ export function useReservationPanel(reservationId: number | null): ReservationPa
 
   const complete = useCallback(async (): Promise<CompleteResult> => {
     const result = await send((id, version) => completeReservation(id, { version }))
-    return result.kind === 'ok' ? { kind: 'completed', data: result.data } : result
+    if (result.kind === 'ok') return result.live ? { kind: 'completed', data: result.data } : { kind: 'stale' }
+    return result
   }, [send])
 
   const changeStatus = useCallback(
@@ -176,8 +177,10 @@ export function useReservationPanel(reservationId: number | null): ReservationPa
       const call = action === 'cancel' ? cancelReservation : markNoShow
       const result = await send((id, version) => call(id, { version }))
       if (result.kind !== 'ok') return result
-      setNotice({ tone: 'info', message: CONFIRM_TEXT[action].done })
-      setReloadKey((key) => key + 1) // 바뀐 상태·version을 다시 읽는다
+      if (result.live) {
+        setNotice({ tone: 'info', message: CONFIRM_TEXT[action].done })
+        setReloadKey((key) => key + 1) // 바뀐 상태·version을 다시 읽는다
+      }
       return { kind: 'changed', data: result.data }
     },
     [send],
@@ -188,8 +191,10 @@ export function useReservationPanel(reservationId: number | null): ReservationPa
     async (call: (id: number, version: number) => Promise<unknown>, done: string, options?: SendOptions): Promise<PanelChangeResult> => {
       const result = await send(call, options)
       if (result.kind !== 'ok') return result
-      setNotice({ tone: 'info', message: done })
-      setReloadKey((key) => key + 1)
+      if (result.live) {
+        setNotice({ tone: 'info', message: done })
+        setReloadKey((key) => key + 1)
+      }
       return { kind: 'changed' }
     },
     [send],
