@@ -23,10 +23,10 @@
   max-width: 100%;
   max-height: calc(100vh - 48px);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--ck-border);
   border-radius: 24px;
   background: var(--ck-surface);
-  box-shadow: 0 26px 70px rgba(8, 11, 18, 0.25);
+  box-shadow: var(--ck-shadow-pop); /* 아래 층과 구분하는 최소 효과만 (#82) */
   animation: ck-modal-rise-in 0.19s ease-out;
 }
 .modal:focus {

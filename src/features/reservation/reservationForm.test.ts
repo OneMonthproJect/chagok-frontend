@@ -35,8 +35,10 @@ describe('시각 선택지', () => {
 
 describe('validateForm', () => {
   it('등록: 차량·날짜·시각 필수, 예약 목적은 선택', () => {
-    expect(validateForm(emptyForm(TODAY), TODAY, '09:00', 'create')).toEqual({ vehicle: '차량을 골라 주세요.', time: '시각을 골라 주세요.' })
-    const ok = { ...emptyForm('2026-11-27', { vehicleId: 1, plateNumber: '12가0001' }), time: '10:00' }
+    expect(validateForm(emptyForm(TODAY), TODAY, '09:00', 'create')).toEqual({
+      vehicle: '차량을 골라 주세요.', time: '시각을 골라 주세요.', assignee: '담당 정비사를 골라 주세요.',
+    })
+    const ok = { ...emptyForm('2026-11-27', { vehicleId: 1, plateNumber: '12가0001' }), time: '10:00', assigneeId: 1 }
     expect(validateForm(ok, TODAY, '09:00', 'create')).toEqual({})
   })
 
@@ -51,13 +53,28 @@ describe('validateForm', () => {
   it('변경: 차량 칸은 검사하지 않는다(바꿀 수 없음)', () => {
     expect(validateForm({ ...formFromReservation(target), vehicle: null }, TODAY, '09:00', 'edit')).toEqual({})
   })
+
+  it('변경 #71: 일시를 그대로 두면 지난 날짜·지난 시각이어도 막지 않는다 (08 19: reservedAt을 보낼 때만 날짜 규칙)', () => {
+    const past = { ...target, reservedAt: '2026-11-25T10:00:00' } // 어제 (처리 필요)
+    const todayPast = { ...target, reservedAt: `${TODAY}T10:00:00` } // 오늘, 지금(11:00)보다 이른 시각
+    const memoOnly = (t: EditTarget) => ({ ...formFromReservation(t), memo: '목적만 변경' })
+    expect(validateForm(memoOnly(past), TODAY, '11:00', 'edit', { originalReservedAt: past.reservedAt })).toEqual({})
+    expect(validateForm(memoOnly(todayPast), TODAY, '11:00', 'edit', { originalReservedAt: todayPast.reservedAt })).toEqual({})
+    // 일시를 바꾸면 기존처럼 막는다
+    expect(validateForm({ ...memoOnly(past), time: '10:30' }, TODAY, '11:00', 'edit', { originalReservedAt: past.reservedAt }).date).toMatch(/오늘 이후/)
+    expect(validateForm({ ...memoOnly(todayPast), time: '10:30' }, TODAY, '11:00', 'edit', { originalReservedAt: todayPast.reservedAt }).time).toMatch(/지난 시각/)
+    // 30분 단위 검사는 일시를 그대로 둬도 한다
+    expect(validateForm({ ...memoOnly(past), time: '10:15' }, TODAY, '11:00', 'edit', { originalReservedAt: '2026-11-25T10:15:00' }).time).toMatch(/30분/)
+    // 등록은 originalReservedAt이 와도 그대로 검사한다
+    expect(validateForm({ ...memoOnly(past), vehicle: target.vehicle, assigneeId: 1 }, TODAY, '11:00', 'create', { originalReservedAt: past.reservedAt }).date).toMatch(/오늘 이후/)
+  })
 })
 
 describe('요청 만들기', () => {
-  it('16: 담당 필드 없이(D-51), 메모가 비면 null', () => {
-    const values = { ...emptyForm('2026-11-27', { vehicleId: 1, plateNumber: '12가0001' }), time: '11:30', itemIds: [1, 4], memo: '  ' }
+  it('16: 담당(assigneeId, P0-나머지 필수 #37)과 함께, 메모가 비면 null', () => {
+    const values = { ...emptyForm('2026-11-27', { vehicleId: 1, plateNumber: '12가0001' }), time: '11:30', itemIds: [1, 4], memo: '  ', assigneeId: 2 }
     expect(createRequest(values)).toEqual({
-      vehicleId: 1, reservedAt: '2026-11-27T11:30:00', purpose: { itemIds: [1, 4], other: false, memo: null },
+      vehicleId: 1, reservedAt: '2026-11-27T11:30:00', assigneeId: 2, purpose: { itemIds: [1, 4], other: false, memo: null },
     })
   })
 

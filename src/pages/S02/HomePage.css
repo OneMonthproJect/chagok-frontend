@@ -1,8 +1,10 @@
-/* S-02 홈 (P0-핵심 목록) — 디자인 v3.0 page-header·card-panel·reservation-empty-state. --ck-* 는 #18 토큰, 기본값 포함 */
+/* S-02 홈 (P0-핵심 목록 + P0-나머지 월 캘린더 #30·주 캘린더 #36) — 디자인 v3.0 page-header·card-panel·reservation-empty-state. --ck-* 는 #18 토큰, 기본값 포함 */
 .home-page { max-width: 1280px; }
 
 /* 예약 상세 패널(#26): 넓은 화면은 목록 오른쪽 열, 좁은 화면은 패널이 화면을 덮는다(ReservationPanel.css) */
 .home-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ck-space-5, 20px); align-items: start; }
+/* 왼쪽 열: 월 캘린더 카드 + 고른 날짜의 예약 목록 카드 (#30) */
+.home-main { min-width: 0; display: flex; flex-direction: column; gap: var(--ck-space-5, 20px); }
 @media (min-width: 1024px) {
   .has-panel .home-layout { grid-template-columns: minmax(0, 1fr) var(--ck-panel-w, 380px); }
 }
@@ -74,3 +76,70 @@
   color: var(--ck-text-3, #5f646d);
   text-align: center;
 }
+
+/* 캘린더 카드 오른쪽 위: "내 담당만"(주 보기만) + [주][월] */
+.home-card__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* "내 담당만" 스위치 (09 S-02 「보기 옵션」, 디자인 v3.0 Home-Week .toggle). 켬은 aria-checked로 알린다 */
+.home-mine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ck-text-2, #3d4149);
+  font-size: var(--ck-fs-small, 14px);
+  font-weight: 500;
+  cursor: pointer;
+}
+.home-mine__switch {
+  position: relative;
+  width: 30px;
+  height: 17px;
+  padding: 2px;
+  border: 0;
+  border-radius: 99px;
+  background: #d9dce1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.home-mine__switch::after { content: ''; position: absolute; inset: -14px -8px; } /* 누르는 영역 44px */
+.home-mine__switch i {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px #0000002e;
+  transition: transform 0.15s;
+}
+.home-mine__switch[aria-checked='true'] { background: var(--ck-brand, #1f2bff); }
+.home-mine__switch[aria-checked='true'] i { transform: translateX(13px); }
+.home-mine__switch:disabled { opacity: 0.5; cursor: not-allowed; }
+.home-mine__switch:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: 2px; }
+
+/* 캘린더 카드 오른쪽 위 [주][월] 전환 (09 S-02, #36). 지금 보기는 aria-pressed로 알린다 */
+.home-view-switch {
+  height: 36px;
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid #e2e4e8;
+  border-radius: 9px;
+  background: var(--ck-surface, #fff);
+}
+.home-view-switch button {
+  min-width: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--ck-text-3, #5f646d);
+  font: inherit;
+  font-size: var(--ck-fs-small, 14px);
+  font-weight: 600;
+  cursor: pointer;
+}
+.home-view-switch button + button { border-left: 1px solid #e2e4e8; }
+.home-view-switch button[aria-pressed='true'] { background: var(--ck-brand, #1f2bff); color: #fff; }
+.home-view-switch button:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: -3px; }

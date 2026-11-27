@@ -156,6 +156,14 @@
 .rsv-panel__footer:empty { display: none; }
 .rsv-panel__actions { display: flex; flex-direction: column; gap: var(--ck-space-2); }
 .rsv-panel__actions .button { width: 100%; }
+/* 취소·노쇼 (#31): 방문 완료·변경 아래 한 줄에 나란히 */
+.rsv-panel__actions-row { display: flex; gap: var(--ck-space-2); }
+.rsv-panel__actions-row .button { flex: 1 1 0; }
+
+/* 확인 대화상자 (PanelConfirmDialog) */
+.rsv-confirm__target { margin: 0; display: flex; flex-direction: column; gap: 2px; color: var(--ck-text-2, #4d525a); }
+.rsv-confirm__target strong { color: var(--ck-text-1, #17191c); }
+.rsv-confirm__desc { margin: var(--ck-space-3) 0 0; color: var(--ck-text-3, #5f646d); font-size: 14px; }
 
 /* 최근 정비 이력 (RecentVisits) */
 .rsv-visits { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--ck-space-2); }
@@ -181,3 +189,29 @@
   font-size: var(--ck-fs-caption);
 }
 .rsv-visits__memo { color: var(--ck-text-3); overflow-wrap: anywhere; }
+/* 점검 결과(양호·주의)·고객 진술 꼬리표 (#29) — S-07 정비 이력과 같은 모양 */
+.rsv-visits__result,
+.rsv-visits__source {
+  padding: 1px 6px;
+  border-radius: var(--ck-radius-pill);
+  font-size: var(--ck-fs-caption);
+  font-weight: var(--ck-fw-semibold);
+}
+.rsv-visits__result { border: 1px solid var(--ck-border-soft); color: var(--ck-text-2); }
+.rsv-visits__source { background: var(--ck-brand-tint); color: var(--ck-brand); }
+
+/* 방문 접수 입력·정정 대화상자 (#33) */
+.rsv-dialog__fields { margin-top: var(--ck-space-4); display: flex; flex-direction: column; gap: var(--ck-space-3); }
+.rsv-dialog__hint { margin: 0; color: var(--ck-text-3, #5f646d); font-size: 14px; }
+
+/* 변경 이력 (RevisionHistoryDialog, #33): 오래된 것부터 */
+.rsv-revisions { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--ck-space-2); }
+.rsv-revisions__item {
+  padding: var(--ck-space-3);
+  border: 1px solid var(--ck-border-soft);
+  border-radius: var(--ck-radius-sm);
+}
+.rsv-revisions__head { margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--ck-space-2); }
+.rsv-revisions__head span { color: var(--ck-text-3, #5f646d); font-size: 14px; }
+.rsv-revisions__change { margin: var(--ck-space-1, 4px) 0 0; }
+.rsv-revisions__reason { margin: var(--ck-space-1, 4px) 0 0; color: var(--ck-text-3, #5f646d); font-size: 14px; overflow-wrap: anywhere; }

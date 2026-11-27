@@ -61,7 +61,8 @@ jobs:
           fi
 
           # 3) 본문에서 이 레포 이슈 번호만 (HTML 주석 제거, 다른 레포 참조 제외)
-          nums=$(printf '%s' "$BODY" | perl -0pe 's/<!--.*?-->//gs' \
+          #    줄 처음의 닫히지 않은 <!-- 뒤는 화면에 보이지 않으므로 끝까지 지운다(pr-check와 같은 방식, chagok-docs#169)
+          nums=$(printf '%s' "$BODY" | perl -0pe 's/<!--.*?-->//gs; s/^ {0,3}<!--.*//ms' \
             | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+' \
             | while IFS= read -r ref; do
                 t=$(printf '%s' "$ref" | grep -oE '([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+$')

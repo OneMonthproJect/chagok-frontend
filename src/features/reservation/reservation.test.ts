@@ -4,7 +4,7 @@ import { getReservations } from './api'
 import { addDays, formatDayLabel, formatFullDate, formatTime, isValidDate, nowSeoul, todaySeoul } from './dates'
 import { reservationStatusLabel } from './status'
 import {
-  mockComplete, mockCreateReservation, mockGetPanel, mockGetReservations, mockUpdate, resetReservationMocks,
+  mockCancel, mockComplete, mockCreateReservation, mockGetPanel, mockGetReservations, mockNoShow, mockUpdate, resetReservationMocks,
 } from './mocks'
 import type { ReservationPeriodResponse } from './types'
 
@@ -99,12 +99,12 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
   })
 
   it('16: 같은 차량 유효 예약이 있으면 409와 기존 예약 번호, 30분 단위가 아니면 400', () => {
-    const dup = mockCreateReservation({ vehicleId: 2, reservedAt: `${addDays(today, 3)}T10:00:00` })
+    const dup = mockCreateReservation({ vehicleId: 2, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1 })
     expect(dup.status).toBe(409)
     expect((dup.body as { error: { details: unknown } }).error.details).toEqual({ reservationId: 3 })
-    expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:10:00` }).status).toBe(400)
-    expect(mockCreateReservation({ vehicleId: 99, reservedAt: `${addDays(today, 3)}T10:00:00` }).status).toBe(404)
-    expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:00:00` }).status).toBe(200)
+    expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:10:00`, assigneeId: 1 }).status).toBe(400)
+    expect(mockCreateReservation({ vehicleId: 99, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1 }).status).toBe(404)
+    expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1 }).status).toBe(200)
   })
 
   it('18·19: version이 다르면 409, 완료 뒤 변경은 409 상태 전이', () => {
@@ -119,6 +119,28 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
     expect((mockUpdate(1, { version: 1, purpose: { memo: '메모' } }).body as { error: { code: string } }).error.code).toBe('INVALID_STATUS_TRANSITION')
     expect(mockUpdate(3, { version: 0 }).status).toBe(400) // 바꿀 필드 없음 (R14)
     expect(mockUpdate(3, { version: 0, purpose: { memo: '메모' } }).status).toBe(200)
+  })
+
+  it('20·21: 취소는 예약·진행중(시각 무관), 노쇼는 시각이 지난 예약만. 상태 → version → 시각 순', () => {
+    const code = (r: { body: unknown }) => (r.body as { error: { code: string } }).error.code
+    expect(code(mockCancel(3, {} as never))).toBe('INVALID_INPUT')
+    expect(mockCancel(999, { version: 0 }).status).toBe(404)
+    expect(code(mockCancel(3, { version: 5 }))).toBe('CONCURRENT_MODIFICATION')
+    const canceled = mockCancel(3, { version: 0 }) // 이틀 뒤 예약도 취소 가능
+    expect(canceled.status).toBe(200)
+    expect((canceled.body as { data: unknown }).data).toEqual({ reservationId: 3, status: 'CANCELED', vehicleId: 2, version: 1 })
+    expect(code(mockCancel(3, { version: 1 }))).toBe('INVALID_STATUS_TRANSITION') // 끝난 예약
+
+    expect(code(mockNoShow(1, { version: 5 }))).toBe('CONCURRENT_MODIFICATION') // version이 시각보다 먼저
+    expect(code(mockNoShow(4, { version: 5 }))).toBe('CONCURRENT_MODIFICATION')
+    expect((mockNoShow(4, { version: 0 }).body as { data: { status: string } }).data.status).toBe('NO_SHOW') // 어제 예약
+    expect(code(mockNoShow(4, { version: 1 }))).toBe('INVALID_STATUS_TRANSITION')
+    const panel = mockGetPanel(4).body as { data: { reservation: { status: string; needsAction: boolean } } }
+    expect(panel.data.reservation).toMatchObject({ status: 'NO_SHOW', needsAction: false })
+  })
+
+  it('21: 시각 전 예약은 노쇼 409', () => {
+    expect((mockNoShow(3, { version: 0 }).body as { error: { code: string } }).error.code).toBe('INVALID_STATUS_TRANSITION')
   })
 
   it('17: 패널은 08 모양, 없는 예약은 404', () => {
@@ -146,5 +168,31 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
     expect(seo.recentVisits.map((v) => v.records[0].type)).toEqual(['EXTERNAL', 'REPLACE'])
 
     expect(read(1).totalVisitCount).toBe(1) // 78라0004
+  })
+
+  it('17 P0-나머지 (#29): 꼬리표는 07 7.2 시드대로(11바0006 거절·33아0008 주의), source는 외부만 고객 진술, 점검 결과는 점검에만', () => {
+    type Panel = {
+      itemStatuses: { itemId: number; lastDecline: { date: string; memo: string | null } | null; lastCaution: { date: string; memo: string | null } | null }[]
+      recentVisits: { records: { type: string; source: string; inspectResult: string | null }[] }[]
+    }
+    const panelOf = (vehicleId: number, time: string) => {
+      const saved = mockCreateReservation({ vehicleId, reservedAt: `${addDays(todaySeoul(), 3)}T${time}`, assigneeId: 1 })
+      const id = parseResponse<{ reservationId: number }>(saved.status, saved.body).reservationId
+      return parseResponse<Panel>(mockGetPanel(id).status, mockGetPanel(id).body)
+    }
+    const ha = panelOf(6, '11:00:00') // 11바0006: 엔진오일 교체 D-8M 뒤 거절 D-1M
+    expect(ha.itemStatuses.find((i) => i.itemId === 1)).toMatchObject({ lastDecline: { memo: null }, lastCaution: null })
+    expect(ha.itemStatuses.filter((i) => i.lastDecline || i.lastCaution).map((i) => i.itemId)).toEqual([1])
+
+    const yun = panelOf(8, '13:00:00') // 33아0008: 타이어 교체 뒤 점검 주의 D-2M
+    expect(yun.itemStatuses.find((i) => i.itemId === 5)).toMatchObject({
+      lastDecline: null,
+      lastCaution: { memo: '타이어 트레드 마모 진행, 다음 방문 때 교체 권장' },
+    })
+    expect(yun.recentVisits[0].records[0]).toMatchObject({ type: 'INSPECT', source: 'SHOP', inspectResult: 'CAUTION' })
+
+    const records = [2, 4].flatMap((id) => parseResponse<Panel>(mockGetPanel(id).status, mockGetPanel(id).body).recentVisits.flatMap((v) => v.records))
+    expect(records.every((r) => (r.type === 'EXTERNAL') === (r.source === 'CUSTOMER_STATEMENT'))).toBe(true) // 07 3.7 CHECK
+    expect(records.every((r) => r.inspectResult === null || r.type === 'INSPECT')).toBe(true)
   })
 })

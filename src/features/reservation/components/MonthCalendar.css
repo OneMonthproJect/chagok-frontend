@@ -1,0 +1,79 @@
+/* 홈 월 캘린더 (F-RSV-05, #30). --ck-* 는 #18 토큰, 기본값 포함. 상태 색은 ReservationList.css 예약 상태 배지와 같은 계열 */
+.mcal { display: flex; flex-direction: column; gap: 12px; }
+
+/* 이동 바(이전·달 표시·다음·오늘로)는 PeriodNavigator.css (#83, 주 캘린더·날짜 목록과 같은 모양) */
+.mcal__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mcal__weekdays,
+.mcal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.mcal__weekdays span {
+  color: var(--ck-text-4, #626770);
+  font-size: var(--ck-fs-caption, 12px);
+  font-weight: 600;
+  text-align: center;
+}
+.mcal__weekdays span:first-child { color: #b42318; }
+
+.mcal__grid { margin: 0; padding: 0; list-style: none; }
+.mcal__grid > li { min-width: 0; }
+
+.mcal-day {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 92px;
+  padding: 6px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  border: 1px solid #ecedf1;
+  border-radius: 10px;
+  background: var(--ck-surface, #fff);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s, background-color 0.14s;
+}
+.mcal-day:hover { border-color: #c9cdf9; }
+.mcal-day:focus-visible { outline: 2px solid var(--ck-brand-ring, rgba(31, 43, 255, 0.32)); outline-offset: 2px; }
+.mcal-day.is-outside { background: var(--ck-surface-muted, #f7f8fa); color: var(--ck-text-4, #8a8f98); }
+.mcal-day.is-selected { border-color: var(--ck-brand, #1f2bff); background: var(--ck-brand-tint, #f0f1ff); }
+
+.mcal-day__num { font-size: var(--ck-fs-meta, 13px); font-weight: 600; }
+.mcal-day.is-today .mcal-day__num {
+  min-width: 22px;
+  height: 22px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--ck-brand, #1f2bff);
+  color: #fff;
+}
+.mcal-day__total { color: #25282e; font-size: var(--ck-fs-meta, 13px); font-weight: 700; }
+.mcal-day__counts { display: flex; flex-wrap: wrap; gap: 2px 4px; }
+
+/* 상태별 작은 숫자: 글자를 항상 함께 보인다(색만으로 구분하지 않음) */
+.mcal-count { font-size: 11px; line-height: 1.35; white-space: nowrap; }
+.mcal-count--reserved { color: var(--ck-brand, #1f2bff); }
+.mcal-count--inProgress { color: #1520b8; font-weight: 700; }
+.mcal-count--completed { color: #067647; }
+.mcal-count--canceled { color: var(--ck-text-3, #5f646d); }
+.mcal-count--noShow { color: #b42318; }
+
+/* 좁은 화면: 칸을 낮추고 상태별 숫자는 줄을 바꿔 쌓는다 */
+@media (max-width: 599px) {
+  .mcal-day { min-height: 68px; padding: 4px; }
+  .mcal-day__counts { flex-direction: column; gap: 0; }
+  .mcal-count { font-size: 10px; }
+}

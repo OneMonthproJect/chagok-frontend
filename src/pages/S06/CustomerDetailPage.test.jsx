@@ -120,13 +120,13 @@ describe('S-06 고객 상세', () => {
     expect(secondCounts[1].textContent).toBe('임박 0')
   })
 
-  it('차량 카드를 누르면 S-07 (#22) — 버튼은 [차량 추가] 하나뿐(수정은 아직 없다)', async () => {
+  it('차량 카드를 누르면 S-07 (#22) — 버튼은 [수정](#32)·[차량 추가]뿐(비활성화·삭제는 P1)', async () => {
     fetchMock.mockResolvedValue(ok(OH))
     renderPage()
     await settle()
     const links = Array.from(document.querySelectorAll('.customer-vehicles a'))
     expect(links.map((a) => a.getAttribute('href'))).toEqual(['/vehicles/10', '/vehicles/11'])
-    expect(Array.from(document.querySelectorAll('button')).map((b) => b.textContent.trim())).toEqual(['차량 추가'])
+    expect(Array.from(document.querySelectorAll('button')).map((b) => b.textContent.trim())).toEqual(['수정', '차량 추가'])
 
     click(links[1])
     expect(location.pathname).toBe('/vehicles/11')
@@ -148,7 +148,7 @@ describe('S-06 고객 상세', () => {
     expect(document.body.textContent).toContain('등록된 차량이 없습니다.')
     expect(document.body.textContent).toContain('등록 차량 0대')
     expect(vehicleCards()).toHaveLength(0)
-    expect(Array.from(document.querySelectorAll('button')).map((b) => b.textContent.trim())).toEqual(['차량 추가', '차량 추가'])
+    expect(Array.from(document.querySelectorAll('button')).map((b) => b.textContent.trim())).toEqual(['수정', '차량 추가', '차량 추가'])
   })
 
   it('404(다른 정비소·없는 고객, X1): "찾을 수 없습니다." + 홈으로 — 다시 불러오기 없음', async () => {

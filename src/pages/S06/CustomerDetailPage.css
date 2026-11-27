@@ -38,8 +38,8 @@
 .s06__card {
   overflow: hidden;
   border-radius: var(--ck-radius-xl);
+  border: 1px solid var(--ck-border-soft);
   background: var(--ck-surface);
-  box-shadow: var(--ck-shadow-card);
 }
 .s06__card--padded {
   padding: var(--ck-space-5);
@@ -51,12 +51,25 @@
 }
 .s06__skeleton-block {
   border-radius: var(--ck-radius-xl);
+  border: 1px solid var(--ck-border-soft);
   background: var(--ck-surface);
-  box-shadow: var(--ck-shadow-card);
 }
 .s06__skeleton-block--info {
   height: 104px;
 }
 .s06__skeleton-block--vehicles {
   height: 260px;
+}
+
+/* 고객 정보 카드 + [수정] (#32) */
+.s06__info-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ck-space-3);
+}
+.s06__edit {
+  margin-top: var(--ck-space-4);
+  border-radius: var(--ck-radius-md);
+  overflow: hidden;
 }

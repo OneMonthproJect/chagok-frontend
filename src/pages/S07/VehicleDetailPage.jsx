@@ -6,6 +6,7 @@ import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import ItemStatusList from '@/shared/ui/ItemStatusList.jsx'
 import VehicleCustomerHeader from '@/features/customer/components/VehicleCustomerHeader.jsx'
+import VehicleEditForm from '@/features/customer/components/VehicleEditForm.jsx'
 import {
   GO_HOME_LABEL,
   NOT_FOUND_DESCRIPTION,
@@ -13,6 +14,7 @@ import {
   listSearchFrom,
   parseVehicleId,
 } from '@/features/customer/detailFlow'
+import { EDIT_LABEL } from '@/features/customer/editFlow'
 import { LOAD_FAILED_MESSAGE, RELOAD_LABEL } from '@/features/customer/searchFlow'
 import { useVehicleDetail } from '@/features/customer/useVehicleDetail'
 import VisitHistory from '@/features/maintenance/components/VisitHistory.jsx'
@@ -20,6 +22,7 @@ import { ITEM_STATUS_NOTE, RECORD_VISIT_LABEL, itemStatusTableRows } from '@/fea
 import { useItemStatus } from '@/features/maintenance/useItemStatus'
 import { useVisitHistory } from '@/features/maintenance/useVisitHistory'
 import ReservationFormModal from '@/features/reservation/components/ReservationFormModal.jsx'
+import { useMe } from '@/features/auth/useMe'
 import { useServiceItems } from '@/pages/S02/useServiceItems'
 import './VehicleDetailPage.css'
 
@@ -33,7 +36,10 @@ import './VehicleDetailPage.css'
 // - 머리 오른쪽 버튼(09 S-07 버튼, 디자인 v3.0): [예약] → M-02(차량을 채워 염, 09 M-02) · [방문 기록] → S-08(`/visits/new?vehicleId=`).
 //   이력이 없을 때의 "방문 기록"(09 5장)도 S-08로. 차량을 불러온 뒤에만 보인다(찾을 수 없음·실패 때는 없음).
 //   M-02 저장 뒤 이동은 09에 없어 S-04처럼 닫기만 한다. 같은 차량의 유효 예약(409)이면 S-04처럼 S-02 그 예약 패널로.
-// - 아직 연결하지 않는 것(연결 안 된 버튼 금지, 09 0장): [수정](#32)·기록 수정(#34)은 그 이슈가, [비활성화]·약식 도면은 P1.
+// - [수정](#32, 08 23): 차량·고객 머리 아래 인라인 입력(차량만, 고객은 S-06에서). 저장하면 닫고 09를 다시 불러온다.
+//   409 동시 수정(그 사이 방문 기록 저장 포함)이면 09를 다시 불러 머리에 최신 값을 보이고 입력은 그대로 둔다(POL-124).
+//   LIMIT: 다시 불러오기(09)마저 실패하면 머리 영역이 "불러오지 못했습니다."로 바뀌어 입력이 사라진다(S-06과 같은 한계, 같은 개선 시점).
+// - 아직 연결하지 않는 것(연결 안 된 버튼 금지, 09 0장): 기록 수정(#34)은 그 이슈가, [비활성화]·약식 도면은 P1.
 
 export default function VehicleDetailPage() {
   const { vehicleId: rawId } = useParams()
@@ -45,6 +51,7 @@ export default function VehicleDetailPage() {
   const listSearch = listSearchFrom(location.state)
   const navigate = useNavigate()
   const [reserving, setReserving] = useState(false)
+  const [editing, setEditing] = useState(false)
 
   const notFound = [vehicle.status, itemStatus.status, history.status].includes('notFound')
   const loaded = vehicle.data && !notFound ? vehicle.data : null
@@ -62,6 +69,11 @@ export default function VehicleDetailPage() {
         </div>
         {loaded && (
           <div className="s07__actions">
+            {!editing && (
+              <Button variant="secondary" onClick={() => setEditing(true)}>
+                {EDIT_LABEL}
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setReserving(true)}>
               예약
             </Button>
@@ -75,6 +87,21 @@ export default function VehicleDetailPage() {
         history={history}
         listSearch={listSearch}
         onRecordVisit={loaded ? recordVisit : undefined}
+        editForm={
+          loaded &&
+          editing && (
+            <VehicleEditForm
+              vehicle={loaded}
+              refreshing={vehicle.status === 'loading'}
+              onSaved={(kind) => {
+                setEditing(false)
+                if (kind === 'saved') vehicle.reload()
+              }}
+              onConflict={vehicle.reload}
+              onCancel={() => setEditing(false)}
+            />
+          )
+        }
       />
       {loaded && reserving && (
         <ReserveModal
@@ -90,14 +117,16 @@ export default function VehicleDetailPage() {
   )
 }
 
-/** M-02 (차량을 채워 염). 예약 목적 항목(08 13)은 M-02를 열 때만 부른다 */
+/** M-02 (차량을 채워 염). 예약 목적 항목(08 13)·로그인 계정(08 03, 담당 기본값 #37)은 M-02를 열 때만 부른다 */
 function ReserveModal({ vehicle, onClose, onOpenExisting }) {
   const items = useServiceItems()
+  const { me } = useMe()
   return (
     <ReservationFormModal
       mode="create"
       initialVehicle={{ vehicleId: vehicle.vehicleId, plateNumber: vehicle.plateNumber, customerName: vehicle.customer.name }}
       items={items}
+      login={me}
       onSaved={onClose}
       onClose={onClose}
       onOpenExisting={onOpenExisting}
@@ -105,7 +134,7 @@ function ReserveModal({ vehicle, onClose, onOpenExisting }) {
   )
 }
 
-function VehicleDetailBody({ vehicle, itemStatus, history, listSearch, onRecordVisit }) {
+function VehicleDetailBody({ vehicle, itemStatus, history, listSearch, onRecordVisit, editForm }) {
   const navigate = useNavigate()
 
   if ([vehicle.status, itemStatus.status, history.status].includes('notFound')) {
@@ -145,6 +174,7 @@ function VehicleDetailBody({ vehicle, itemStatus, history, listSearch, onRecordV
           vehicle={vehicle.data}
           customerLink={{ to: customerPath(customer.customerId), state: { listSearch } }}
         />
+        {editForm && <div className="s07__edit">{editForm}</div>}
       </section>
       <div className="s07__columns">
         <section className="s07__card" aria-labelledby="s07-item-status-title">

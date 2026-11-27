@@ -18,7 +18,7 @@
 | 굵기 · 행간 | `--ck-fw-*` `--ck-lh-tight/body` | 400·500·600·700 / 1.25·1.5 | |
 | 간격 | `--ck-space-1~8` | 4 · 8 · 12 · 16 · 20 · 24 · 32 | 4px 단위 |
 | 모서리 | `--ck-radius-sm/md/lg/xl/pill` | 8 · 12 · 16 · 20 · 999 | |
-| 그림자 | `--ck-shadow-card/pop/brand` | | |
+| 그림자 | `--ck-shadow-card/pop/brand` | none · 0 4px 16px rgba(17,24,39,.08) · none | chagok-frontend#82: 카드·버튼·사이드바는 그림자 없이 테두리(`--ck-border-soft`)·배경 대비로 구분. pop은 모달처럼 떠 있는 층에만. 포커스 링(0 0 0 3px)은 그림자가 아님 |
 | 크기 | `--ck-control-h(-sm/-lg)` · `--ck-icon(-sm)` | 44(40/48) · 20(16) | 터치 영역 40px 이상 |
 | 레이아웃 | `--ck-sidebar-w(-collapsed)` · `--ck-panel-w` · `--ck-modal-w` | 216(76) · 380 · 560 | 반응형 확정은 STEP 06 |
 | z-index | `--ck-z-sidebar/panel/modal/dialog/toast/tooltip` | 30 · 40 · 120 · 130 · 150 · 160 | |
@@ -39,7 +39,7 @@
 | StatusBadge (점검 주기) | `CycleBadge` | 도래 · 임박 · 여유 · 미확인 | 글자 + 점 + 색. 서버 status 그대로(08 0.4) |
 | ReservationStatusBadge | `StatusChip` | 예약 · 진행중 · 방문 완료 · 취소 · 노쇼 | 글자 항상 표시 |
 | 보조 꼬리표 | (인라인) | 처리 필요 · 예약 있음 · 지난 방문 거절 · 지난 점검 주의 · 예약 목적 · 수정됨 · 담당 | 상태를 바꾸지 않음(09 0장) |
-| Card | `.card-panel` | — | 모서리 20, 그림자 card |
+| Card | `.card-panel` | — | 모서리 20, 테두리 1px `--ck-border-soft` (그림자 없음, chagok-frontend#82) |
 | Table | `.maintenance-table` | — | 본문 14~15px |
 | Tabs | `.ck-tabs` (주/월 토글) | selected | `role=tablist/tab`, `aria-selected` |
 | Pagination | `.ck-pagination` | current · disabled | `aria-current="page"`, 40px |

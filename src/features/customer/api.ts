@@ -1,7 +1,7 @@
 // features/customer의 API 호출 (08 05~09). 요청은 shared/api/client를 거친다(fetch 직접 호출 없음).
 // 오류는 client가 ApiError로 던진다(05 POL-120~129). 자동으로 다시 보내지 않는다(POL-125).
 // Mock은 개발 서버에서 VITE_USE_MOCK=true일 때만, 동적 import()로 불러 운영 번들에 들어가지 않는다 (CONVENTIONS 7장 「Mock」).
-// 다른 화면(S-06·S-07·M-02 등)도 이 파일만 부른다 — 이 이슈(#19)가 05~09를 모두 만든다(STARTER 08).
+// 다른 화면(S-06·S-07·M-02 등)도 이 파일만 부른다 — 05~09는 #19가, 22·23 고객·차량 수정은 #32가 만든다(STARTER 08).
 
 import { MOCK_ENABLED, request } from '@/shared/api/client'
 import type {
@@ -10,9 +10,13 @@ import type {
   CustomerDetail,
   CustomerSearchParams,
   CustomerSearchResponse,
+  CustomerUpdateRequest,
+  CustomerUpdateResponse,
   VehicleAddRequest,
   VehicleAddResponse,
   VehicleDetail,
+  VehicleUpdateRequest,
+  VehicleUpdateResponse,
 } from './types'
 
 /** 05 쿼리 문자열. 빈 검색어·정하지 않은 쪽은 빼서 서버 기본값(page 0·size 20)을 쓴다 */
@@ -60,5 +64,21 @@ export function addVehicle(customerId: number, body: VehicleAddRequest): Promise
 export function getVehicle(vehicleId: number): Promise<VehicleDetail> {
   return request<VehicleDetail>('GET', `/api/vehicles/${encodeURIComponent(vehicleId)}`, {
     mock: MOCK_ENABLED ? () => import('./mocks').then((m) => m.mockGetVehicle(vehicleId)) : undefined,
+  })
+}
+
+/** 08 22 고객 수정 (S-06). 07에서 읽은 version을 함께 보낸다. 다르면 409 CONCURRENT_MODIFICATION */
+export function updateCustomer(customerId: number, body: CustomerUpdateRequest): Promise<CustomerUpdateResponse> {
+  return request<CustomerUpdateResponse>('PATCH', `/api/customers/${encodeURIComponent(customerId)}`, {
+    body,
+    mock: MOCK_ENABLED ? () => import('./mocks').then((m) => m.mockUpdateCustomer(customerId, body)) : undefined,
+  })
+}
+
+/** 08 23 차량 수정 (S-07). 09에서 읽은 version을 함께 보낸다. 다르면 409 CONCURRENT_MODIFICATION */
+export function updateVehicle(vehicleId: number, body: VehicleUpdateRequest): Promise<VehicleUpdateResponse> {
+  return request<VehicleUpdateResponse>('PATCH', `/api/vehicles/${encodeURIComponent(vehicleId)}`, {
+    body,
+    mock: MOCK_ENABLED ? () => import('./mocks').then((m) => m.mockUpdateVehicle(vehicleId, body)) : undefined,
   })
 }

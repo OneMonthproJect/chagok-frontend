@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import TargetList from '@/features/target/components/TargetList.jsx'
 import { LOAD_FAILED_MESSAGE, NO_TARGETS_MESSAGE, reservationQuery, vehicleOf } from '@/features/target/targetFlow'
 import { useTargets } from '@/features/target/useTargets'
+import { useMe } from '@/features/auth/useMe'
 import ReservationFormModal from '@/features/reservation/components/ReservationFormModal.jsx'
 import { formatFullDate } from '@/features/reservation/dates'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
@@ -21,6 +22,7 @@ export default function TargetsPage() {
   const navigate = useNavigate()
   const { state, reload } = useTargets()
   const items = useServiceItems()
+  const { me } = useMe() // M-02 담당 기본값 (08 03, #37)
   const [reserveTarget, setReserveTarget] = useState(null)
 
   function openReservation(active) {
@@ -55,6 +57,7 @@ export default function TargetsPage() {
           mode="create"
           initialVehicle={vehicleOf(reserveTarget)}
           items={items}
+          login={me}
           onSaved={() => {
             setReserveTarget(null)
             reload()

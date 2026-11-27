@@ -1,28 +1,58 @@
-// 예약 상세 패널 데이터 (08 17 조회 · 18 방문 완료). S-02가 ?reservation= 값으로 부른다.
+// 예약 상세 패널 데이터 (08 17 조회 · 18 방문 완료 · 20 취소 · 21 노쇼 · 39 방문 접수 · 40 정정). S-02가 ?reservation= 값으로 부른다.
 // - 다른 예약으로 바뀌면 다시 부르고, 늦게 온 이전 응답은 버린다. 404(없는 예약·다른 정비소 예약, X3)는 'notFound'.
 // - 방문 완료는 패널이 읽은 version을 함께 보낸다(M1 결정 B). 409(INVALID_STATUS_TRANSITION·CONCURRENT_MODIFICATION)면
 //   패널을 다시 불러 최신 상태를 보이고 'conflict'를 돌려준다 — 화면은 S-08로 이동하지 않는다(08 18 「화면 처리」).
+// - 취소·노쇼(#31)도 같은 규칙이다(08 20·21 「화면 처리는 18과 같다」). 성공하면 패널을 다시 불러 바뀐 상태를 보이고 안내를 띄운다.
+// - 방문 접수·정정(#33)도 같은 규칙이다(09 S-02: 접수·완료·취소·노쇼·정정은 version을 보내고 409면 패널 다시 조회).
+//   입력 칸이 있는 대화상자(접수 입력·정정)에서 보낼 때는 409 밖의 실패(400·403·500)를 패널이 아니라 대화상자가 보이도록
+//   { inline: true }로 부른다 — 대화상자가 열린 채 입력값을 지킨다(05 POL-121). 접수 뒤 S-08로 이동하지 않는다(#33 결정).
 // - 어떤 실패도 자동으로 다시 보내거나 다시 부르지 않는다(05 POL-104·125). 다시 시도는 사람이 버튼으로 한다.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ApiError } from '@/shared/api/client'
-import { completeReservation, getReservationPanel } from './api'
-import { reloadsOnConflict } from './panelFlow'
-import type { ReservationCompleted, ReservationPanel } from './types'
+import { cancelReservation, completeReservation, correctReservation, getReservationPanel, markNoShow, startReservation } from './api'
+import { CONFIRM_TEXT, CORRECT_TEXT, START_TEXT, reloadsOnConflict } from './panelFlow'
+import type { ConfirmAction } from './panelFlow'
+import type {
+  ReservationCompleted,
+  ReservationCorrectRequest,
+  ReservationPanel,
+  ReservationStartRequest,
+  ReservationStatusChanged,
+} from './types'
 
 export type PanelStatus = 'loading' | 'ready' | 'notFound' | 'error'
 
-/** 패널 안 행동(방문 완료)의 실패 안내. warn = 409 뒤 다시 불러옴, error = 그 밖(500·네트워크 등) */
-export interface PanelActionNotice {
-  tone: 'warn' | 'error'
-  error: ApiError
-}
+/**
+ * 패널 안 행동의 안내. warn = 409 뒤 다시 불러옴, error = 그 밖(500·네트워크 등), info = 취소·노쇼 성공(message).
+ */
+export type PanelActionNotice =
+  | { tone: 'warn' | 'error'; error: ApiError }
+  | { tone: 'info'; message: string }
 
 export type CompleteResult =
   | { kind: 'completed'; data: ReservationCompleted }
   | { kind: 'conflict' }
   | { kind: 'failed' }
   | { kind: 'stale' } // 요청 중 다른 예약으로 바뀜(결과를 쓰지 않음)
+
+export type StatusChangeResult =
+  | { kind: 'changed'; data: ReservationStatusChanged }
+  | { kind: 'conflict' }
+  | { kind: 'failed' }
+  | { kind: 'stale' }
+
+/** 39 방문 접수·40 정정 결과. failed에는 오류를 실어 대화상자가 보이게 한다(inline일 때) */
+export type PanelChangeResult =
+  | { kind: 'changed' }
+  | { kind: 'conflict' }
+  | { kind: 'failed'; error: ApiError }
+  | { kind: 'stale' }
+
+/** inline: 409 밖의 실패를 패널 안내로 띄우지 않고 결과로만 돌려준다(대화상자가 보임) */
+export interface SendOptions {
+  inline?: boolean
+}
 
 export interface ReservationPanelState {
   status: PanelStatus
@@ -33,6 +63,12 @@ export interface ReservationPanelState {
   reload: () => void
   /** [방문 완료]. Promise가 끝날 때까지 버튼이 잠긴다(Button, POL-120) */
   complete: () => Promise<CompleteResult>
+  /** [취소]·[노쇼] (확인 대화상자에서 확인한 뒤). 성공·409 모두 패널을 다시 읽는다 */
+  changeStatus: (action: ConfirmAction) => Promise<StatusChangeResult>
+  /** [방문 접수] (08 39). body의 version은 패널이 읽은 값으로 바꿔 보낸다. 성공·409 모두 패널을 다시 읽는다 */
+  start: (body: Omit<ReservationStartRequest, 'version'>, options?: SendOptions) => Promise<PanelChangeResult>
+  /** [정정] (08 40). 성공·409 모두 패널을 다시 읽는다 */
+  correct: (body: Omit<ReservationCorrectRequest, 'version'>, options?: SendOptions) => Promise<PanelChangeResult>
 }
 
 interface LoadResult {
@@ -100,25 +136,76 @@ export function useReservationPanel(reservationId: number | null): ReservationPa
   }, [])
 
   const data = result.status === 'ready' ? result.data : null
-  const complete = useCallback(async (): Promise<CompleteResult> => {
-    if (!data) return { kind: 'stale' }
-    const id = data.reservation.reservationId
-    setNotice(null)
-    try {
-      const completed = await completeReservation(id, { version: data.reservation.version })
-      return aliveRef.current && idRef.current === id ? { kind: 'completed', data: completed } : { kind: 'stale' }
-    } catch (e) {
-      const error = e as ApiError
-      if (!aliveRef.current || idRef.current !== id) return { kind: 'stale' }
-      if (reloadsOnConflict(error.code)) {
-        setNotice({ tone: 'warn', error })
-        setReloadKey((key) => key + 1) // 최신 상태·version을 다시 읽는다(18을 다시 보내지는 않음)
-        return { kind: 'conflict' }
+  /**
+   * 패널이 읽은 version으로 상태 변경 요청을 보낸다(18·20·21 공통). 409면 다시 읽고 'conflict', 그 밖 실패는 'failed'.
+   * 요청 중 패널을 닫거나 다른 예약으로 바뀌면 결과를 쓰지 않는다('stale').
+   */
+  const send = useCallback(
+    async <T,>(
+      call: (id: number, version: number) => Promise<T>,
+      options: SendOptions = {},
+    ): Promise<{ kind: 'ok'; data: T } | { kind: 'conflict' | 'stale' } | { kind: 'failed'; error: ApiError }> => {
+      if (!data) return { kind: 'stale' }
+      const id = data.reservation.reservationId
+      setNotice(null)
+      try {
+        const done = await call(id, data.reservation.version)
+        return aliveRef.current && idRef.current === id ? { kind: 'ok', data: done } : { kind: 'stale' }
+      } catch (e) {
+        const error = e as ApiError
+        if (!aliveRef.current || idRef.current !== id) return { kind: 'stale' }
+        if (reloadsOnConflict(error.code)) {
+          setNotice({ tone: 'warn', error })
+          setReloadKey((key) => key + 1) // 최신 상태·version을 다시 읽는다(요청을 다시 보내지는 않음)
+          return { kind: 'conflict' }
+        }
+        if (!options.inline) setNotice({ tone: 'error', error })
+        return { kind: 'failed', error }
       }
-      setNotice({ tone: 'error', error })
-      return { kind: 'failed' }
-    }
-  }, [data])
+    },
+    [data],
+  )
 
-  return { ...result, notice, reload, complete }
+  const complete = useCallback(async (): Promise<CompleteResult> => {
+    const result = await send((id, version) => completeReservation(id, { version }))
+    return result.kind === 'ok' ? { kind: 'completed', data: result.data } : result
+  }, [send])
+
+  const changeStatus = useCallback(
+    async (action: ConfirmAction): Promise<StatusChangeResult> => {
+      const call = action === 'cancel' ? cancelReservation : markNoShow
+      const result = await send((id, version) => call(id, { version }))
+      if (result.kind !== 'ok') return result
+      setNotice({ tone: 'info', message: CONFIRM_TEXT[action].done })
+      setReloadKey((key) => key + 1) // 바뀐 상태·version을 다시 읽는다
+      return { kind: 'changed', data: result.data }
+    },
+    [send],
+  )
+
+  /** 39·40 공통: 성공하면 안내를 띄우고 패널을 다시 읽는다 */
+  const change = useCallback(
+    async (call: (id: number, version: number) => Promise<unknown>, done: string, options?: SendOptions): Promise<PanelChangeResult> => {
+      const result = await send(call, options)
+      if (result.kind !== 'ok') return result
+      setNotice({ tone: 'info', message: done })
+      setReloadKey((key) => key + 1)
+      return { kind: 'changed' }
+    },
+    [send],
+  )
+
+  const start = useCallback(
+    (body: Omit<ReservationStartRequest, 'version'>, options?: SendOptions) =>
+      change((id, version) => startReservation(id, { ...body, version }), START_TEXT.done, options),
+    [change],
+  )
+
+  const correct = useCallback(
+    (body: Omit<ReservationCorrectRequest, 'version'>, options?: SendOptions) =>
+      change((id, version) => correctReservation(id, { ...body, version }), CORRECT_TEXT.done, options),
+    [change],
+  )
+
+  return { ...result, notice, reload, complete, changeStatus, start, correct }
 }

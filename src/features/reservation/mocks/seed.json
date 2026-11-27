@@ -33,11 +33,16 @@
     { "vehicleId": 10, "customerId": 10, "plateNumber": "55차0010", "model": "쏘나타", "modelYear": 2018, "latestMileage": 97000 },
     { "vehicleId": 11, "customerId": 10, "plateNumber": "66카0011", "model": "K3", "modelYear": null, "latestMileage": null }
   ],
+  "_staffComment": "07 7.1 A 정비소 사장·정비사 (08 36 예시와 같은 staffId·colorIndex). 예약 담당(assigneeStaffId)은 07 7.3.",
+  "staff": [
+    { "staffId": 1, "name": "박사장", "colorIndex": 0 },
+    { "staffId": 2, "name": "김정비", "colorIndex": 1 }
+  ],
   "reservations": [
-    { "reservationId": 1, "dayOffset": 0, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 4, "itemIds": [1], "other": false, "memo": null },
-    { "reservationId": 2, "dayOffset": 0, "time": "14:30:00", "status": "RESERVED", "version": 0, "vehicleId": 7, "itemIds": [], "other": true, "memo": "에어컨 냄새" },
-    { "reservationId": 3, "dayOffset": 2, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 2, "itemIds": [1], "other": false, "memo": null },
-    { "reservationId": 4, "dayOffset": -1, "time": "15:00:00", "status": "RESERVED", "version": 0, "vehicleId": 10, "itemIds": [6], "other": false, "memo": null }
+    { "reservationId": 1, "dayOffset": 0, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 4, "itemIds": [1], "other": false, "memo": null, "assigneeStaffId": 2 },
+    { "reservationId": 2, "dayOffset": 0, "time": "14:30:00", "status": "RESERVED", "version": 0, "vehicleId": 7, "itemIds": [], "other": true, "memo": "에어컨 냄새", "assigneeStaffId": 1 },
+    { "reservationId": 3, "dayOffset": 2, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 2, "itemIds": [1], "other": false, "memo": null, "assigneeStaffId": 2 },
+    { "reservationId": 4, "dayOffset": -1, "time": "15:00:00", "status": "RESERVED", "version": 0, "vehicleId": 10, "itemIds": [6], "other": false, "memo": null, "assigneeStaffId": 1 }
   ],
   "_visitsComment": "07 7.2 기록 (패널 17의 recentVisits·totalVisitCount용). 날짜는 오늘 기준 monthOffset 개월 + dayOffset 일. visitKey·recordId는 chagok-backend db/seed와 08 17 예시와 같은 번호.",
   "visits": [
@@ -51,7 +56,7 @@
     { "visitKey": "5eed0000-0000-4000-8000-000000000008", "vehicleId": 7, "monthOffset": -13, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 8, "itemId": 3, "type": "REPLACE", "memo": null }] },
     { "visitKey": "5eed0000-0000-4000-8000-000000000009", "vehicleId": 7, "monthOffset": -1, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 9, "itemId": 3, "type": "EXTERNAL", "memo": null }] },
     { "visitKey": "5eed0000-0000-4000-8000-000000000010", "vehicleId": 8, "monthOffset": -6, "dayOffset": 20, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 10, "itemId": 5, "type": "REPLACE", "memo": null }] },
-    { "visitKey": "5eed0000-0000-4000-8000-000000000011", "vehicleId": 8, "monthOffset": -2, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 11, "itemId": 5, "type": "INSPECT", "memo": null }] },
+    { "visitKey": "5eed0000-0000-4000-8000-000000000011", "vehicleId": 8, "monthOffset": -2, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 11, "itemId": 5, "type": "INSPECT", "memo": "타이어 트레드 마모 진행, 다음 방문 때 교체 권장", "inspectResult": "CAUTION" }] },
     { "visitKey": "5eed0000-0000-4000-8000-000000000012", "vehicleId": 9, "monthOffset": -7, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 12, "itemId": 1, "type": "REPLACE", "memo": null }] },
     { "visitKey": "5eed0000-0000-4000-8000-000000000013", "vehicleId": 10, "monthOffset": -36, "dayOffset": 20, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 13, "itemId": 6, "type": "REPLACE", "memo": null }] },
     { "visitKey": "5eed0000-0000-4000-8000-000000000014", "vehicleId": 10, "monthOffset": -3, "dayOffset": 0, "mileage": null, "staffName": "김정비", "records": [{ "recordId": 14, "itemId": 2, "type": "REPLACE", "memo": null }, { "recordId": 15, "itemId": 3, "type": "REPLACE", "memo": null }] },

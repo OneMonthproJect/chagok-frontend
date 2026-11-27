@@ -26,8 +26,8 @@
 .s05__card {
   overflow: hidden;
   border-radius: var(--ck-radius-xl);
+  border: 1px solid var(--ck-border-soft);
   background: var(--ck-surface);
-  box-shadow: var(--ck-shadow-card);
 }
 .s05__toolbar {
   padding: var(--ck-space-4) var(--ck-space-5);

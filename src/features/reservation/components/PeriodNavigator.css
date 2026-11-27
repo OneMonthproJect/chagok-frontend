@@ -1,0 +1,79 @@
+/* 기간 이동 바 (#83) — 주·월 캘린더·날짜 목록 공통. 버튼 40px 이상, 그림자 없이 테두리로 구분(#82). --ck-* 는 #18 토큰, 기본값 포함 */
+.period-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.period-nav__group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.period-nav__arrow {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ck-border, #e4e6ea);
+  border-radius: var(--ck-radius-md, 12px);
+  background: var(--ck-surface, #fff);
+  color: var(--ck-text-1, #111318);
+  cursor: pointer;
+}
+.period-nav__arrow:hover { background: var(--ck-surface-muted, #f5f6f8); border-color: #c9ccd3; }
+.period-nav__title {
+  margin: 0;
+  font-size: var(--ck-fs-card-title, 18px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.period-nav__label {
+  min-height: 40px;
+  padding: 0 10px 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--ck-radius-md, 12px);
+  background: transparent;
+  color: var(--ck-text-1, #111318);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.period-nav__label:hover,
+.period-nav__label[aria-expanded='true'] { border-color: var(--ck-border, #e4e6ea); background: var(--ck-surface-muted, #f5f6f8); }
+.period-nav__caret { flex: none; color: var(--ck-text-3, #5f646d); }
+/* 날짜 목록의 이동 바는 제목보다 작게 (월 보기 아래 목록 머리) */
+strong.period-nav__title { font-size: var(--ck-fs-small, 14px); }
+.period-nav__today {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--ck-border, #e4e6ea);
+  border-radius: var(--ck-radius-pill, 999px);
+  background: var(--ck-surface, #fff);
+  color: var(--ck-text-1, #111318);
+  font: inherit;
+  font-size: var(--ck-fs-small, 14px);
+  font-weight: 700;
+  cursor: pointer;
+}
+.period-nav__today:hover:not(:disabled) { border-color: var(--ck-brand, #1f2bff); color: var(--ck-brand, #1f2bff); }
+/* 지금 보는 날짜가 오늘이면 누를 일이 없다: 비활성이지만 글자는 읽히게(투명도 대신 회색 바탕) */
+.period-nav__today:disabled {
+  border-color: var(--ck-border-soft, #eeeff2);
+  background: var(--ck-surface-muted, #f5f6f8);
+  color: var(--ck-text-3, #5f646d);
+  cursor: default;
+}
+.period-nav__arrow:focus-visible,
+.period-nav__label:focus-visible,
+.period-nav__today:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: 2px; }
+
+@media (max-width: 479px) {
+  .period-nav__title { font-size: var(--ck-fs-body, 15px); }
+  .period-nav__label { padding: 0 6px; }
+}

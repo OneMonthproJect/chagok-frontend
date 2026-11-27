@@ -11,7 +11,7 @@ import {
 } from './maintenanceFlow'
 import type { ItemStatusItem, Visit } from './types'
 
-// S-07 표시 규칙 (09 S-07, 04 F-CUS-05·F-CYC-01). 상태·다음 정비일·다음 km는 서버 값 그대로, 글자 모양만 바꾼다.
+// S-07 표시 규칙 (09 S-07, 04 F-CUS-05·F-CYC-01·F-CYC-02). 상태·다음 정비일·다음 km는 서버 값 그대로, 글자 모양만 바꾼다.
 
 const ITEM = (over: Partial<ItemStatusItem>): ItemStatusItem => ({
   itemId: 1,
@@ -22,6 +22,8 @@ const ITEM = (over: Partial<ItemStatusItem>): ItemStatusItem => ({
   baseRecord: null,
   nextDueDate: null,
   nextDueMileage: null,
+  lastDecline: null,
+  lastCaution: null,
   ...over,
 })
 
@@ -79,6 +81,16 @@ describe('itemStatusTableRows (ItemStatusList table)', () => {
     expect(byKm[0].details[2].value).toBe('55,000 km (도래 근거)')
   })
 })
+
+describe('꼬리표 (04 F-CYC-02, 08 10 lastDecline·lastCaution) — 문구는 shared/lib/noteTag', () => {
+  it('꼬리표는 줄의 tag로만 붙고 상태는 서버 값 그대로 (꼬리표가 상태를 바꾸지 않음)', () => {
+    const [row] = itemStatusTableRows([ITEM({ status: 'AHEAD', lastDecline: { date: '2026-10-24', memo: null } })])
+    expect(row.status).toBe('AHEAD')
+    expect(row.tag).toBe('지난 방문 거절(2026.10.24)')
+    expect(itemStatusTableRows([ITEM({})])[0].tag).toBeUndefined()
+  })
+})
+
 
 describe('더 보기', () => {
   it('마지막 쪽이 아니면 더 있다', () => {
