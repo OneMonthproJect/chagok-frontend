@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Button from '@/shared/ui/Button.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import FormField from '@/shared/ui/FormField.jsx'
@@ -16,6 +16,13 @@ export default function StartVisitDialog({ target, missing, onSubmit, onClose })
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const aliveRef = useRef(true)
+  useEffect(() => {
+    aliveRef.current = true
+    return () => {
+      aliveRef.current = false
+    }
+  }, [])
 
   function change(field, value) {
     setInput((prev) => ({ ...prev, [field]: value }))
@@ -29,6 +36,8 @@ export default function StartVisitDialog({ target, missing, onSubmit, onClose })
     setServerError(null)
     setBusy(true)
     const result = await onSubmit(startRequestBody(input, missing))
+    // 요청 중에 다른 예약으로 바뀌어 이 대화상자가 언마운트됐으면, 늦게 온 결과가 지금 열린 접수 대화상자를 닫지 않게 한다
+    if (!aliveRef.current) return
     setBusy(false)
     if (result.kind !== 'failed') {
       onClose()
