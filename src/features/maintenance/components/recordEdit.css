@@ -1,0 +1,60 @@
+/* M-03 정비 기록 수정 · 수정 이력 패널 (#34) */
+.record-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-3);
+}
+.record-edit__vehicle {
+  margin: 0;
+  font-size: var(--ck-fs-small);
+}
+.record-edit__label {
+  color: var(--ck-text-3);
+}
+.record-edit__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ck-space-3) var(--ck-space-4);
+}
+.record-edit__span {
+  grid-column: 1 / -1;
+}
+@media (max-width: 599px) {
+  .record-edit__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.record-revisions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-space-3);
+}
+.record-revisions__item {
+  padding: var(--ck-space-3);
+  border: 1px solid var(--ck-border-soft);
+  border-radius: var(--ck-radius-sm);
+}
+.record-revisions__head {
+  margin: 0 0 6px;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-3);
+}
+.record-revisions__change {
+  margin: 2px 0;
+  font-size: var(--ck-fs-small);
+  overflow-wrap: anywhere;
+}
+.record-revisions__reason {
+  margin: 6px 0 0;
+  font-size: var(--ck-fs-meta);
+  color: var(--ck-text-2);
+  overflow-wrap: anywhere;
+}
+.record-revisions__state {
+  margin: 0;
+  color: var(--ck-text-3);
+}

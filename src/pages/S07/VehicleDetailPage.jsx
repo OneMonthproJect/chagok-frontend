@@ -17,12 +17,18 @@ import {
 import { EDIT_LABEL } from '@/features/customer/editFlow'
 import { LOAD_FAILED_MESSAGE, RELOAD_LABEL } from '@/features/customer/searchFlow'
 import { useVehicleDetail } from '@/features/customer/useVehicleDetail'
+import RecordEditModal from '@/features/maintenance/components/RecordEditModal.jsx'
+import RecordRevisionPanel from '@/features/maintenance/components/RecordRevisionPanel.jsx'
 import VisitHistory from '@/features/maintenance/components/VisitHistory.jsx'
-import { ITEM_STATUS_NOTE, RECORD_VISIT_LABEL, itemStatusTableRows } from '@/features/maintenance/maintenanceFlow'
+import { ITEM_STATUS_NOTE, RECORD_VISIT_LABEL, dateText, itemStatusTableRows } from '@/features/maintenance/maintenanceFlow'
+import { editPermission, findRecord } from '@/features/maintenance/recordEditFlow'
 import { useItemStatus } from '@/features/maintenance/useItemStatus'
 import { useVisitHistory } from '@/features/maintenance/useVisitHistory'
 import ReservationFormModal from '@/features/reservation/components/ReservationFormModal.jsx'
+import { useAssignees } from '@/features/reservation/useAssignees'
+import { ROLE_LABEL } from '@/features/auth/api'
 import { useMe } from '@/features/auth/useMe'
+import { todaySeoul } from '@/shared/lib/date'
 import { useServiceItems } from '@/pages/S02/useServiceItems'
 import './VehicleDetailPage.css'
 
@@ -39,7 +45,11 @@ import './VehicleDetailPage.css'
 // - [수정](#32, 08 23): 차량·고객 머리 아래 인라인 입력(차량만, 고객은 S-06에서). 저장하면 닫고 09를 다시 불러온다.
 //   409 동시 수정(그 사이 방문 기록 저장 포함)이면 09를 다시 불러 머리에 최신 값을 보이고 입력은 그대로 둔다(POL-124).
 //   LIMIT: 다시 불러오기(09)마저 실패하면 머리 영역이 "불러오지 못했습니다."로 바뀌어 입력이 사라진다(S-06과 같은 한계, 같은 개선 시점).
-// - 아직 연결하지 않는 것(연결 안 된 버튼 금지, 09 0장): 기록 수정(#34)은 그 이슈가, [비활성화]·약식 도면은 P1.
+// - 기록 수정(#34, F-MNT-04, 08 37·38): 정비 이력 줄의 [수정] → M-03, "수정됨" → 수정 이력 패널.
+//   [수정] 활성은 로그인 계정(08 03)·기록 담당(11 staff)·오늘(서울)로 미리 알려 주고(recordEditFlow.editPermission) 최종 판정은 서버(403).
+//   M-03 담당 후보는 08 36(features/reservation useAssignees)을 이 화면에서 받아 넘긴다(feature끼리 import 금지). 항목은 08 13.
+//   저장하면 닫고 11·10을 다시 불러온다(수정 즉시 다음 정비일·상태 반영, H2). 409면 11만 다시 불러 모달의 기록을 최신으로 바꾸고 입력은 둔다.
+// - 아직 연결하지 않는 것(연결 안 된 버튼 금지, 09 0장): [비활성화]·약식 도면은 P1.
 
 export default function VehicleDetailPage() {
   const { vehicleId: rawId } = useParams()
@@ -52,6 +62,18 @@ export default function VehicleDetailPage() {
   const navigate = useNavigate()
   const [reserving, setReserving] = useState(false)
   const [editing, setEditing] = useState(false)
+  const { me, error: meError } = useMe()
+  const today = todaySeoul()
+  const [recordEdit, setRecordEdit] = useState(null) // { record, visit } — M-03을 연 기록(11에서 읽은 값)
+  const [revisionRecord, setRevisionRecord] = useState(null) // 수정 이력 패널을 연 기록
+  // 409 뒤 11을 다시 받으면 같은 기록의 최신 값·version으로 바꾼다. 다시 받는 중에는 연 때 값을 그대로 둔다(입력 유지).
+  const latestEdit = recordEdit && history.status === 'ready' ? findRecord(history.visits, recordEdit.record.recordId) : null
+  const editTarget = latestEdit ?? recordEdit
+  const recordActions = {
+    permissionOf: (record) => editPermission(record, me, today, meError != null),
+    onEdit: (record, visit) => setRecordEdit({ record, visit }),
+    onShowRevisions: (record) => setRevisionRecord(record),
+  }
 
   const notFound = [vehicle.status, itemStatus.status, history.status].includes('notFound')
   const loaded = vehicle.data && !notFound ? vehicle.data : null
@@ -87,6 +109,7 @@ export default function VehicleDetailPage() {
         history={history}
         listSearch={listSearch}
         onRecordVisit={loaded ? recordVisit : undefined}
+        recordActions={loaded ? recordActions : undefined}
         editForm={
           loaded &&
           editing && (
@@ -103,9 +126,35 @@ export default function VehicleDetailPage() {
           )
         }
       />
+      {loaded && editTarget && (
+        <RecordEditDialog
+          target={editTarget}
+          missing={recordEdit != null && history.status === 'ready' && latestEdit == null}
+          reloadFailed={history.status === 'error'}
+          vehicleLabel={loaded.plateNumber}
+          today={today}
+          refreshing={history.status === 'loading'}
+          onSaved={() => {
+            setRecordEdit(null)
+            history.reload()
+            itemStatus.reload() // 수정 즉시 상태·다음 정비일 반영 (H2)
+            vehicle.reload() // 주행거리 수정이 차량 최근 주행거리를 올릴 수 있다 (08 37, POL-60)
+          }}
+          onConflict={history.reload}
+          onClose={() => setRecordEdit(null)}
+        />
+      )}
+      {loaded && revisionRecord && (
+        <RecordRevisionPanel
+          recordId={revisionRecord.recordId}
+          title={`${revisionRecord.itemName} · ${dateText(revisionRecord.date)}`}
+          onClose={() => setRevisionRecord(null)}
+        />
+      )}
       {loaded && reserving && (
         <ReserveModal
           vehicle={loaded}
+          me={me}
           onClose={() => setReserving(false)}
           onOpenExisting={(reservationId) => {
             setReserving(false)
@@ -117,10 +166,9 @@ export default function VehicleDetailPage() {
   )
 }
 
-/** M-02 (차량을 채워 염). 예약 목적 항목(08 13)·로그인 계정(08 03, 담당 기본값 #37)은 M-02를 열 때만 부른다 */
-function ReserveModal({ vehicle, onClose, onOpenExisting }) {
+/** M-02 (차량을 채워 염). 예약 목적 항목(08 13)은 M-02를 열 때만 부른다. 로그인 계정(08 03, 담당 기본값 #37)은 화면이 받아 둔 값 */
+function ReserveModal({ vehicle, me, onClose, onOpenExisting }) {
   const items = useServiceItems()
-  const { me } = useMe()
   return (
     <ReservationFormModal
       mode="create"
@@ -134,7 +182,34 @@ function ReserveModal({ vehicle, onClose, onOpenExisting }) {
   )
 }
 
-function VehicleDetailBody({ vehicle, itemStatus, history, listSearch, onRecordVisit, editForm }) {
+/**
+ * M-03 (기록 수정). 항목(08 13)·담당 후보(08 36)는 열 때만 부른다. 후보를 받기 전·실패면 지금 담당만 고를 수 있다
+ * (나머지 칸은 고칠 수 있음 — 담당 칸은 RecordEditModal이 지금 담당을 한 줄 더해 비지 않는다).
+ */
+function RecordEditDialog({ target, missing, reloadFailed, vehicleLabel, today, refreshing, onSaved, onConflict, onClose }) {
+  const items = useServiceItems()
+  const assignees = useAssignees()
+  const mechanicOptions = (assignees.data ?? []).map((c) => ({ staffId: c.staffId, label: `${c.name} (${ROLE_LABEL[c.role] ?? c.role})` }))
+  return (
+    <RecordEditModal
+      key={target.record.recordId}
+      record={target.record}
+      visit={target.visit}
+      missing={missing}
+      reloadFailed={reloadFailed}
+      vehicleLabel={vehicleLabel}
+      items={items}
+      mechanicOptions={mechanicOptions}
+      today={today}
+      refreshing={refreshing}
+      onSaved={onSaved}
+      onConflict={onConflict}
+      onClose={onClose}
+    />
+  )
+}
+
+function VehicleDetailBody({ vehicle, itemStatus, history, listSearch, onRecordVisit, recordActions, editForm }) {
   const navigate = useNavigate()
 
   if ([vehicle.status, itemStatus.status, history.status].includes('notFound')) {
@@ -187,7 +262,7 @@ function VehicleDetailBody({ vehicle, itemStatus, history, listSearch, onRecordV
           <ItemStatusSection itemStatus={itemStatus} />
         </section>
         <section className="s07__card">
-          <VisitHistorySection history={history} onRecordVisit={onRecordVisit} />
+          <VisitHistorySection history={history} onRecordVisit={onRecordVisit} recordActions={recordActions} />
         </section>
       </div>
     </div>
@@ -209,7 +284,7 @@ function ItemStatusSection({ itemStatus }) {
   return <ItemStatusList variant="table" items={itemStatusTableRows(data.items)} loading={status === 'loading'} />
 }
 
-function VisitHistorySection({ history, onRecordVisit }) {
+function VisitHistorySection({ history, onRecordVisit, recordActions }) {
   const { status, visits, last, error, reload, hasMore, loadingMore, moreError, loadMore } = history
   if (status === 'error') {
     return (
@@ -230,6 +305,7 @@ function VisitHistorySection({ history, onRecordVisit }) {
       moreError={moreError}
       onLoadMore={loadMore}
       onRecordVisit={onRecordVisit}
+      recordActions={recordActions}
     />
   )
 }

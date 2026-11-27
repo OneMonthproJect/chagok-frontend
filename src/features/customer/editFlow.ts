@@ -6,7 +6,6 @@
 // - 409 CONCURRENT_MODIFICATION은 따로 돌려준다: 화면이 07·09를 다시 불러 최신 값·version을 보이고, 사람이 고친 칸은 지우지 않는다.
 //   자동으로 다시 보내지 않는다(POL-124·125).
 
-import { ApiError, DEFAULT_MESSAGES, type FieldError } from '@/shared/api/client'
 import { REGISTER_MESSAGES, normalizePlate, parseOptionalInt, validateVehicleFields } from './registerFlow'
 import type { CustomerDetail, CustomerUpdateRequest, VehicleDetail, VehicleUpdateRequest } from './types'
 
@@ -100,54 +99,7 @@ export function toVehicleUpdate(form: VehicleEditForm, current: VehicleDetail): 
   return Object.keys(changes).length > 0 ? { version: current.version, ...changes } : null
 }
 
-// ---- 저장 한 번 (22·23 공통) ----
-
-export type EditOutcome<E> =
-  | { kind: 'saved' }
-  /** 바꾼 칸이 없어 요청하지 않음 */
-  | { kind: 'unchanged' }
-  /** 400: 칸 아래 문구. message는 칸에 붙일 수 없는 오류가 있을 때만(화면 위 안내) */
-  | { kind: 'invalid'; errors: E; message: string | null }
-  /** 409 CONCURRENT_MODIFICATION: 화면이 07·09를 다시 불러온다. 입력값은 유지 */
-  | { kind: 'conflict' }
-  /** 그 밖(404·500·네트워크 등): 입력값 유지, 화면 위 오류 안내 + 사람이 누르는 다시 시도 */
-  | { kind: 'failed'; error: ApiError }
-
-/**
- * 22·23 저장 한 번. request가 null(바꾼 칸 없음)이면 부르지 않는다. 입력값은 바꾸지 않는다.
- * fields: 서버 fieldErrors.field 중 칸에 붙일 수 있는 이름 (08 22·23 요청 필드 이름 그대로)
- */
-export async function submitEdit<B, F extends string>(
-  request: B | null,
-  save: (body: B) => Promise<unknown>,
-  fields: readonly F[],
-): Promise<EditOutcome<Partial<Record<F, string>>>> {
-  if (request === null) return { kind: 'unchanged' }
-  try {
-    await save(request)
-    return { kind: 'saved' }
-  } catch (e) {
-    const error = e instanceof ApiError ? e : new ApiError(0, 'INTERNAL_ERROR', DEFAULT_MESSAGES.INTERNAL_ERROR)
-    if (error.code === 'CONCURRENT_MODIFICATION') return { kind: 'conflict' }
-    if (error.code === 'INVALID_INPUT') {
-      const { errors, unmatched } = mapFieldErrors(error.fieldErrors, fields)
-      const message = unmatched.length > 0 || !Object.values(errors).some(Boolean) ? error.message : null
-      return { kind: 'invalid', errors, message }
-    }
-    return { kind: 'failed', error }
-  }
-}
-
-function mapFieldErrors<F extends string>(fieldErrors: FieldError[], fields: readonly F[]) {
-  const errors: Partial<Record<F, string>> = {}
-  const unmatched: FieldError[] = []
-  for (const fieldError of fieldErrors) {
-    const field = fields.find((name) => name === fieldError.field)
-    if (field && !errors[field]) errors[field] = fieldError.reason
-    else if (!field) unmatched.push(fieldError)
-  }
-  return { errors, unmatched }
-}
+// ---- 저장 한 번(22·23)은 shared/lib/submitEdit — 정비 기록 수정 37과 함께 씀(#34). 아래는 그 함수에 넘길 칸 이름 ----
 
 export const CUSTOMER_EDIT_FIELDS = ['name', 'phone', 'consent'] as const
 export const VEHICLE_EDIT_FIELDS = ['plateNumber', 'model', 'modelYear', 'latestMileage'] as const
