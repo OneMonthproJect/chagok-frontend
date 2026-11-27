@@ -24,7 +24,9 @@ import {
   initialVisitRecordForm,
   missingNoticeText,
   recordItems,
+  requiredVehicleInfo,
   rowOf,
+  ROW_ERROR_FIELDS,
   selectedRows,
   selectionSummary,
   toVisitSaveRequest,
@@ -33,7 +35,7 @@ import {
 } from '@/features/maintenance/visitRecordFlow'
 import './VisitRecordPage.css'
 
-// S-08 방문·정비 기록 (09 S-08·5장, 04 F-MNT-01, 08 09·12·13, 05 POL-30·120~125, D-58, 디자인 v3.0 S-08-visit-record).
+// S-08 방문·정비 기록 (09 S-08·5장, 04 F-MNT-01~03, 08 09·12·13, 05 POL-30·120~125, D-58, 디자인 v3.0 S-08-visit-record).
 // - 주소 `/visits/new?vehicleId=&reservationId=`. vehicleId가 있으면 09로 차량을 불러 채우고, 없으면 VehiclePicker로 검색해 고른다
 //   (고르면 주소에 vehicleId를 넣는다). customer(차량)와 maintenance(기록)는 이 화면에서만 합친다(CONVENTIONS 7장).
 // - reservationId는 받아만 둔다: 예약과 기록은 데이터로 잇지 않는다(08 12, 05 POL-95). 예약에서 왔으면 차량을 바꾸지 못하게만 한다.
@@ -45,10 +47,17 @@ import './VisitRecordPage.css'
 //   입력값을 잃지 않고 이력에서 저장 여부를 확인한 뒤 다시 시도하게 한다(08 0.2 표).
 // - 차량을 바꾸면 입력을 처음으로 되돌린다(앞 차량의 주행거리·기록이 다른 차량에 저장되지 않게).
 // - 저장 전 미리보기(08 10, F-VIS-01, #35)는 VisitPreview가 주행거리 칸을 따라 부른다. 실패해도 입력·저장을 막지 않는다.
-// - 이번 이슈에 없는 것(09 0장 연결 안 된 버튼 금지): 거절·외부·점검 결과·담당 정비사(P0-나머지).
+//   "지난 방문 거절"·"지난 점검 주의" 꼬리표(F-CYC-02)도 미리보기 줄에 서버 값 그대로 붙는다.
+// - 구분 거절·외부·점검 결과(F-MNT-02·03, #29)는 ItemRecordRows. 연식·주행거리 필수(D-58)는 교체·점검을 골랐을 때만(requiredVehicleInfo).
+// - 이번 이슈에 없는 것(09 0장 연결 안 된 버튼 금지): 담당 정비사(P0-나머지 #62).
 //   디자인의 이탈 확인 대화상자·저장 토스트·관련 예약 표시는 09에 없어 넣지 않았다.
 
 const INFO_FIELDS = ['visitDate', 'mileage', 'modelYear']
+/** D-58 "비어 있음" 오류 (구분을 바꾸면 필수 여부가 달라져 지운다) */
+const EMPTY_ERRORS = [
+  ['mileage', M.MILEAGE_EMPTY],
+  ['modelYear', M.MODEL_YEAR_EMPTY],
+]
 
 export default function VisitRecordPage() {
   const [params, setParams] = useSearchParams()
@@ -69,6 +78,7 @@ export default function VisitRecordPage() {
   const rows = items.data ? recordItems(items.data) : []
   const vehicleData = vehicle.status === 'ready' || vehicle.status === 'loading' ? vehicle.data : null
   const missing = vehicleData ? vehicleMissing(vehicleData) : { modelYear: false, latestMileage: false }
+  const required = requiredVehicleInfo(form, rows, missing)
   const selected = selectedRows(form, rows).length
   const canSave = vehicleData != null && vehicleData.vehicleId === vehicleId && rows.length > 0 && selected > 0
 
@@ -102,16 +112,35 @@ export default function VisitRecordPage() {
     if (INFO_FIELDS.includes(field)) clearError(field)
   }
 
+  // 그 줄을 고치면 그 줄의 칸 오류(메모·외부 정비일·외부 주행거리)와 위쪽 한 줄 오류를 지운다.
+  // 구분을 바꾸면 D-58 필수 여부가 달라질 수 있어 연식·주행거리 칸의 "비어 있음" 오류만 지운다(저장할 때 다시 검사).
+  // 서버가 알려 준 범위 오류 등은 그 칸 값을 고칠 때까지 남긴다(POL-121).
   function changeRow(itemId, patch) {
     setForm((prev) => ({ ...prev, records: { ...prev.records, [itemId]: { ...rowOf(prev, itemId), ...patch } } }))
     setErrors((prev) => {
-      if (!prev.memo?.[itemId] && !prev.form) return prev
-      const memo = { ...prev.memo }
-      delete memo[itemId]
-      const next = { ...prev, memo }
-      if (Object.keys(memo).length === 0) delete next.memo
-      delete next.form
-      return next
+      const next = { ...prev }
+      let changed = false
+      for (const field of ROW_ERROR_FIELDS) {
+        if (!prev[field]?.[itemId]) continue
+        const rest = { ...prev[field] }
+        delete rest[itemId]
+        if (Object.keys(rest).length === 0) delete next[field]
+        else next[field] = rest
+        changed = true
+      }
+      if ('form' in next) {
+        delete next.form
+        changed = true
+      }
+      if ('choice' in patch) {
+        for (const [field, empty] of EMPTY_ERRORS) {
+          if (next[field] === empty) {
+            delete next[field]
+            changed = true
+          }
+        }
+      }
+      return changed ? next : prev
     })
   }
 
@@ -217,6 +246,7 @@ export default function VisitRecordPage() {
                 form={form}
                 errors={errors}
                 missing={missing}
+                required={required}
                 today={today}
                 latestMileage={vehicleData.latestMileage}
                 onChange={changeField}
@@ -239,13 +269,7 @@ export default function VisitRecordPage() {
               ) : !items.data ? (
                 <span className="s08__section-loading" role="status" aria-label="불러오는 중" />
               ) : (
-                <ItemRecordRows
-                  items={rows}
-                  form={form}
-                  memoErrors={errors.memo}
-                  onChoice={(itemId, choice) => changeRow(itemId, { choice })}
-                  onMemo={(itemId, memo) => changeRow(itemId, { memo })}
-                />
+                <ItemRecordRows items={rows} form={form} errors={errors} today={today} onChange={changeRow} />
               )}
             </div>
           </section>

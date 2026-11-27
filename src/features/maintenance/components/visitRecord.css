@@ -81,3 +81,31 @@
 .item-record-row__memo {
   max-width: 560px;
 }
+/* 구분 5개(기록 안 함·교체·점검·거절·외부)는 좁은 화면에서 줄을 바꾼다 */
+.item-record-row__choices {
+  flex-wrap: wrap;
+}
+.item-record-row__choices--sm .item-record-row__choice {
+  min-width: 64px;
+}
+.item-record-row__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ck-space-2) var(--ck-space-3);
+}
+.item-record-row__sub-label {
+  font-size: var(--ck-fs-small);
+  color: var(--ck-text-2);
+}
+.item-record-row__external {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ck-space-3);
+  max-width: 560px;
+}
+@media (min-width: 768px) {
+  .item-record-row__external {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
