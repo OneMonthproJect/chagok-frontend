@@ -12,6 +12,7 @@ import { useMonthSummary } from '@/features/reservation/useMonthSummary'
 import { useReservationPanel } from '@/features/reservation/useReservationPanel'
 import SummaryCards from '@/features/home/components/SummaryCards.jsx'
 import { useHomeSummary } from '@/features/home/useHomeSummary'
+import { useMe } from '@/features/auth/useMe'
 import VehiclePicker from '@/features/customer/components/VehiclePicker.jsx'
 import CustomerVehicleFormModal from '@/features/customer/components/CustomerVehicleFormModal.jsx'
 import Button from '@/shared/ui/Button.jsx'
@@ -33,11 +34,13 @@ import './HomePage.css'
 //   패널 안 [방문 완료](08 18)가 성공하면 S-08(/visits/new?vehicleId=&reservationId=)로, 409면 패널·목록·캘린더 건수(42)·요약을 다시 불러오고 이동하지 않는다.
 //   [상세 이동]은 S-07(/vehicles/:vehicleId). [변경]은 M-02 변경 모드(#25).
 //   [취소]·[노쇼](08 20·21, #31)는 확인 대화상자를 거친다. 성공·409 모두 패널·목록·캘린더 건수(42)·요약을 다시 불러온다(자동 재전송 없음).
+//   [방문 접수]·[정정](08 39·40, #33)도 같다. 접수 뒤에는 패널에 남는다(S-08 이동은 [방문 완료]만). [이력 보기](41)는 패널이 연다.
+//   정정의 상태 선택은 사장만이라 03(useMe)의 역할을 패널에 넘긴다(features끼리 import하지 않고 여기서 조립).
 // - [예약 등록](머리·빈 날) → M-02 (#25). 차량은 customer의 VehiclePicker, 신규는 M-01(CustomerVehicleFormModal), 항목은 13 —
 //   여기서 조립한다(feature끼리 import 금지). 등록·변경되면 그 날짜 목록으로 옮겨 다시 불러온다.
 // - 요약 숫자(#28, 08 04): 오늘 예약·오늘 연락할 고객. 다른 날짜를 볼 때만 "목록 →"(오늘로), [보기 →]는 S-04 라우트가 있을 때만(→ /targets).
 //   예약이 바뀌면(등록·변경·취소·노쇼·409) 함께 다시 부른다.
-// - 다음 이슈가 이어서 고친다: 주 캘린더(P0-나머지 #36), 방문 접수·정정(#33).
+// - 다음 이슈가 이어서 고친다: 주 캘린더(P0-나머지 #36), M-02 담당 선택·재배정(#37).
 
 /** 패널을 목록에서 열었는지(이때만 닫기 = 뒤로 가기). 주소로 바로 들어왔으면 쿼리만 지운다 */
 const PANEL_FROM_LIST = 'panelFromList'
@@ -64,6 +67,7 @@ export default function HomePage() {
   const panelOpen = reservationId !== undefined
   const openedFromList = location.state?.[PANEL_FROM_LIST] === true
   const items = useServiceItems()
+  const { me } = useMe()
   const [createOpen, setCreateOpen] = useState(false)
   const [registerQuery, setRegisterQuery] = useState(null) // M-01을 열 때의 검색어 (null = 닫힘)
   const pickVehicleRef = useRef(null) // M-02 안의 차량 선택 함수 (M-01로 새로 등록한 차량을 채울 때)
@@ -194,6 +198,7 @@ export default function HomePage() {
         {panelOpen && (
           <HomeReservationPanel
             reservationId={reservationId}
+            role={me?.role ?? null}
             items={items}
             onClose={closePanel}
             onConflict={reload}
@@ -243,7 +248,7 @@ export default function HomePage() {
  * 패널이 열렸을 때만 17을 부른다. 409 뒤에는 목록도 다시 불러 같은 상태를 보인다(목록·패널이 어긋나지 않게).
  * [변경] → M-02 변경 모드: 패널이 읽은 예약(version 포함)으로 열고, 저장되면 패널·목록을 다시 불러온다.
  */
-function HomeReservationPanel({ reservationId, items, onClose, onConflict, onStatusChanged, onCompleted, onEdited, onOpenVehicle }) {
+function HomeReservationPanel({ reservationId, role, items, onClose, onConflict, onStatusChanged, onCompleted, onEdited, onOpenVehicle }) {
   const panel = useReservationPanel(reservationId)
   const [editTarget, setEditTarget] = useState(null)
 
@@ -260,6 +265,21 @@ function HomeReservationPanel({ reservationId, items, onClose, onConflict, onSta
     else if (result.kind === 'conflict') onConflict()
   }
 
+  /** [방문 접수]·[정정] (#33). 결과는 패널(대화상자)이 쓰고, 여기서는 목록·요약만 맞춘다 */
+  async function start(body, options) {
+    const result = await panel.start(body, options)
+    if (result.kind === 'changed') onStatusChanged()
+    else if (result.kind === 'conflict') onConflict()
+    return result
+  }
+
+  async function correct(body, options) {
+    const result = await panel.correct(body, options)
+    if (result.kind === 'changed') onStatusChanged()
+    else if (result.kind === 'conflict') onConflict()
+    return result
+  }
+
   function openEdit(data) {
     setEditTarget({
       reservationId: data.reservation.reservationId,
@@ -274,10 +294,13 @@ function HomeReservationPanel({ reservationId, items, onClose, onConflict, onSta
     <>
       <ReservationPanel
         panel={panel}
+        role={role}
         onClose={onClose}
         onComplete={complete}
         onEdit={openEdit}
         onStatusChange={changeStatus}
+        onStart={start}
+        onCorrect={correct}
         onOpenVehicle={onOpenVehicle}
       />
       {editTarget && (

@@ -189,3 +189,19 @@
   font-size: var(--ck-fs-caption);
 }
 .rsv-visits__memo { color: var(--ck-text-3); overflow-wrap: anywhere; }
+
+/* 방문 접수 입력·정정 대화상자 (#33) */
+.rsv-dialog__fields { margin-top: var(--ck-space-4); display: flex; flex-direction: column; gap: var(--ck-space-3); }
+.rsv-dialog__hint { margin: 0; color: var(--ck-text-3, #5f646d); font-size: 14px; }
+
+/* 변경 이력 (RevisionHistoryDialog, #33): 오래된 것부터 */
+.rsv-revisions { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--ck-space-2); }
+.rsv-revisions__item {
+  padding: var(--ck-space-3);
+  border: 1px solid var(--ck-border-soft);
+  border-radius: var(--ck-radius-sm);
+}
+.rsv-revisions__head { margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--ck-space-2); }
+.rsv-revisions__head span { color: var(--ck-text-3, #5f646d); font-size: 14px; }
+.rsv-revisions__change { margin: var(--ck-space-1, 4px) 0 0; }
+.rsv-revisions__reason { margin: var(--ck-space-1, 4px) 0 0; color: var(--ck-text-3, #5f646d); font-size: 14px; overflow-wrap: anywhere; }

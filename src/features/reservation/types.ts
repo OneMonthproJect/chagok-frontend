@@ -1,4 +1,4 @@
-// 08 15~19 (예약). 필드 이름·타입·nullable은 08 표·JSON 예시와 글자까지 같게 둔다 (features/reservation 첫 이슈 #24).
+// 08 15~21·39~42 (예약). 필드 이름·타입·nullable은 08 표·JSON 예시와 글자까지 같게 둔다 (features/reservation 첫 이슈 #24).
 // P0-나머지 필드(assignee, assigneeId, reassignReason, IN_PROGRESS)는 08에 맞춰 선택(optional)으로 둔다.
 
 /** 08 0.4 예약 상태. IN_PROGRESS·NO_SHOW는 P0-나머지부터 */
@@ -193,6 +193,65 @@ export interface ReservationUpdateRequest {
   purpose?: ReservationPurposeRequest
   assigneeId?: number // P0-나머지
   reassignReason?: string // P0-나머지
+}
+
+// ---- 39 POST /api/reservations/{id}/start (P0-나머지, F-RSV-09 방문 접수, 08 7.1 39) ----
+// 차량의 연식·최근 주행거리가 비어 있을 때만 modelYear·mileage가 필수다(D-58, 없으면 400). 차량에 값이 있으면 보내지 않는다.
+
+export interface ReservationStartRequest {
+  version: number
+  modelYear?: number
+  mileage?: number
+}
+
+/**
+ * 39 응답: 18·20·21·40과 같은 { reservationId, status, vehicleId, version } (08 7.1 39, chagok-docs#155).
+ * 백엔드 develop은 아직 reservedAt을 더 싣는다(문서에 맞춰 조정 예정, docs#155) — 화면은 성공 뒤 17을 다시 불러 이 응답의 필드를 쓰지 않는다.
+ */
+export type ReservationStarted = ReservationStatusChanged
+
+// ---- 40 POST /api/reservations/{id}/correct (P0-나머지, F-RSV-10 지난 예약 정정, 08 7.1 40) ----
+// 끝난 예약(COMPLETED·CANCELED·NO_SHOW)의 상태·예약 메모만. 바꿀 것만 보낸다. 응답은 18·20·21과 같다.
+
+/** 40 status로 보낼 수 있는 값 */
+export type CorrectableStatus = 'COMPLETED' | 'CANCELED' | 'NO_SHOW'
+
+export interface ReservationCorrectRequest {
+  version: number
+  status?: CorrectableStatus
+  purposeMemo?: string // ""이면 메모를 비운다
+  reason?: string
+}
+
+// ---- 41 GET /api/reservations/{id}/revisions (P0-나머지, F-RSV-06·10, 08 7.1 41 JSON 예시) ----
+// changedAt 오름차순(같으면 이력 번호 순, 번호는 응답에 없음). 이력이 없으면 items: [].
+
+/** 08 0.4 예약 이력 종류 */
+export type ReservationRevisionKind = 'STATUS' | 'MEMO' | 'ASSIGNEE'
+
+/** 바꾼 사람·담당 (name은 그 계정의 현재 이름) */
+export interface RevisionPerson {
+  staffId: number
+  name: string
+}
+
+/** STATUS: field "status"(상태 enum), MEMO: "purposeMemo"(메모, 없으면 null), ASSIGNEE: "assignee"({ staffId, name }) */
+export interface ReservationRevisionChange {
+  field: string
+  before: string | RevisionPerson | null
+  after: string | RevisionPerson | null
+}
+
+export interface ReservationRevision {
+  kind: ReservationRevisionKind
+  changedAt: string // 오프셋 없는 일시 (08 0.1)
+  changedBy: RevisionPerson
+  reason: string | null
+  changes: ReservationRevisionChange[]
+}
+
+export interface ReservationRevisionListResponse {
+  items: ReservationRevision[]
 }
 
 // ---- 42 GET /api/reservations/summary?from=&to= (P0-나머지, F-RSV-05 월 보기) ----

@@ -1,4 +1,4 @@
-// features/reservation의 API 호출 (08 15~19, 42). 요청은 shared/api/client를 거친다.
+// features/reservation의 API 호출 (08 15~21, 36, 39~42). 요청은 shared/api/client를 거친다.
 // Mock은 개발 서버에서 VITE_USE_MOCK=true일 때만, 동적 import()로 불러 운영 번들에 들어가지 않는다 (CONVENTIONS 7장 「Mock」).
 
 import { MOCK_ENABLED, request } from '@/shared/api/client'
@@ -6,11 +6,15 @@ import type {
   AssigneeListResponse,
   ReservationCompleteRequest,
   ReservationCompleted,
+  ReservationCorrectRequest,
   ReservationCreateRequest,
   ReservationPanel,
   ReservationPeriodQuery,
   ReservationPeriodResponse,
+  ReservationRevisionListResponse,
   ReservationSaved,
+  ReservationStartRequest,
+  ReservationStarted,
   ReservationSummaryQuery,
   ReservationSummaryResponse,
   ReservationStatusChangeRequest,
@@ -72,6 +76,29 @@ export function markNoShow(reservationId: number, body: ReservationStatusChangeR
   return request<ReservationStatusChanged>('POST', `/api/reservations/${reservationId}/no-show`, {
     body,
     mock: MOCK_ENABLED ? () => mocks().then((m) => m.mockNoShow(reservationId, body)) : undefined,
+  })
+}
+
+/** 08 39 (P0-나머지). 방문 접수: 예약 → 진행중. 차량에 연식·최근 주행거리가 비어 있으면 그 값을 함께 보낸다(D-58) */
+export function startReservation(reservationId: number, body: ReservationStartRequest): Promise<ReservationStarted> {
+  return request<ReservationStarted>('POST', `/api/reservations/${reservationId}/start`, {
+    body,
+    mock: MOCK_ENABLED ? () => mocks().then((m) => m.mockStart(reservationId, body)) : undefined,
+  })
+}
+
+/** 08 40 (P0-나머지). 끝난 예약의 상태·메모 정정. 상태는 사장만, 메모는 사장·담당 정비사(예약 날짜 + 3일) — 판정은 서버 */
+export function correctReservation(reservationId: number, body: ReservationCorrectRequest): Promise<ReservationStatusChanged> {
+  return request<ReservationStatusChanged>('POST', `/api/reservations/${reservationId}/correct`, {
+    body,
+    mock: MOCK_ENABLED ? () => mocks().then((m) => m.mockCorrect(reservationId, body)) : undefined,
+  })
+}
+
+/** 08 41 (P0-나머지). 재배정·정정 이력, 오래된 것부터 */
+export function getReservationRevisions(reservationId: number): Promise<ReservationRevisionListResponse> {
+  return request<ReservationRevisionListResponse>('GET', `/api/reservations/${reservationId}/revisions`, {
+    mock: MOCK_ENABLED ? () => mocks().then((m) => m.mockGetRevisions(reservationId)) : undefined,
   })
 }
 
