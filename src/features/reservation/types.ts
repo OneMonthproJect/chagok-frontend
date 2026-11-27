@@ -226,8 +226,8 @@ export interface ReservationStartRequest {
 }
 
 /**
- * 39 응답: 18·20·21·40과 같은 { reservationId, status, vehicleId, version } (08 7.1 39, chagok-docs#155).
- * 백엔드 develop은 아직 reservedAt을 더 싣는다(문서에 맞춰 조정 예정, docs#155) — 화면은 성공 뒤 17을 다시 불러 이 응답의 필드를 쓰지 않는다.
+ * 39 응답: 18·20·21·40과 같은 { reservationId, status, vehicleId, version } (08 7.1 39, chagok-docs#155). 백엔드도 같은 4필드다(reservedAt 없음).
+ * 화면은 성공 뒤 17을 다시 불러 이 응답의 필드를 쓰지 않는다.
  */
 export type ReservationStarted = ReservationStatusChanged
 

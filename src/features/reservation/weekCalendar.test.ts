@@ -122,7 +122,7 @@ describe('nowMarker — 현재 시각선 (#83)', () => {
 })
 
 describe('Mock 15 — 주 기간(7일) 조회', () => {
-  it('오늘이 속한 주를 부르면 07 7.3 시드의 오늘 예약 2건이 들어 있다', () => {
+  it('오늘이 속한 주를 부르면 07 7.3 시드의 오늘 예약 3건이 들어 있다', () => {
     resetReservationMocks()
     const today = todaySeoul()
     const { from, to } = weekRange(today)
@@ -130,7 +130,7 @@ describe('Mock 15 — 주 기간(7일) 조회', () => {
     expect(res.status).toBe(200)
     const data = (res.body as { data: { from: string; to: string; items: ReservationListItem[] } }).data
     expect([data.from, data.to]).toEqual([from, to])
-    expect(data.items.filter((r) => r.reservedAt.startsWith(today))).toHaveLength(2)
+    expect(data.items.filter((r) => r.reservedAt.startsWith(today))).toHaveLength(3)
     expect(data.items.every((r) => r.reservedAt.slice(0, 10) >= from && r.reservedAt.slice(0, 10) <= to)).toBe(true)
   })
 })
@@ -148,9 +148,9 @@ describe('Mock 15 — assigneeId (내 담당만)', () => {
 
   it('없으면 정비소 전체, 있으면 그 담당 예약만', () => {
     resetReservationMocks()
-    expect(ids(period).map((r) => r.reservationId)).toEqual([4, 1, 2, 3])
+    expect(ids(period).map((r) => r.reservationId)).toEqual([4, 5, 1, 2, 3])
     const mine = ids({ ...period, assigneeId: 2 })
-    expect(mine.map((r) => r.reservationId)).toEqual([1, 3])
+    expect(mine.map((r) => r.reservationId)).toEqual([5, 1, 3])
     expect(mine.every((r) => r.assignee?.staffId === 2)).toBe(true)
     expect(ids({ ...period, assigneeId: 1 }).map((r) => r.reservationId)).toEqual([4, 2])
   })

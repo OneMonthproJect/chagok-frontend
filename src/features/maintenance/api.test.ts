@@ -276,6 +276,27 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     expect(error.fieldErrors.map((f) => f.field)).toEqual(['visitDate', 'records'])
   })
 
+  it('12 구분과 맞지 않는 값·점검 결과 값 오류는 400 records[i].<필드>, 한 기록 안은 외부 값 → 점검 결과 순 (08 12, #106)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
+    const error = parseError(mockSaveVisit(4, {
+      visitDate: '2026-11-24',
+      mileage: 55000,
+      records: [
+        { itemId: 1, type: 'REPLACE', memo: null, externalDate: '2026-11-20', inspectResult: 'GOOD' },
+        { itemId: 5, type: 'INSPECT', memo: null, inspectResult: 'BAD' as never },
+        { itemId: 2, type: 'DECLINE', memo: null, externalMileage: 1000 },
+      ],
+    } as VisitSaveRequest))
+    expect(error.code).toBe('INVALID_INPUT')
+    expect(error.fieldErrors).toEqual([
+      { field: 'records[0].externalDate', reason: '외부 기록일 때만 입력할 수 있습니다.' },
+      { field: 'records[0].inspectResult', reason: '점검일 때만 입력할 수 있습니다.' },
+      { field: 'records[1].inspectResult', reason: 'GOOD 또는 CAUTION만 입력할 수 있습니다.' },
+      { field: 'records[2].externalMileage', reason: '외부 기록일 때만 입력할 수 있습니다.' },
+    ])
+  })
+
   it('12 P0-나머지: 08 12 P0-나머지 예시(외부·거절·점검 결과·담당 지정)를 받는다', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))

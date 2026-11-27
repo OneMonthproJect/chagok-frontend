@@ -1,6 +1,6 @@
 // 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 15~21·39~42의 사본이며 계약의 기준은 08이다.
 // 값은 07 7.1~7.3 시드(seed.json). 예약 날짜는 오늘(서울) 기준으로 계산하고, 바뀐 상태는 메모리에만 둔다(새로 고치면 처음으로).
-// 15 목록의 담당(assignee, P0-나머지)은 07 7.3 담당 계정(seed.json staff·assigneeStaffId, #30).
+// 15 목록의 담당(assignee, P0-나머지)은 07 7.3 담당 계정(seed.json staff·assigneeStaffId, #30). 15 목록의 phone은 08 0.5대로 가린 값(#106), 17 패널은 전체 번호.
 // 16·19의 담당(P0-나머지, #37): 16 assigneeId 필수(R19)·X13·담당 중복(R15), 19 재배정(R24)·담당 중복(R18), 응답 assignee.
 // 패널(17)의 최근 방문·총 방문 수는 07 7.2 기록(seed.json visits, #26)으로 만든다(11 모양, 최신순 2회, 외부만 있는 방문은 세지 않음 POL-45).
 // LIMIT: 점검 주기(itemStatuses)는 단순화 — 항목 상태 모두 미확인. 상태 판정은 서버(cycle)의 일이라 Mock에서 계산하지 않는다. 실제 값은 백엔드 연결로 확인한다.
@@ -12,6 +12,7 @@
 // api.ts만 동적 import()로 부른다. 화면·pages는 import하지 않는다.
 
 import type { MockResponse } from '@/shared/api/client'
+import { maskPhone } from '@/shared/lib/maskPhone'
 import { addDays, nowSeoul, todaySeoul } from '../dates'
 import type {
   ReservationCompleteRequest,
@@ -125,7 +126,7 @@ function toListItem(r: MockReservation): ReservationListItem {
     plateNumber: vehicle.plateNumber,
     customerId: customer.customerId,
     customerName: customer.name,
-    phone: customer.phone,
+    phone: maskPhone(customer.phone),
     purposeSummary: purposeSummary(r),
     assignee: assigneeOf(r.assigneeStaffId),
   }
@@ -454,7 +455,10 @@ export function mockUpdate(reservationId: number, body: ReservationUpdateRequest
   return ok(savedOf(r))
 }
 
-/** 08 39 — 형식 → 소유 → 상태(RESERVED만) → version → 차량 연식·주행거리(비어 있으면 필수, D-58) 순. 응답은 18과 같은 4필드(08 7.1 39) */
+/**
+ * 08 39 — 형식 → 소유 → 상태(RESERVED만) → version → 차량 연식·주행거리(비어 있으면 필수, D-58) → 보낸 값의 범위 순. 응답은 18과 같은 4필드(08 7.1 39).
+ * 범위 문구·순서는 백엔드 CustomerService.applyVisit과 같다(연식 먼저, 하나씩 400, #106).
+ */
 export function mockStart(reservationId: number, body: ReservationStartRequest): MockResponse {
   const invalid = invalidVersion(body?.version)
   if (invalid) return invalid
@@ -469,6 +473,13 @@ export function mockStart(reservationId: number, body: ReservationStartRequest):
   if (vehicle.latestMileage == null && body.mileage == null) fieldErrors.push({ field: 'mileage', reason: '차량의 주행거리가 비어 있어 입력해 주세요.' })
   if (fieldErrors.length > 0) {
     return { status: 400, body: { success: false, data: null, error: { code: 'INVALID_INPUT', message: '입력값을 확인해 주세요.', fieldErrors, details: null } } }
+  }
+  const maxYear = new Date().getFullYear() + 1
+  if (body.modelYear != null && (body.modelYear < 1980 || body.modelYear > maxYear)) {
+    return fail(400, 'INVALID_INPUT', `1980년부터 ${maxYear}년까지 입력할 수 있습니다.`, 'modelYear')
+  }
+  if (body.mileage != null && (body.mileage < 0 || body.mileage > 2_000_000)) {
+    return fail(400, 'INVALID_INPUT', '0 이상 2,000,000 이하로 입력해 주세요.', 'mileage')
   }
   const fill = { ...vehicleFills.get(r.vehicleId) }
   if (vehicle.modelYear == null && body.modelYear != null) fill.modelYear = body.modelYear

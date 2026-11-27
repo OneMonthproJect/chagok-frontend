@@ -6,7 +6,6 @@ import {
   mockCreateCustomer,
   mockGetCustomer,
   mockGetVehicle,
-  maskPhone,
   mockSearchCustomers,
   mockUpdateCustomer,
   mockUpdateVehicle,
@@ -183,15 +182,6 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     expect(parse<VehicleDetail>(mockGetVehicle(4)).customer.phone).toBe('010-0000-0004')
   })
 
-  it('마스킹 규칙 (08 0.5 예시)', () => {
-    expect(maskPhone('010-0000-0001')).toBe('010-****-0001')
-    expect(maskPhone('02-123-4567')).toBe('02-***-4567')
-    expect(maskPhone('0311234567')).toBe('031-***-4567')
-    expect(maskPhone('1588-1234')).toBe('****-1234')
-    expect(maskPhone('1234')).toBe('****')
-    expect(maskPhone('')).toBe('')
-  })
-
   it('05 결과 없음: items [] · totalElements 0', () => {
     const page = parse<CustomerSearchResponse>(mockSearchCustomers({ q: '홍길동' }))
     expect(page.items).toEqual([])
@@ -299,12 +289,26 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     )
   })
 
-  it('22·23 08의 확인 순서: 소유(404) → 입력 검증(400) → version(409). version이 숫자가 아니면 fieldErrors 없이 400 (08 0.2)', () => {
-    expect(() => parse(mockUpdateCustomer(11, { version: 0, name: '' }))).toThrowError(expect.objectContaining({ code: 'NOT_FOUND' }))
+  it('22·23 08의 확인 순서: 형식(400) → 소유(404) → version(409). version이 숫자가 아니면 fieldErrors 없이 400 (08 0.2, chagok-docs#153)', () => {
+    expect(() => parse(mockUpdateCustomer(11, { version: 0, name: '' }))).toThrowError(expect.objectContaining({ code: 'INVALID_INPUT' }))
+    expect(() => parse(mockUpdateCustomer(11, { name: '김민수' } as unknown as CustomerUpdateRequest))).toThrowError(
+      expect.objectContaining({ code: 'INVALID_INPUT', fieldErrors: [{ field: 'version', reason: '필수 입력입니다.' }] }),
+    )
+    expect(() => parse(mockUpdateCustomer(11, { version: 9, name: '김민수' }))).toThrowError(expect.objectContaining({ code: 'NOT_FOUND' }))
     expect(() => parse(mockUpdateVehicle(4, { version: 9, model: '' }))).toThrowError(expect.objectContaining({ code: 'INVALID_INPUT' }))
     expect(() => parse(mockUpdateCustomer(1, { version: '0' } as unknown as CustomerUpdateRequest))).toThrowError(
       expect.objectContaining({ code: 'INVALID_INPUT', fieldErrors: [] }),
     )
+  })
+
+  it('23 modelYear 상한은 소유(404) 뒤·version(409) 앞의 400 (08 23)', () => {
+    const tooNew = new Date().getFullYear() + 2
+    expect(() => parse(mockUpdateVehicle(12, { version: 0, modelYear: tooNew }))).toThrowError(expect.objectContaining({ code: 'NOT_FOUND' }))
+    expect(() => parse(mockUpdateVehicle(4, { version: 9, modelYear: tooNew }))).toThrowError(
+      expect.objectContaining({ code: 'INVALID_INPUT', fieldErrors: [expect.objectContaining({ field: 'modelYear' })] }),
+    )
+    expect(() => parse(mockUpdateVehicle(4, { version: 0, modelYear: 1979 }))).toThrowError(expect.objectContaining({ code: 'INVALID_INPUT' }))
+    expect(() => parse(mockUpdateVehicle(12, { version: 0, modelYear: 1979 }))).toThrowError(expect.objectContaining({ code: 'INVALID_INPUT' }))
   })
 
   it('22·23 격리: B 정비소 고객 11·차량 12는 404 (X12)', () => {

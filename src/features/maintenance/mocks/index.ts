@@ -117,6 +117,12 @@ export function mockGetVisits(vehicleId: number, params: VisitListParams = {}): 
   })
 }
 
+/** 08 12 구분별 입력 문구 (백엔드 MaintenanceService와 같은 글자) */
+const EXTERNAL_ONLY = '외부 기록일 때만 입력할 수 있습니다.'
+const INSPECT_ONLY = '점검일 때만 입력할 수 있습니다.'
+const INSPECT_RESULT_VALUE = 'GOOD 또는 CAUTION만 입력할 수 있습니다.'
+const INSPECT_RESULTS: readonly string[] = ['GOOD', 'CAUTION']
+
 /** 08 12 요청을 형식 검사 전에 느슨하게 읽기 위한 모양 (빠진 필드·null이 올 수 있음) */
 type LooseVisitSave = Partial<VisitSaveRequest> & {
   records?: Array<Partial<VisitSaveRequest['records'][number]>>
@@ -126,8 +132,9 @@ type LooseVisitSave = Partial<VisitSaveRequest> & {
  * 08 12 — 검사 순서는 서버(chagok-backend#32·#102)와 같다: 형식(필수·길이) → 차량 소속(404, X5) → 방문일·외부 정비일 →
  * 항목 중복 → 쓰는 항목(X11) → 담당 정비사(X13, #62) → 차량이 비어 있을 때 필수(D-58, 교체·점검이 있을 때만) → 연식·주행거리 범위.
  * P0-나머지: 외부·거절·점검 결과(#29)와 담당 지정 mechanicId(#62)를 받는다.
+ * 구분과 맞지 않는 값(외부가 아닌데 externalDate·externalMileage, 점검이 아닌데 inspectResult)과 점검 결과 값 오류는 서버처럼 3단계에서
+ *   모아 400(`records[i].<필드>`, 08 12·chagok-docs#176, #106). 문구는 백엔드 MaintenanceService.validateRecordInputs와 같다.
  * LIMIT: 외부 주행거리 범위 문구는 공용 MILEAGE_RANGE를 써서 서버(chagok-backend#32, "0 ~ 2,000,000 사이로 입력해 주세요.")와 글자가 다르다(화면은 서버 문구를 그대로 보임).
- *   구분과 맞지 않는 값(점검이 아닌데 inspectResult 등 — 서버는 400)은 화면이 보내지 않으므로 흉내 내지 않는다.
  */
 export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockResponse {
   const request = (body ?? {}) as LooseVisitSave
@@ -152,17 +159,26 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
   // 2. 차량 소속
   if (!isOwnedVehicle(vehicleId)) return notFound()
 
-  // 3. 방문일: 오늘 이전·오늘. 외부 정비일: 외부면 필수, 미래 불가 (F-MNT-02)
+  // 3. 방문일: 오늘 이전·오늘. 외부 정비일: 외부면 필수, 미래 불가 (F-MNT-02). 구분과 맞지 않는 값·점검 결과 값도 여기서 모은다(08 12)
   const today = todaySeoul()
   if ((request.visitDate as string) > today) return invalid([{ field: 'visitDate', reason: M.VISIT_DATE_FUTURE }])
   const external: FieldError[] = []
+  // 한 기록 안의 순서는 서버와 같다: 외부 값(외부면 범위, 아니면 구분 불일치) → 점검 결과
   records.forEach((r, i) => {
-    if (r.type !== 'EXTERNAL') return
-    if (!r.externalDate) external.push({ field: `records[${i}].externalDate`, reason: M.REQUIRED })
-    else if (r.externalDate > today) external.push({ field: `records[${i}].externalDate`, reason: M.VISIT_DATE_FUTURE })
-    const km = r.externalMileage
-    if (km != null && (!Number.isInteger(km) || km < 0 || km > MAX_MILEAGE)) {
-      external.push({ field: `records[${i}].externalMileage`, reason: M.MILEAGE_RANGE })
+    if (r.type === 'EXTERNAL') {
+      if (!r.externalDate) external.push({ field: `records[${i}].externalDate`, reason: M.REQUIRED })
+      else if (r.externalDate > today) external.push({ field: `records[${i}].externalDate`, reason: M.VISIT_DATE_FUTURE })
+      const km = r.externalMileage
+      if (km != null && (!Number.isInteger(km) || km < 0 || km > MAX_MILEAGE)) {
+        external.push({ field: `records[${i}].externalMileage`, reason: M.MILEAGE_RANGE })
+      }
+    } else {
+      if (r.externalDate != null) external.push({ field: `records[${i}].externalDate`, reason: EXTERNAL_ONLY })
+      if (r.externalMileage != null) external.push({ field: `records[${i}].externalMileage`, reason: EXTERNAL_ONLY })
+    }
+    if (r.inspectResult != null) {
+      if (r.type !== 'INSPECT') external.push({ field: `records[${i}].inspectResult`, reason: INSPECT_ONLY })
+      else if (!INSPECT_RESULTS.includes(r.inspectResult)) external.push({ field: `records[${i}].inspectResult`, reason: INSPECT_RESULT_VALUE })
     }
   })
   if (external.length > 0) return invalid(external)

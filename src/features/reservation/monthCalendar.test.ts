@@ -63,13 +63,13 @@ describe('Mock 42 (08 7.1 JSON 예시 모양) · 15 assignee', () => {
   const summary = (from: string, to: string) =>
     (mockGetReservationSummary({ from, to }).body as { data: { from: string; to: string; items: ReservationDaySummary[] } }).data
 
-  it('07 7.3 시드: 어제 1·오늘 2·D+2 1, 예약이 없는 날은 넣지 않는다', () => {
+  it('07 7.3 시드: 어제 1·오늘 3(진행중 1)·D+2 1, 예약이 없는 날은 넣지 않는다', () => {
     const today = todaySeoul()
     const data = summary(addDays(today, -1), addDays(today, 2))
     expect([data.from, data.to]).toEqual([addDays(today, -1), addDays(today, 2)]) // 요청 기간 그대로
     const days = data.items
     const byDate = Object.fromEntries(days.map((d) => [d.date, d]))
-    expect(byDate[today]).toEqual({ date: today, total: 2, reserved: 2, inProgress: 0, completed: 0, canceled: 0, noShow: 0 })
+    expect(byDate[today]).toEqual({ date: today, total: 3, reserved: 2, inProgress: 1, completed: 0, canceled: 0, noShow: 0 })
     expect(byDate[addDays(today, -1)].total).toBe(1)
     expect(byDate[addDays(today, 2)].total).toBe(1)
     expect(byDate[addDays(today, 1)]).toBeUndefined()
@@ -95,6 +95,7 @@ describe('Mock 42 (08 7.1 JSON 예시 모양) · 15 assignee', () => {
     const today = todaySeoul()
     const items = (mockGetReservations({ from: today, to: today }).body as { data: { items: ReservationListItem[] } }).data.items
     expect(items.map((r) => r.assignee)).toEqual([
+      { staffId: 2, name: '김정비', colorIndex: 1 }, // 90마0005 09:00 진행중 mech_a
       { staffId: 2, name: '김정비', colorIndex: 1 }, // 78라0004 10:00 mech_a
       { staffId: 1, name: '박사장', colorIndex: 0 }, // 22사0007 14:30 owner_a
     ])

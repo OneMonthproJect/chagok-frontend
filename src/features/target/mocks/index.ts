@@ -2,8 +2,10 @@
 // 값은 07 7.2·7.5 시드의 대상 6대(targets.json). 날짜는 오늘(서울) 기준으로 계산한다 — 서버 판정을 흉내 내는 것이 아니라
 // 시드의 기준 기록일 + 주기를 그대로 옮긴 값이다(화면은 status를 받은 그대로 보인다).
 // 다른 feature의 Mock(예약)과 데이터를 나누지 않으므로, Mock으로 예약을 등록해도 이 목록의 "예약 있음"은 바뀌지 않는다.
+// phone은 목록 응답이라 08 0.5대로 가린 값이다(P0-나머지, #106).
 
 import type { MockResponse } from '@/shared/api/client'
+import { maskPhone } from '@/shared/lib/maskPhone'
 import type { Target } from '../types'
 import fixture from './targets.json'
 
@@ -23,7 +25,7 @@ export function mockGetTargets(): MockResponse {
   const items: Target[] = fixture.items.map((t) => ({
     customerId: t.customerId,
     customerName: t.customerName,
-    phone: t.phone,
+    phone: maskPhone(t.phone),
     vehicleId: t.vehicleId,
     plateNumber: t.plateNumber,
     targetItems: t.targetItems.map((i) => {

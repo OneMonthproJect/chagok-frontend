@@ -85,6 +85,18 @@ describe('mocks 39·40·41 (08 모양, 백엔드와 같은 확인 순서)', () =
   const code = (r: { body: unknown }) => (r.body as { error: { code: string } }).error.code
   const data = <T,>(r: { body: unknown }) => (r.body as { data: T }).data
 
+  it('39: 보낸 연식·주행거리의 범위는 빠진 값 다음 400, 연식 먼저 하나씩(백엔드 applyVisit, #106). 실패하면 예약 그대로', () => {
+    const maxYear = new Date().getFullYear() + 1
+    const fields = (r: { body: unknown }) => (r.body as { error: { fieldErrors: { field: string; reason: string }[] } }).error.fieldErrors
+    expect(fields(mockStart(1, { version: 0, modelYear: 1979, mileage: -1 }))).toEqual([
+      { field: 'modelYear', reason: `1980년부터 ${maxYear}년까지 입력할 수 있습니다.` },
+    ])
+    expect(fields(mockStart(1, { version: 0, modelYear: maxYear + 1 }))[0].field).toBe('modelYear')
+    expect(fields(mockStart(1, { version: 0, mileage: 2_000_001 }))).toEqual([{ field: 'mileage', reason: '0 이상 2,000,000 이하로 입력해 주세요.' }])
+    expect(code(mockStart(1, { version: 3, mileage: -1 }))).toBe('CONCURRENT_MODIFICATION') // version이 먼저
+    expect(data(mockStart(1, { version: 0, modelYear: maxYear, mileage: 2_000_000 }))).toMatchObject({ status: 'IN_PROGRESS', version: 1 })
+  })
+
   it('39: 예약 → 진행중, version + 1, 18과 같은 4필드 응답. 끝난·진행중 예약은 409. 진행중에서 완료·취소 가능', () => {
     expect(code(mockStart(1, {} as never))).toBe('INVALID_INPUT')
     expect(mockStart(999, { version: 0 }).status).toBe(404)

@@ -39,6 +39,7 @@
     { "staffId": 2, "name": "김정비", "colorIndex": 1 }
   ],
   "reservations": [
+    { "reservationId": 5, "dayOffset": 0, "time": "09:00:00", "status": "IN_PROGRESS", "version": 0, "vehicleId": 5, "itemIds": [1], "other": false, "memo": null, "assigneeStaffId": 2 },
     { "reservationId": 1, "dayOffset": 0, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 4, "itemIds": [1], "other": false, "memo": null, "assigneeStaffId": 2 },
     { "reservationId": 2, "dayOffset": 0, "time": "14:30:00", "status": "RESERVED", "version": 0, "vehicleId": 7, "itemIds": [], "other": true, "memo": "에어컨 냄새", "assigneeStaffId": 1 },
     { "reservationId": 3, "dayOffset": 2, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 2, "itemIds": [1], "other": false, "memo": null, "assigneeStaffId": 2 },

@@ -34,10 +34,15 @@ describe('getHome (08 04)', () => {
 })
 
 describe('mock (07 7.5)', () => {
-  it('오늘 예약 2건·오늘 연락할 고객 5명, 날짜는 오늘', () => {
+  it('오늘 예약 3건(진행중 포함)·오늘 연락할 고객 5명, 날짜는 오늘 — 08 04 예시·07 7.5', () => {
     const res = mockGetHome()
     const data = parseResponse<HomeSummary>(res.status, res.body)
-    expect(data.todayReservationCount).toBe(2)
+    expect(data.todayReservationCount).toBe(3)
+    expect(data.todayReservations.map((r) => [r.reservationId, r.status, r.phone, r.assignee?.name])).toEqual([
+      [5, 'IN_PROGRESS', '010-****-0005', '김정비'],
+      [1, 'RESERVED', '010-****-0004', '김정비'],
+      [2, 'RESERVED', '010-****-0007', '박사장'],
+    ])
     expect(data.todayContactCount).toBe(5)
     expect(data.todayReservations.every((r) => r.reservedAt.startsWith(data.date))).toBe(true)
   })

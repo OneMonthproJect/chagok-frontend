@@ -76,6 +76,7 @@ describe('mock (07 7.5 재점검 대상 6대)', () => {
     expect(data.items.slice(0, 3).every((t) => t.targetItems[0].status === 'DUE')).toBe(true)
     expect(data.items.filter((t) => t.activeReservation).map((t) => t.plateNumber)).toEqual(['34나0002'])
     expect(data.items.some((t) => t.customerName === '장미래')).toBe(false)
+    expect(data.items.map((t) => t.phone).every((p) => /^010-\*{4}-\d{4}$/.test(p))).toBe(true) // 목록 phone은 08 0.5대로 가림 (#106)
     const due = data.items.slice(0, 3).map((t) => t.targetItems[0].nextDueDate)
     expect([...due].sort()).toEqual(due) // 도래 안에서 다음 정비일 이른 순
     expect(due.every((d) => d <= data.asOf)).toBe(true)

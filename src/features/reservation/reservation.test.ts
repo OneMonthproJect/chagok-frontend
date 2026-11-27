@@ -78,12 +78,20 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
     return parseResponse<ReservationPeriodResponse>(res.status, res.body)
   }
 
-  it('오늘 2건(10:00 78라0004 엔진오일, 14:30 22사0007 기타) — 07 7.5', () => {
+  it('오늘 3건(09:00 90마0005 진행중, 10:00 78라0004 엔진오일, 14:30 22사0007 기타) — 07 7.3·7.5', () => {
     const { items } = period(today)
     expect(items.map((i) => [i.reservedAt.slice(11, 16), i.plateNumber, i.purposeSummary])).toEqual([
+      ['09:00', '90마0005', '엔진오일'],
       ['10:00', '78라0004', '엔진오일'],
       ['14:30', '22사0007', '기타'],
     ])
+  })
+
+  it('15 목록 phone은 08 0.5대로 가린 값, 17 패널은 전체 번호 (#106)', () => {
+    const { items } = period(today)
+    expect(items.map((i) => i.phone)).toEqual(['010-****-0005', '010-****-0004', '010-****-0007'])
+    const panel = mockGetPanel(items[1].reservationId).body as { data: { customer: { phone: string } } }
+    expect(panel.data.customer.phone).toBe('010-0000-0004')
   })
 
   it('어제 15:00 예약은 "처리 필요", 빈 날은 items: []', () => {

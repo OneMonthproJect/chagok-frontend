@@ -1,8 +1,10 @@
 // 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 04의 사본이며 계약의 기준은 08이다.
-// 값은 07 7.5 기대값 그대로(오늘 예약 2건·오늘 연락할 고객 5명). 날짜만 오늘(서울)로 바꾼다.
+// 값은 08 04 예시·07 7.3·7.5 기대값 그대로(오늘 예약 3건 — 진행중 1건 포함, 오늘 연락할 고객 5명, P0-나머지 assignee). 날짜만 오늘(서울)로 바꾸고
+// 목록 phone은 08 0.5대로 가린다(#106).
 // 다른 feature의 Mock(예약)과 데이터를 나누지 않으므로, Mock으로 예약을 등록해도 이 숫자는 바뀌지 않는다.
 
 import type { MockResponse } from '@/shared/api/client'
+import { maskPhone } from '@/shared/lib/maskPhone'
 import type { HomeReservation, HomeSummary } from '../types'
 import fixture from './home.json'
 
@@ -20,6 +22,7 @@ export function mockGetHome(): MockResponse {
     todayReservations: fixture.todayReservations.map(({ time, ...r }) => ({
       ...r,
       reservedAt: `${date}T${time}`,
+      phone: maskPhone(r.phone),
       status: r.status as HomeReservation['status'],
     })),
   }
