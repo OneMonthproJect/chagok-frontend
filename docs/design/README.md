@@ -11,7 +11,7 @@
 | **최종 기준 버전** | **ChaGok — Design v3.0** (STEP 09-A 디자인, 09-B 소스 정리, 09-C 통합 검증·정책 수정, 09-E docs #111 반영, 2026-11-25) |
 | 범위 | P0-핵심 · P0-나머지 · P1. P2·Non-goal은 디자인하지 않음 |
 | **개발 순서** | **실제 개발은 P0부터.** P1은 디자인·Mock까지이며 이슈가 아직 없다(범위 동결 chagok-docs#103 기록 뒤 생성). F-CUS-10·11(비활성화·익명화)은 POL-46 확인 전 구현 시작 안 함 |
-| 상태 | 디자인 완료 · 프로토타입 연결 완료 · Mock 동작 확인까지. **실제 기능 개발·실제 API 연동은 P0·P1 모두 미착수**(기능별: `references/DESIGN_PROGRESS.md` 6장) |
+| 상태 | 디자인 완료 · 프로토타입 연결 완료 · Mock 동작 확인까지(디자인 기준). **실제 기능 개발·API 연동**(2026-11-27): P0-핵심·P0-나머지는 `src/`에 구현·연동됨(M2 통합 검증 통과 2026-11-26), P1은 미착수(기능별: `references/DESIGN_PROGRESS.md` 6장, 현황은 레포 README 「지금 상태」) |
 | 판정 | CONDITIONAL READY (P0·P1 디자인 기준) — 조건·결정 필요 D1~D18: `references/DESIGN_VERIFICATION.md` 「STEP 09-C」 |
 | 화면 크기 | PC·태블릿(03 NFR-04). 폰 폭은 지원 범위 밖 — 알려진 한계(같은 문서 9C-7) |
 | 기준 커밋 | **chagok-docs develop `e57b2be`**(STEP 09-E에서 확인, #111 예약 API 19 반영. 이후 `c68d41e`까지 확인 — D-71 협업 규칙만 바뀌어 화면·API 영향 없음) · chagok-frontend develop `bf2ab08`(이후 `c6304ec`까지 확인 — `.github` PR 규칙만 바뀜). 이전 검증 기준(09-A `ac0705b`, 09-C·D `42c75df`)은 각 문서에 검증 이력으로 남김 |
