@@ -218,6 +218,7 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
         {
           recordId: 16, itemId: 1, itemName: '엔진오일', type: 'REPLACE', date: '2026-10-24', memo: null, source: 'SHOP', inspectResult: null,
           version: 1, edited: true, staff: { staffId: 2, name: '김정비' },
+          mileage: null,
         },
       ],
     })

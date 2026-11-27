@@ -26,6 +26,7 @@ const RECORD = (over: Partial<VisitRecord> = {}): VisitRecord => ({
   version: 0,
   edited: false,
   staff: { staffId: 2, name: '김정비' },
+  mileage: 45000,
   ...over,
 })
 const OWNER = { staffId: 1, role: 'OWNER' }
@@ -66,22 +67,27 @@ describe('editPermission (09 S-07 수정 버튼, 08 37 권한)', () => {
 })
 
 describe('toRecordUpdate (08 37 보낸 필드만)', () => {
-  const visit = { mileage: 45000 }
+  it('처음 칸 값은 그 기록의 주행거리 — 외부·행마다 다른 값도 그대로, 값이 없으면 빈 칸 (chagok-docs#174)', () => {
+    expect(recordEditForm(RECORD({ type: 'EXTERNAL', source: 'CUSTOMER_STATEMENT', mileage: 40000 })).mileage).toBe('40000')
+    expect(recordEditForm(RECORD({ mileage: 52000 })).mileage).toBe('52000')
+    expect(recordEditForm(RECORD({ mileage: null })).mileage).toBe('')
+    expect(recordEditForm(RECORD({ mileage: 0 })).mileage).toBe('0') // 0은 값이다(null과 다름)
+  })
 
   it('바꾼 칸만 + 읽은 version, 사유는 공백을 빼고 (08 37 예시 모양)', () => {
-    const initial = recordEditForm(RECORD(), visit)
+    const initial = recordEditForm(RECORD())
     const body = toRecordUpdate({ ...initial, mileage: '52000', memo: ' 합성유 사용 ', reason: ' 입력 누락 보완 ' }, initial, 0)
     expect(body).toEqual({ version: 0, mileage: 52000, memo: '합성유 사용', reason: '입력 누락 보완' })
   })
 
   it('바꾼 칸이 없으면 null (사유만 적어도 요청하지 않음 — 서버도 400, H8)', () => {
-    const initial = recordEditForm(RECORD(), visit)
+    const initial = recordEditForm(RECORD())
     expect(toRecordUpdate({ ...initial, reason: '사유만' }, initial, 0)).toBeNull()
     expect(toRecordUpdate({ ...initial, memo: '  ' }, initial, 0)).toBeNull() // 원래 메모 없음 + 공백 = 그대로
   })
 
   it('구분 교체 → 점검이면 점검 결과를 함께 보낸다 (08 37 구분 정정 예시), 결과 없음이면 type만', () => {
-    const initial = recordEditForm(RECORD(), visit)
+    const initial = recordEditForm(RECORD())
     expect(toRecordUpdate({ ...initial, type: 'INSPECT', inspectResult: 'CAUTION' }, initial, 1)).toEqual({
       version: 1,
       type: 'INSPECT',
@@ -91,12 +97,12 @@ describe('toRecordUpdate (08 37 보낸 필드만)', () => {
   })
 
   it('구분을 점검 밖으로 바꾸면 점검 결과는 보내지 않는다(서버가 비움)', () => {
-    const initial = recordEditForm(RECORD({ type: 'INSPECT', inspectResult: 'GOOD' }), visit)
+    const initial = recordEditForm(RECORD({ type: 'INSPECT', inspectResult: 'GOOD' }))
     expect(toRecordUpdate({ ...initial, type: 'DECLINE' }, initial, 0)).toEqual({ version: 0, type: 'DECLINE' })
   })
 
   it('메모를 비우면 "" (08 37 빈 문자열이면 비운다), 항목·담당은 숫자로', () => {
-    const initial = recordEditForm(RECORD({ memo: '오일 누유' }), visit)
+    const initial = recordEditForm(RECORD({ memo: '오일 누유' }))
     expect(toRecordUpdate({ ...initial, memo: '', itemId: '3', mechanicId: '1' }, initial, 2)).toEqual({
       version: 2,
       itemId: 3,
@@ -105,15 +111,15 @@ describe('toRecordUpdate (08 37 보낸 필드만)', () => {
     })
   })
 
-  it('방문 주행거리로 채운 칸을 그대로 두면 주행거리는 보내지 않는다', () => {
-    const initial = recordEditForm(RECORD(), visit)
+  it('그 기록의 주행거리로 채운 칸을 그대로 두면 주행거리는 보내지 않는다', () => {
+    const initial = recordEditForm(RECORD())
     expect(initial.mileage).toBe('45000')
     expect(toRecordUpdate({ ...initial, recordDate: '2026-11-23' }, initial, 0)).toEqual({ version: 0, recordDate: '2026-11-23' })
   })
 })
 
 describe('validateRecordEdit (08 37 요청 표)', () => {
-  const initial = recordEditForm(RECORD(), { mileage: 45000 })
+  const initial = recordEditForm(RECORD())
 
   it('미래 방문일은 칸 오류 (H6), 오늘은 된다', () => {
     expect(validateRecordEdit({ ...initial, recordDate: '2026-11-25' }, initial, '2026-11-24').recordDate).toBeDefined()
@@ -124,14 +130,14 @@ describe('validateRecordEdit (08 37 요청 표)', () => {
     expect(validateRecordEdit({ ...initial, mileage: '12.5' }, initial, '2026-11-24').mileage).toBeDefined()
     expect(validateRecordEdit({ ...initial, mileage: '2000001' }, initial, '2026-11-24').mileage).toBeDefined()
     expect(validateRecordEdit({ ...initial, mileage: '' }, initial, '2026-11-24').mileage).toBe('비울 수 없습니다.')
-    const empty = recordEditForm(RECORD(), { mileage: null })
+    const empty = recordEditForm(RECORD({ mileage: null }))
     expect(validateRecordEdit(empty, empty, '2026-11-24')).toEqual({})
   })
 
   it('메모·사유 200자, 점검 그대로 결과만 지우기는 막는다', () => {
     expect(validateRecordEdit({ ...initial, memo: 'a'.repeat(201) }, initial, '2026-11-24').memo).toBeDefined()
     expect(validateRecordEdit({ ...initial, reason: 'a'.repeat(201) }, initial, '2026-11-24').reason).toBeDefined()
-    const inspect = recordEditForm(RECORD({ type: 'INSPECT', inspectResult: 'CAUTION' }), { mileage: null })
+    const inspect = recordEditForm(RECORD({ type: 'INSPECT', inspectResult: 'CAUTION', mileage: null }))
     expect(validateRecordEdit({ ...inspect, inspectResult: '' }, inspect, '2026-11-24').inspectResult).toBeDefined()
   })
 })

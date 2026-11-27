@@ -82,6 +82,8 @@ export interface VisitRecord {
   edited: boolean
   /** P0-나머지 (#34). 그 기록의 담당 정비사(현재 이름). 37로 담당을 바꾸면 바뀐다 */
   staff: StaffRef
+  /** P0-나머지 (F-MNT-04, chagok-docs#174). 그 기록 행의 주행거리(37이 고치는 값). 외부 기록은 확인되지 않으면 null이며 null은 0이 아니라 "알 수 없음". 방문 `mileage`와 별개 */
+  mileage: number | null
 }
 
 /** 08 11 records[].staff · 38 changedBy·mechanic — `{ staffId, name }` (name은 그 계정의 현재 이름) */

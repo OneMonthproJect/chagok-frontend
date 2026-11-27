@@ -270,6 +270,7 @@ function visitsOf(vehicleId: number): RecentVisit[] {
         // 기록 16만 1회 수정한 모양(version 1·edited), 나머지는 수정 전
         ...(EDITED_RECORDS[r.recordId] ?? { version: 0, edited: false }),
         staff: staffRefOf(v.staffName),
+        mileage: r.type === 'EXTERNAL' ? null : v.mileage, // 11 Mock(maintenance visits.json)과 같은 규칙: 외부는 null, 그 밖은 방문 주행거리
       })),
     }))
 }

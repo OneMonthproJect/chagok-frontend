@@ -130,6 +130,8 @@ export interface VisitRecord {
   version: number
   edited: boolean
   staff: { staffId: number; name: string }
+  /** P0-나머지 (F-MNT-04). 11과 같은 모양 — 패널 화면에서는 쓰지 않는다 */
+  mileage: number | null
 }
 
 /** 08 10 items[].lastDecline·lastCaution (P0-나머지 #29, F-CYC-02) */

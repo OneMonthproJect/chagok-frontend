@@ -11,6 +11,7 @@ import {
   SHOW_MORE_LABEL,
   dateText,
   isCustomerStatement,
+  kmText,
   visitCountText,
   visitMetaText,
 } from '../maintenanceFlow'
@@ -23,6 +24,7 @@ import './visitHistory.css'
 //   고객 진술(08 11 source CUSTOMER_STATEMENT — isCustomerStatement)이면 "고객 진술" 꼬리표.
 //   점검 결과(양호·주의)는 값이 있을 때만(F-MNT-03).
 //   기록마다 자기 날짜가 있다(외부는 고객이 말한 날짜) — 방문일과 다르면 기록 옆에 보인다.
+//   기록마다 자기 주행거리(11 records[].mileage)도 있다 — 값이 있고 방문 주행거리와 다르면 기록 옆에 보인다(chagok-docs#174, 09 S-07).
 // - 이력이 없으면 "정비 이력이 없습니다." + "방문 기록"(09 5장). 버튼은 화면이 onRecordVisit을 넘길 때만 그린다(연결 안 된 버튼 금지, 09 0장).
 // - 더 보기는 사람이 누를 때만 다음 쪽을 받는다. 실패하면 받은 이력은 그대로 두고 그 자리에서 다시 누르게 한다(POL-125).
 // - 출처 "우리 정비소"(SHOP)는 따로 보이지 않는다(09 S-07은 외부만 표시).
@@ -46,6 +48,7 @@ function RecordLine({ record, visit, actions }) {
       )}
       {isCustomerStatement(record) && <span className="visit-record__source">{CUSTOMER_STATEMENT_LABEL}</span>}
       {record.date !== visit.visitDate && <span className="visit-record__date">{dateText(record.date)}</span>}
+      {record.mileage != null && record.mileage !== visit.mileage && <span className="visit-record__mileage">{kmText(record.mileage)}</span>}
       {record.edited && actions && (
         <button
           type="button"
