@@ -1,6 +1,7 @@
 // 예약 상세 패널(S-02, F-RSV-03·04·07~10, 08 17·18·20·21·39~41, 09 S-02 「예약 상세 패널」)의 판단 규칙·문구. 화면 없이 테스트하도록 순수 함수로 둔다.
 // 상태(점검 주기·예약)는 서버 값 그대로 쓴다. 여기서 날짜로 상태를 계산하지 않는다(CONVENTIONS 7장).
 
+import { itemNoteTag } from '@/shared/lib/noteTag'
 import { formatDayLabel, formatTime } from './dates'
 import { reservationStatusLabel } from './status'
 import type {
@@ -287,9 +288,14 @@ export function visitDateText(date: string): string {
   return date.replaceAll('-', '.')
 }
 
+/** 예약 목적으로 고른 항목의 꼬리표 */
+export const PURPOSE_TAG = '예약 목적'
+
 /**
  * 17 itemStatuses → shared/ui ItemStatusList(variant summary)의 줄. 순서는 받은 그대로(sortOrder 순),
  * 예약 목적 항목은 자리를 옮기지 않고 강조 + 「예약 목적」 꼬리표만 단다(D-63 B02).
+ * P0-나머지(#29): 지난 방문 거절·지난 점검 주의(04 F-CYC-02, 서버 값 그대로)를 같은 칸에 "예약 목적 · 지난 방문 거절(날짜)"로 잇는다.
+ * 꼬리표는 상태를 바꾸지 않는다.
  */
 export function itemStatusRows(itemStatuses: PanelItemStatus[]) {
   return itemStatuses.map((item) => ({
@@ -297,6 +303,12 @@ export function itemStatusRows(itemStatuses: PanelItemStatus[]) {
     name: item.name,
     status: item.status,
     highlighted: item.highlighted,
-    tag: item.highlighted ? '예약 목적' : undefined,
+    tag: [item.highlighted && PURPOSE_TAG, itemNoteTag(item)].filter(Boolean).join(' · ') || undefined,
   }))
 }
+
+/**
+ * 최근 이력 기록의 출처·점검 결과 (09 S-02 4번 「항목·구분(·결과)」, S-07과 같은 표시: 외부는 "고객 진술", 점검 결과는 값이 있을 때만).
+ * S-07(maintenance)과 같은 규칙이라 shared/lib/recordDisplay에 두고 여기서는 다시 내보낸다.
+ */
+export { CUSTOMER_STATEMENT_LABEL, INSPECT_RESULT_LABELS, isCustomerStatement } from '@/shared/lib/recordDisplay'

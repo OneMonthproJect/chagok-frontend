@@ -169,4 +169,30 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
 
     expect(read(1).totalVisitCount).toBe(1) // 78라0004
   })
+
+  it('17 P0-나머지 (#29): 꼬리표는 07 7.2 시드대로(11바0006 거절·33아0008 주의), source는 외부만 고객 진술, 점검 결과는 점검에만', () => {
+    type Panel = {
+      itemStatuses: { itemId: number; lastDecline: { date: string; memo: string | null } | null; lastCaution: { date: string; memo: string | null } | null }[]
+      recentVisits: { records: { type: string; source: string; inspectResult: string | null }[] }[]
+    }
+    const panelOf = (vehicleId: number, time: string) => {
+      const saved = mockCreateReservation({ vehicleId, reservedAt: `${addDays(todaySeoul(), 3)}T${time}`, assigneeId: 1 })
+      const id = parseResponse<{ reservationId: number }>(saved.status, saved.body).reservationId
+      return parseResponse<Panel>(mockGetPanel(id).status, mockGetPanel(id).body)
+    }
+    const ha = panelOf(6, '11:00:00') // 11바0006: 엔진오일 교체 D-8M 뒤 거절 D-1M
+    expect(ha.itemStatuses.find((i) => i.itemId === 1)).toMatchObject({ lastDecline: { memo: null }, lastCaution: null })
+    expect(ha.itemStatuses.filter((i) => i.lastDecline || i.lastCaution).map((i) => i.itemId)).toEqual([1])
+
+    const yun = panelOf(8, '13:00:00') // 33아0008: 타이어 교체 뒤 점검 주의 D-2M
+    expect(yun.itemStatuses.find((i) => i.itemId === 5)).toMatchObject({
+      lastDecline: null,
+      lastCaution: { memo: '타이어 트레드 마모 진행, 다음 방문 때 교체 권장' },
+    })
+    expect(yun.recentVisits[0].records[0]).toMatchObject({ type: 'INSPECT', source: 'SHOP', inspectResult: 'CAUTION' })
+
+    const records = [2, 4].flatMap((id) => parseResponse<Panel>(mockGetPanel(id).status, mockGetPanel(id).body).recentVisits.flatMap((v) => v.records))
+    expect(records.every((r) => (r.type === 'EXTERNAL') === (r.source === 'CUSTOMER_STATEMENT'))).toBe(true) // 07 3.7 CHECK
+    expect(records.every((r) => r.inspectResult === null || r.type === 'INSPECT')).toBe(true)
+  })
 })

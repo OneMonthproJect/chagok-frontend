@@ -10,9 +10,9 @@ import type { Target, TargetListResponse } from './types'
 const target: Target = {
   customerId: 2, customerName: '이영희', phone: '010-0000-0002', vehicleId: 2, plateNumber: '34나0002',
   targetItems: [
-    { itemId: 1, name: '엔진오일', status: 'DUE', nextDueDate: '2026-11-14', baseDate: '2026-05-14' },
-    { itemId: 6, name: '배터리', status: 'SOON', nextDueDate: '2026-12-14', baseDate: '2023-12-14' },
-    { itemId: 4, name: '브레이크패드', status: 'DUE', nextDueDate: '2026-11-20', baseDate: '2025-11-20' },
+    { itemId: 1, name: '엔진오일', status: 'DUE', nextDueDate: '2026-11-14', baseDate: '2026-05-14', lastDecline: null, lastCaution: null },
+    { itemId: 6, name: '배터리', status: 'SOON', nextDueDate: '2026-12-14', baseDate: '2023-12-14', lastDecline: null, lastCaution: null },
+    { itemId: 4, name: '브레이크패드', status: 'DUE', nextDueDate: '2026-11-20', baseDate: '2025-11-20', lastDecline: { date: '2026-10-24', memo: null }, lastCaution: null },
   ],
   activeReservation: { reservationId: 3, reservedAt: '2026-11-26T10:00:00' },
 }
@@ -28,10 +28,19 @@ describe('targetFlow', () => {
 
   it('펼침: 서버 순서·상태 그대로, 다음 정비일·기준 기록일', () => {
     expect(itemRows(target.targetItems)[0]).toEqual({
-      id: 1, name: '엔진오일', status: 'DUE',
+      id: 1, name: '엔진오일', status: 'DUE', tag: undefined,
       details: [{ label: '다음 정비일', value: '2026.11.14' }, { label: '기준 기록일', value: '2026.05.14' }],
     })
     expect(itemRows(target.targetItems).map((r) => r.id)).toEqual([1, 6, 4])
+  })
+
+  it('꼬리표 (#29, F-CYC-02): 08 14 lastDecline·lastCaution 그대로 tag, 상태는 바꾸지 않는다', () => {
+    const rows = itemRows(target.targetItems)
+    expect(rows[2]).toMatchObject({ status: 'DUE', tag: '지난 방문 거절(2026.10.24)' })
+    expect(itemRows([{ ...target.targetItems[1], lastCaution: { date: '2026-09-24', memo: '앞 타이어 마모' } }])[0]).toMatchObject({
+      status: 'SOON',
+      tag: '지난 점검 주의(2026.09.24, 앞 타이어 마모)',
+    })
   })
 
   it('"예약 있음 · 11/26 10:00", S-02 패널 쿼리, M-02 차량', () => {
@@ -70,5 +79,15 @@ describe('mock (07 7.5 재점검 대상 6대)', () => {
     const due = data.items.slice(0, 3).map((t) => t.targetItems[0].nextDueDate)
     expect([...due].sort()).toEqual(due) // 도래 안에서 다음 정비일 이른 순
     expect(due.every((d) => d <= data.asOf)).toBe(true)
+  })
+
+  it('꼬리표 (07 7.2 시드): 11바0006 엔진오일 지난 방문 거절, 33아0008 타이어 지난 점검 주의, 나머지는 null', () => {
+    const data = parseResponse<TargetListResponse>(mockGetTargets().status, mockGetTargets().body)
+    const byPlate = Object.fromEntries(data.items.map((t) => [t.plateNumber, t.targetItems[0]]))
+    expect(byPlate['11바0006'].lastDecline).toEqual({ date: expect.any(String), memo: null })
+    expect(byPlate['11바0006'].lastCaution).toBeNull()
+    expect(byPlate['33아0008'].lastCaution?.memo).toBe('타이어 트레드 마모 진행, 다음 방문 때 교체 권장')
+    expect(byPlate['33아0008'].lastDecline).toBeNull()
+    expect(byPlate['34나0002']).toMatchObject({ lastDecline: null, lastCaution: null })
   })
 })

@@ -28,7 +28,17 @@ export function mockGetTargets(): MockResponse {
     plateNumber: t.plateNumber,
     targetItems: t.targetItems.map((i) => {
       const baseDate = shift(today, i.baseMonths, i.baseDays)
-      return { itemId: i.itemId, name: i.name, status: i.status as 'DUE' | 'SOON', baseDate, nextDueDate: shift(baseDate, i.cycleMonths, 0) }
+      const seedNote = 'note' in i ? (i.note as { kind: string; months: number; days: number; memo: string | null }) : null
+      const note = seedNote ? { date: shift(today, seedNote.months, seedNote.days), memo: seedNote.memo } : null
+      return {
+        itemId: i.itemId,
+        name: i.name,
+        status: i.status as 'DUE' | 'SOON',
+        nextDueDate: shift(baseDate, i.cycleMonths, 0),
+        baseDate,
+        lastDecline: seedNote?.kind === 'DECLINE' ? note : null,
+        lastCaution: seedNote?.kind === 'CAUTION' ? note : null,
+      }
     }),
     activeReservation: t.activeReservation
       ? { reservationId: t.activeReservation.reservationId, reservedAt: `${shift(today, 0, t.activeReservation.dayOffset)}T${t.activeReservation.time}` }
