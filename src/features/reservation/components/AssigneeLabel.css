@@ -1,0 +1,31 @@
+/* 담당 정비사 라벨 (F-RSV-05 담당 색, #30). 색은 colorIndex 0~7 순서: 보라·청록·분홍·갈색·연두·남색·올리브·자주 (💡 04) */
+.assignee-label {
+  --assignee-color: #6d28d9;
+  max-width: 100%;
+  padding: 3px 8px 3px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--assignee-color) 35%, transparent);
+  border-radius: var(--ck-radius-pill, 999px);
+  background: color-mix(in srgb, var(--assignee-color) 8%, #fff);
+  color: #25282e;
+  font-size: var(--ck-fs-caption, 12px);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.assignee-label__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--assignee-color);
+}
+.assignee-label--c0 { --assignee-color: #6d28d9; } /* 보라 */
+.assignee-label--c1 { --assignee-color: #0f766e; } /* 청록 */
+.assignee-label--c2 { --assignee-color: #db2777; } /* 분홍 */
+.assignee-label--c3 { --assignee-color: #8a5a2b; } /* 갈색 */
+.assignee-label--c4 { --assignee-color: #65a30d; } /* 연두 */
+.assignee-label--c5 { --assignee-color: #1e3a8a; } /* 남색 */
+.assignee-label--c6 { --assignee-color: #6b7a1f; } /* 올리브 */
+.assignee-label--c7 { --assignee-color: #a21caf; } /* 자주 */

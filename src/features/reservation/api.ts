@@ -1,4 +1,4 @@
-// features/reservation의 API 호출 (08 15~19). 요청은 shared/api/client를 거친다.
+// features/reservation의 API 호출 (08 15~19, 42). 요청은 shared/api/client를 거친다.
 // Mock은 개발 서버에서 VITE_USE_MOCK=true일 때만, 동적 import()로 불러 운영 번들에 들어가지 않는다 (CONVENTIONS 7장 「Mock」).
 
 import { MOCK_ENABLED, request } from '@/shared/api/client'
@@ -11,6 +11,8 @@ import type {
   ReservationPeriodQuery,
   ReservationPeriodResponse,
   ReservationSaved,
+  ReservationSummaryQuery,
+  ReservationSummaryResponse,
   ReservationStatusChangeRequest,
   ReservationStatusChanged,
   ReservationUpdateRequest,
@@ -78,5 +80,13 @@ export function updateReservation(reservationId: number, body: ReservationUpdate
   return request<ReservationSaved>('PATCH', `/api/reservations/${reservationId}`, {
     body,
     mock: MOCK_ENABLED ? () => mocks().then((m) => m.mockUpdate(reservationId, body)) : undefined,
+  })
+}
+
+/** 08 42 (P0-나머지). 월 보기의 날짜별 건수·상태별 건수. from·to 규칙은 15와 같다(최대 42일) */
+export function getReservationSummary(query: ReservationSummaryQuery): Promise<ReservationSummaryResponse> {
+  const params = new URLSearchParams({ from: query.from, to: query.to })
+  return request<ReservationSummaryResponse>('GET', `/api/reservations/summary?${params}`, {
+    mock: MOCK_ENABLED ? () => mocks().then((m) => m.mockGetReservationSummary(query)) : undefined,
   })
 }
