@@ -303,6 +303,45 @@ describe('M-02 변경', () => {
     expect(text()).toContain('지난 날짜의 예약은 담당을 바꿀 수 없습니다.')
   })
 
+  it('#71 처리 필요(어제) 예약: 일시를 그대로 두고 목적만 바꾸면 19를 보낸다 (reservedAt 없음, 08 19)', async () => {
+    fixSeoulNow()
+    fetchMock.mockResolvedValue(saved(3))
+    const { onSaved } = await renderEdit({ target: pastTarget })
+    click(checkbox('배터리'))
+    click(button('저장'))
+    await settle()
+    expect(text()).not.toContain('오늘 이후 날짜만 예약할 수 있습니다.')
+    expect(JSON.parse(calls('PATCH')[0][1].body)).toEqual({ version: 2, purpose: { itemIds: [1, 6], other: false, memo: '' } })
+    expect(onSaved).toHaveBeenCalled()
+  })
+
+  it('#71 당일 사장: 예약 시각(10:00)이 지났어도 일시를 그대로 두면 재배정을 보낸다 (08 19 R24 날짜 기준)', async () => {
+    fixSeoulNow()
+    fetchMock.mockResolvedValue(saved(3))
+    await renderEdit({ login: OWNER, target: { ...target, reservedAt: '2026-11-26T10:00:00' } })
+    chooseAssignee(1)
+    typeReason('김정비 병가')
+    click(button('저장'))
+    await settle()
+    expect(text()).not.toContain('지난 시각은 고를 수 없습니다.')
+    expect(JSON.parse(calls('PATCH')[0][1].body)).toEqual({ version: 2, assigneeId: 1, reassignReason: '김정비 병가' })
+  })
+
+  it('#71 일시를 바꾸면 날짜 검사는 그대로 (어제 예약의 날짜를 더 이전으로)', async () => {
+    fixSeoulNow()
+    await renderEdit({ target: pastTarget })
+    const dateInput = document.querySelector('input[type="date"]')
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
+    act(() => {
+      setter.call(dateInput, '2026-11-24')
+      dateInput.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    click(button('저장'))
+    await settle()
+    expect(calls('PATCH')).toHaveLength(0)
+    expect(text()).toContain('오늘 이후 날짜만 예약할 수 있습니다.')
+  })
+
   it('409 ASSIGNEE_CHANGE_CLOSED → 담당만 원래대로 되돌리고 잠근다, 다른 입력은 유지·자동 재전송 없음', async () => {
     fetchMock.mockResolvedValueOnce(fail(409, 'ASSIGNEE_CHANGE_CLOSED', '지금은 담당 정비사를 바꿀 수 없습니다.'))
     await renderEdit()
