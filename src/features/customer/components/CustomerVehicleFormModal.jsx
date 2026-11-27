@@ -5,6 +5,7 @@ import FormField from '@/shared/ui/FormField.jsx'
 import Modal from '@/shared/ui/Modal.jsx'
 import { NETWORK_ERROR } from '@/shared/api/client'
 import { searchCustomers } from '../api'
+import { EDIT_EXISTING_LABEL } from '../editFlow'
 import {
   CONSENT_HINT,
   CONSENT_LABEL,
@@ -28,14 +29,17 @@ import './customer.css'
 // - 칸 오류는 칸을 벗어날 때 보이고, 한 번 보인 칸은 입력마다 다시 검사한다. 저장 때 서버 400 fieldErrors를 칸 아래에.
 // - 저장 중 버튼 비활성·두 번 눌러도 한 번(Button, POL-120). 실패해도 입력값 유지, 위에 오류 안내 + 사람이 누르는 다시 시도(POL-125).
 // - 연락처·차량번호 칸을 벗어나면 05로 같은 연락처·차량번호의 기존 고객을 찾아 위에 보인다. 같아도 등록을 막지 않는다(가족 공동 번호).
+//   05의 연락처는 서버가 가린 값(08 0.5)이라 연락처 검색에 나온 고객 중 가린 값과 자리가 맞는 고객을 "같은 연락처"로 본다(#32).
 //   기존 고객 행동 버튼은 쓰는 화면이 연결한 것만 그린다(pickKinds) — 연결 안 된 버튼 없음:
-//     'vehicle' 같은 차량번호의 차량 (목록: 차량 보기 / 예약: 이 차량 선택), 'add' 이 고객에 차량 추가
+//     'vehicle' 같은 차량번호의 차량 (목록: 차량 보기 / 예약: 이 차량 선택), 'add' 이 고객에 차량 추가,
+//     'edit' 기존 고객 수정(09 M-01 ③, F-CUS-06 #32 — S-06 고객 수정으로 감)
 // 쓰는 화면은 열 때 그리고 닫을 때 빼서(조건부 렌더) 입력을 새로 시작한다.
 // 사용: <CustomerVehicleFormModal initialQuery={q} context="list" onCreated={done} onClose={close} />
 
 const PICK_LABELS = {
   vehicle: { list: '차량 보기', reservation: '이 차량 선택' },
   add: { list: '이 고객에 차량 추가', reservation: '이 고객에 차량 추가' },
+  edit: { list: EDIT_EXISTING_LABEL, reservation: EDIT_EXISTING_LABEL },
 }
 
 export default function CustomerVehicleFormModal({
@@ -84,15 +88,22 @@ export default function CustomerVehicleFormModal({
 
   async function findDuplicates(value) {
     const request = ++duplicateRequest.current
-    const queries = [value.phone.trim(), normalizePlate(value.plateNumber)].filter(Boolean)
-    if (queries.length === 0) {
+    const phone = value.phone.trim()
+    const plate = normalizePlate(value.plateNumber)
+    if (!phone && !plate) {
       setDuplicates([])
       return
     }
     try {
-      const pages = await Promise.all(queries.map((q) => searchCustomers({ q })))
+      // 연락처 검색 결과를 따로 알아 둔다 — 05의 연락처는 가린 값이라(08 0.5) 같은 번호인지는 이 결과로 확인한다(registerFlow)
+      const [byPhone, byPlate] = await Promise.all([
+        phone ? searchCustomers({ q: phone }) : null,
+        plate ? searchCustomers({ q: plate }) : null,
+      ])
       if (request !== duplicateRequest.current) return
-      setDuplicates(duplicateCandidates(mergeSearchItems(pages.map((page) => page.items)), value))
+      const lists = [byPhone, byPlate].filter(Boolean).map((page) => page.items)
+      const phoneHitIds = new Set((byPhone?.items ?? []).map((customer) => customer.customerId))
+      setDuplicates(duplicateCandidates(mergeSearchItems(lists), value, phoneHitIds))
     } catch {
       // 중복 확인은 안내일 뿐이라 실패해도 등록을 막지 않는다. 401은 client가 로그인 화면으로 보낸다.
       if (request === duplicateRequest.current) setDuplicates([])
@@ -195,6 +206,11 @@ export default function CustomerVehicleFormModal({
                       {pickKinds.includes('add') && (
                         <Button variant="secondary" size="sm" onClick={() => onPick({ kind: 'add', customerId: customer.customerId })}>
                           {PICK_LABELS.add[context]}
+                        </Button>
+                      )}
+                      {pickKinds.includes('edit') && (
+                        <Button variant="secondary" size="sm" onClick={() => onPick({ kind: 'edit', customerId: customer.customerId })}>
+                          {PICK_LABELS.edit[context]}
                         </Button>
                       )}
                     </span>

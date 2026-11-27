@@ -6,7 +6,7 @@ import './customerDetail.css'
 // 연락처는 서버가 준 전체 번호 그대로 보인다(상세 화면은 마스킹하지 않음, 09 0장, D-40).
 // 연식·최근 주행거리는 비어 있을 수 있다(08 09, 07 3.5) — S-06 차량 카드와 같은 문구로 흐리게 보인다.
 // customerLink({ to, state }): 고객명을 눌러 갈 곳(S-06). pages가 정한다(features는 app 경로를 모름). 없으면 글자만.
-// 수정(P0-나머지 #32)·비활성화(P1)·약식 도면(P1)은 그 이슈가 더한다 — 지금은 버튼을 두지 않는다(09 0장).
+// [수정](#32)은 화면(S-07) 머리 버튼이 VehicleEditForm을 연다. 비활성화(P1)·약식 도면(P1)은 그 이슈가 더한다(09 0장).
 
 export default function VehicleCustomerHeader({ vehicle, customerLink }) {
   const { plateNumber, model, modelYear, latestMileage, customer } = vehicle

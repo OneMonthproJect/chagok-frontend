@@ -6,6 +6,7 @@
     "model": "K5",
     "modelYear": 2020,
     "latestMileage": 45000,
+    "version": 0,
     "customer": { "customerId": 4, "name": "최지은", "phone": "010-0000-0004", "consent": true }
   },
   "error": null

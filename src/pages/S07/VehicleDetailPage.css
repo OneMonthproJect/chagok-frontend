@@ -110,3 +110,10 @@
 .s07__skeleton-block--body {
   height: 360px;
 }
+
+/* 차량 수정 인라인 입력 (#32) */
+.s07__edit {
+  margin-top: var(--ck-space-4);
+  border-radius: var(--ck-radius-md);
+  overflow: hidden;
+}
