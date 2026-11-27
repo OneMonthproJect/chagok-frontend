@@ -1,0 +1,74 @@
+/* 날짜 선택 팝오버 (#83). body에 고정 위치로 띄운다(카드 overflow 밖). 떠 있는 층이라 최소 그림자(--ck-shadow-pop, #82) + 테두리 */
+.date-picker {
+  position: fixed;
+  z-index: calc(var(--ck-z-panel, 40) + 10);
+  box-sizing: border-box;
+  width: 304px;
+  padding: 12px;
+  border: 1px solid var(--ck-border, #e4e6ea);
+  border-radius: var(--ck-radius-lg, 16px);
+  background: var(--ck-surface, #fff);
+  box-shadow: var(--ck-shadow-pop);
+  color: var(--ck-text-1, #111318);
+  font-size: var(--ck-fs-small, 14px);
+}
+.date-picker__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.date-picker__month { font-size: var(--ck-fs-body, 15px); }
+.date-picker__month-btn,
+.date-picker__day,
+.date-picker__action {
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.date-picker__month-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ck-radius-md, 12px);
+  font-size: 18px;
+}
+.date-picker__month-btn:hover,
+.date-picker__day:hover,
+.date-picker__action:hover { background: var(--ck-surface-muted, #f5f6f8); }
+.date-picker__weekdays,
+.date-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.date-picker__weekdays span {
+  padding: 4px 0;
+  color: var(--ck-text-3, #5f646d);
+  font-size: var(--ck-fs-caption, 12px);
+  text-align: center;
+}
+.date-picker__day {
+  height: 38px;
+  border-radius: var(--ck-radius-sm, 8px);
+  font-variant-numeric: tabular-nums;
+}
+.date-picker__day.is-outside { color: var(--ck-text-disabled, #9a9ea5); }
+.date-picker__day.is-today { border-color: var(--ck-brand, #1f2bff); color: var(--ck-brand, #1f2bff); font-weight: 700; }
+.date-picker__day.is-selected { background: var(--ck-brand, #1f2bff); border-color: var(--ck-brand, #1f2bff); color: #fff; font-weight: 700; }
+.date-picker__foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ck-border-soft, #eeeff2);
+}
+.date-picker__action {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--ck-radius-md, 12px);
+  font-weight: 700;
+}
+.date-picker__action:first-child { color: var(--ck-brand, #1f2bff); }
+.date-picker button:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: 1px; }

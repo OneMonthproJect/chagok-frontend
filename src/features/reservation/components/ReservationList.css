@@ -86,36 +86,7 @@
 .rsv-status--CANCELED { background: #f1f2f3; color: var(--ck-text-3, #5f646d); }
 .rsv-status--NO_SHOW { border-color: #b423184d; background: #feecec; color: #b42318; }
 
-/* 날짜 이동 */
-.date-nav {
-  height: 40px;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  border: 1px solid #e2e4e8;
-  border-radius: 9px;
-  background: var(--ck-surface, #fff);
-}
-.date-nav button {
-  min-width: 36px;
-  height: 100%;
-  border: 0;
-  background: transparent;
-  color: var(--ck-text-3, #5f646d);
-  font: inherit;
-  font-size: 16px;
-  cursor: pointer;
-}
-.date-nav button:hover { background: var(--ck-surface-muted, #f5f6f8); }
-.date-nav button:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: -3px; }
-.date-nav strong { min-width: 112px; text-align: center; font-size: var(--ck-fs-caption, 12px); }
-.date-nav__today {
-  padding: 0 10px !important;
-  border-left: 1px solid #e2e4e8 !important;
-  font-size: var(--ck-fs-caption, 12px) !important;
-  font-weight: 700;
-}
-.date-nav__today:disabled { cursor: default; opacity: 0.45; }
+/* 날짜 이동은 PeriodNavigator.css (#83, 주·월 캘린더와 같은 이동 바) */
 
 @media (max-width: 1023px) {
   .rsv-row { grid-template-columns: 1fr; gap: 8px; }
