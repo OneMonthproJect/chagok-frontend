@@ -31,10 +31,12 @@
   font-weight: var(--ck-fw-semibold);
   white-space: nowrap;
 }
-/* table(S-07)·preview(S-08) 꼬리표에는 메모(200자 이내)가 들어갈 수 있어(지난 점검 주의, F-CYC-02) 좁은 화면에서는 줄을 바꾼다.
-   summary(S-02 패널 「예약 목적」)·target은 그대로 한 줄 */
-.item-status-list--table .item-status-list__tag,
-.item-status-list--preview .item-status-list__tag {
+/* 꼬리표에는 메모(200자 이내)가 들어갈 수 있어(지난 점검 주의, F-CYC-02) 모든 variant에서 좁으면 줄을 바꾼다.
+   짧은 꼬리표(S-02 패널 「예약 목적」 등)는 그대로 한 줄로 보인다 */
+.item-status-list__name {
+  flex-wrap: wrap;
+}
+.item-status-list__tag {
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -50,6 +52,9 @@
   gap: var(--ck-space-3);
   min-height: 40px;
   font-size: var(--ck-fs-small);
+}
+.item-status-list--summary .item-status-list__name {
+  flex: 1 1 auto;
 }
 
 /* target: 이름 · 상태 · 근거 칸 (재점검 대상 펼침 줄) */
@@ -71,6 +76,10 @@
 }
 .item-status-list--target .item-status-list__name {
   flex: 0 0 164px;
+}
+/* 꼬리표가 있는 줄은 이름 칸이 한 줄을 다 쓰고 상태·근거 칸은 다음 줄로 (164px 칸에 메모가 갇히지 않게) */
+.item-status-list--target .item-status-list__name:has(.item-status-list__tag) {
+  flex-basis: 100%;
 }
 .item-status-list--target .item-status-list__detail {
   flex: 1 1 150px;

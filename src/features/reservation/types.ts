@@ -1,5 +1,6 @@
 // 08 15~21·39~42 (예약). 필드 이름·타입·nullable은 08 표·JSON 예시와 글자까지 같게 둔다 (features/reservation 첫 이슈 #24).
 // P0-나머지 필드(assignee, reassignReason, IN_PROGRESS 등)는 08에 맞춰 선택(optional)으로 둔다. 16 assigneeId는 P0-나머지 필수(#37).
+// 17 itemStatuses[]의 lastDecline·lastCaution, recentVisits[].records[]의 source·inspectResult는 08 10·11과 같은 모양(#29).
 
 /** 08 0.4 예약 상태. IN_PROGRESS·NO_SHOW는 P0-나머지부터 */
 export type ReservationStatus = 'RESERVED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED' | 'NO_SHOW'
@@ -113,12 +114,22 @@ export interface PanelVehicle {
   latestMileage: number | null
 }
 
-/** 08 11 방문 이력의 기록 한 줄 */
+/** 08 11 방문 이력의 기록 한 줄 (17 recentVisits[].records[]도 같은 모양) */
 export interface VisitRecord {
   recordId: number
   itemId: number
   itemName: string
   type: 'REPLACE' | 'INSPECT' | 'EXTERNAL' | 'DECLINE'
+  date: string
+  memo: string | null
+  /** P0-나머지 (#29). 외부면 CUSTOMER_STATEMENT, 그 밖은 SHOP (08 0.4, 07 3.7 CHECK) */
+  source: 'SHOP' | 'CUSTOMER_STATEMENT'
+  /** P0-나머지 (#29). 점검이고 결과를 남겼을 때만 */
+  inspectResult: 'GOOD' | 'CAUTION' | null
+}
+
+/** 08 10 items[].lastDecline·lastCaution (P0-나머지 #29, F-CYC-02) */
+export interface ItemNote {
   date: string
   memo: string | null
 }
@@ -145,6 +156,10 @@ export interface PanelItemStatus {
   baseRecord: { date: string; mileage: number | null; type: VisitRecord['type'] } | null
   nextDueDate: string | null
   nextDueMileage: number | null
+  /** P0-나머지 (#29). 지난 방문 거절, 조건이 아니면 null */
+  lastDecline: ItemNote | null
+  /** P0-나머지 (#29). 지난 점검 주의, 조건이 아니면 null */
+  lastCaution: ItemNote | null
   highlighted: boolean
 }
 

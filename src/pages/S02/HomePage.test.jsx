@@ -205,6 +205,54 @@ describe('S-02 예약 상세 패널', () => {
     expect(rows[1].textContent).toContain('임박') // 서버 상태 그대로
   })
 
+  it('P0-나머지 꼬리표 (#29): 점검 주기 요약에 "지난 방문 거절"·"지난 점검 주의(메모)", 목적 항목은 "예약 목적 · …"로 잇고 상태는 그대로', async () => {
+    const base = panelExample()
+    handlers.panel = () =>
+      ok({
+        ...base,
+        itemStatuses: [
+          { ...base.itemStatuses[0], lastDecline: { date: '2026-10-24', memo: null }, lastCaution: null },
+          { ...base.itemStatuses[1], lastDecline: null, lastCaution: { date: '2026-09-24', memo: '단자 부식' } },
+        ],
+      })
+    renderHome('/?reservation=4')
+    await settle()
+    const rows = Array.from(panel().querySelectorAll('.item-status-list__row'))
+    expect(rows.map((r) => r.querySelector('.item-status-list__tag')?.textContent)).toEqual([
+      '지난 방문 거절(2026.10.24)',
+      '예약 목적 · 지난 점검 주의(2026.09.24, 단자 부식)',
+    ])
+    expect(rows[0].textContent).toContain('여유')
+    expect(rows[1].textContent).toContain('임박')
+  })
+
+  it('최근 이력 (#29): 점검 결과는 값이 있을 때만, 외부(source CUSTOMER_STATEMENT)는 "고객 진술", source가 없으면 type EXTERNAL로', async () => {
+    const base = panelExample()
+    handlers.panel = () =>
+      ok({
+        ...base,
+        recentVisits: [
+          {
+            ...base.recentVisits[0],
+            records: [
+              { recordId: 16, itemId: 5, itemName: '타이어 상태 점검', type: 'INSPECT', date: '2026-10-24', memo: '앞 타이어 마모', source: 'SHOP', inspectResult: 'CAUTION' },
+              { recordId: 17, itemId: 3, itemName: '에어컨필터', type: 'EXTERNAL', date: '2026-10-01', memo: null, source: 'CUSTOMER_STATEMENT', inspectResult: null },
+            ],
+          },
+          { ...base.recentVisits[1] }, // P0-핵심 모양(source·inspectResult 없음)
+        ],
+      })
+    renderHome('/?reservation=4')
+    await settle()
+    const lines = Array.from(panel().querySelectorAll('.rsv-visits__records li'))
+    expect(lines[0].querySelector('.rsv-visits__result').textContent).toBe('주의')
+    expect(lines[0].querySelector('.rsv-visits__source')).toBeNull()
+    expect(lines[1].querySelector('.rsv-visits__source').textContent).toBe('고객 진술')
+    expect(lines[1].querySelector('.rsv-visits__result')).toBeNull()
+    expect(lines[2].querySelector('.rsv-visits__result')).toBeNull()
+    expect(lines[2].querySelector('.rsv-visits__source')).toBeNull()
+  })
+
   it('최근 방문 2회를 보이고, 총 방문 3회면 상세 이동 활성 → S-07', async () => {
     renderHome('/?reservation=4')
     await settle()

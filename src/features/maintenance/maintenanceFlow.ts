@@ -2,7 +2,9 @@
 // 상태(미확인/여유/임박/도래)·도래 근거·다음 정비일·다음 정비 km는 서버(08 10) 값 그대로 쓴다.
 // 여기서 날짜·주행거리로 상태나 다음 정비일을 계산하지 않는다(CONVENTIONS 7장). 바꾸는 것은 글자 모양(날짜 점 표기·천 단위 쉼표)뿐이다.
 
-import type { BaseRecord, InspectResult, ItemStatusItem, RecordSource, RecordType, Visit, VisitListResponse } from './types'
+import { itemNoteTag } from '@/shared/lib/noteTag'
+import { CUSTOMER_STATEMENT_LABEL } from '@/shared/lib/recordDisplay'
+import type { BaseRecord, ItemStatusItem, RecordType, Visit, VisitListResponse } from './types'
 
 /** 08 0.4 정비 구분 글자 */
 export const RECORD_TYPE_LABELS: Record<RecordType, string> = {
@@ -13,25 +15,11 @@ export const RECORD_TYPE_LABELS: Record<RecordType, string> = {
 }
 
 /**
- * 외부 기록 표시 (09 S-07 「외부는 "고객 진술" 표시」, 08 0.4 출처 CUSTOMER_STATEMENT).
- * 10 baseRecord에는 source가 없어 type EXTERNAL로 정한다. 정비 이력(08 11)은 isCustomerStatement.
+ * 외부 기록 표시 (09 S-07 「외부는 "고객 진술" 표시」, 08 0.4 출처 CUSTOMER_STATEMENT)·점검 결과 글자(F-MNT-03)·고객 진술 판정.
+ * S-02 패널(reservation)과 같이 쓰므로 shared/lib/recordDisplay에 두고 여기서는 다시 내보낸다(이 feature 안의 import는 그대로).
+ * 10 baseRecord에는 source가 없어 type EXTERNAL로 정한다(baseRecordText). 정비 이력(08 11)은 isCustomerStatement.
  */
-export const CUSTOMER_STATEMENT_LABEL = '고객 진술'
-
-/**
- * 08 11 기록이 고객 진술인지. source(P0-나머지)를 먼저 보고, 없으면 type EXTERNAL로 정한다.
- * 구분과 출처는 항상 짝이다(07 3.7 CHECK (record_type = 'EXTERNAL') = (source = 'CUSTOMER_STATEMENT'), 04 F-MNT-04).
- * LIMIT: backend develop(#32 머지 뒤 포함)의 11은 아직 source를 주지 않는다 / 11이 source를 싣기 전에는 type 대체를 지우지 않는다.
- */
-export function isCustomerStatement(record: { type: RecordType; source?: RecordSource | null }): boolean {
-  return record.source != null ? record.source === 'CUSTOMER_STATEMENT' : record.type === 'EXTERNAL'
-}
-
-/** 08 0.4 점검 결과 글자 (F-MNT-03). 진단이 아니라 정비사의 관찰 기록이다 */
-export const INSPECT_RESULT_LABELS: Record<InspectResult, string> = {
-  GOOD: '양호',
-  CAUTION: '주의',
-}
+export { CUSTOMER_STATEMENT_LABEL, INSPECT_RESULT_LABELS, isCustomerStatement } from '@/shared/lib/recordDisplay'
 
 /** 빈 상태 (09 5장 S-07 이력 없음) + 이어지는 버튼 */
 export const NO_HISTORY_MESSAGE = '정비 이력이 없습니다.'
@@ -69,22 +57,6 @@ export function baseRecordText(baseRecord: BaseRecord | null): string | null {
   if (!baseRecord) return null
   const type = baseRecord.type === 'EXTERNAL' ? `${RECORD_TYPE_LABELS.EXTERNAL}(${CUSTOMER_STATEMENT_LABEL})` : RECORD_TYPE_LABELS[baseRecord.type]
   return [dateText(baseRecord.date), kmText(baseRecord.mileage), type].filter(Boolean).join(' · ')
-}
-
-/**
- * 항목 꼬리표 (04 F-CYC-02, 09 S-07·S-08, 08 10 lastDecline·lastCaution).
- * "지난 방문 거절(2026.10.24)" · "지난 점검 주의(2026.09.24, 앞 타이어 마모)". 메모가 없으면 날짜만.
- * 붙일지·사라질지는 서버가 정한다(값이 null이면 없음). 상태(StatusBadge)는 바꾸지 않는다.
- * 두 조건은 "그 항목의 가장 최근 기록"이라 함께 오지 않지만, 둘 다 오면 거절 · 주의 순으로 잇는다. 없으면 undefined.
- */
-export function itemNoteTag(item: Pick<ItemStatusItem, 'lastDecline' | 'lastCaution'>): string | undefined {
-  const tags: string[] = []
-  if (item.lastDecline) tags.push(`지난 방문 거절(${dateText(item.lastDecline.date)})`)
-  if (item.lastCaution) {
-    const detail = [dateText(item.lastCaution.date), item.lastCaution.memo].filter(Boolean).join(', ')
-    tags.push(`지난 점검 주의(${detail})`)
-  }
-  return tags.length > 0 ? tags.join(' · ') : undefined
 }
 
 /** shared/ui/ItemStatusList의 한 줄 모양 (API 타입을 모르는 공통 UI에 넘긴다) */

@@ -73,22 +73,26 @@ export function isPastSlot(date: string, time: string, today: string, nowTime: s
 /**
  * 보내기 전 검사 (서버도 같은 규칙으로 다시 막는다: R1·R2·R19, 16·19).
  * reasonRequired: 당일 사장 재배정이라 사유가 필수인지 (assigneeRules.needsReassignReason)
+ * originalReservedAt: 변경 모드에서 변경 전 예약 일시. 일시를 그대로 두면 날짜(≥ 오늘)·지난 시각 검사를 하지 않는다 —
+ * 19는 reservedAt을 보낼 때만 날짜 규칙을 적용하므로 "처리 필요" 예약의 목적·메모·담당 변경은 막지 않는다 (08 19, #71).
  */
 export function validateForm(
   values: ReservationFormValues,
   today: string,
   nowTime: string,
   mode: 'create' | 'edit',
-  { reasonRequired = false }: { reasonRequired?: boolean } = {},
+  { reasonRequired = false, originalReservedAt }: { reasonRequired?: boolean; originalReservedAt?: string } = {},
 ): FormErrors {
   const errors: FormErrors = {}
+  const keepsReservedAt = mode === 'edit' && originalReservedAt != null
+    && values.date === originalReservedAt.slice(0, 10) && values.time === originalReservedAt.slice(11, 16)
   if (mode === 'create' && !values.vehicle) errors.vehicle = '차량을 골라 주세요.'
   if (mode === 'create' && values.assigneeId == null) errors.assignee = ASSIGNEE_MESSAGES.REQUIRED
   if (!values.date) errors.date = '날짜를 골라 주세요.'
-  else if (values.date < today) errors.date = '오늘 이후 날짜만 예약할 수 있습니다.'
+  else if (!keepsReservedAt && values.date < today) errors.date = '오늘 이후 날짜만 예약할 수 있습니다.'
   if (!values.time) errors.time = '시각을 골라 주세요.'
   else if (!/^\d{2}:(00|30)$/.test(values.time)) errors.time = '시각은 30분 단위로 골라 주세요.'
-  else if (values.date && !errors.date && isPastSlot(values.date, values.time, today, nowTime)) errors.time = '지난 시각은 고를 수 없습니다.'
+  else if (!keepsReservedAt && values.date && !errors.date && isPastSlot(values.date, values.time, today, nowTime)) errors.time = '지난 시각은 고를 수 없습니다.'
   if (values.memo.length > MEMO_MAX) errors.memo = `메모는 ${MEMO_MAX}자까지 입력할 수 있습니다.`
   if (reasonRequired) {
     const reason = values.reassignReason.trim()
