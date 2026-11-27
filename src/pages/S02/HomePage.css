@@ -1,4 +1,4 @@
-/* S-02 홈 (P0-핵심 목록 + P0-나머지 월 캘린더 #30) — 디자인 v3.0 page-header·card-panel·reservation-empty-state. --ck-* 는 #18 토큰, 기본값 포함 */
+/* S-02 홈 (P0-핵심 목록 + P0-나머지 월 캘린더 #30·주 캘린더 #36) — 디자인 v3.0 page-header·card-panel·reservation-empty-state. --ck-* 는 #18 토큰, 기본값 포함 */
 .home-page { max-width: 1280px; }
 
 /* 예약 상세 패널(#26): 넓은 화면은 목록 오른쪽 열, 좁은 화면은 패널이 화면을 덮는다(ReservationPanel.css) */
@@ -76,3 +76,26 @@
   color: var(--ck-text-3, #5f646d);
   text-align: center;
 }
+
+/* 캘린더 카드 오른쪽 위 [주][월] 전환 (09 S-02, #36). 지금 보기는 aria-pressed로 알린다 */
+.home-view-switch {
+  height: 36px;
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid #e2e4e8;
+  border-radius: 9px;
+  background: var(--ck-surface, #fff);
+}
+.home-view-switch button {
+  min-width: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--ck-text-3, #5f646d);
+  font: inherit;
+  font-size: var(--ck-fs-small, 14px);
+  font-weight: 600;
+  cursor: pointer;
+}
+.home-view-switch button + button { border-left: 1px solid #e2e4e8; }
+.home-view-switch button[aria-pressed='true'] { background: var(--ck-brand, #1f2bff); color: #fff; }
+.home-view-switch button:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: -3px; }
