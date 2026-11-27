@@ -825,10 +825,9 @@ describe('S-02 주 캘린더 (F-RSV-05, #36) — 기본 보기', () => {
   // 2030-03-13은 수요일 → 그 주는 3월 11일(월) ~ 17일(일)
   const week = (items) => () => ok({ from: '2030-03-11', to: '2030-03-17', items })
   const at = (id, reservedAt, extra = {}) => ({ ...LIST_ITEM, reservationId: id, reservedAt, needsAction: false, plateNumber: `12가000${id}`, customerName: `고객${id}`, ...extra })
-  // 가로 타임라인(#83): 행 = 날짜, 열 = 시간(머리줄 글자가 열 이름)
-  const dayRow = (date) => document.querySelector(`.wcal__day[data-date="${date}"]`).closest('tr')
-  const columns = () => Array.from(document.querySelectorAll('.wcal__table thead th')).slice(1).map((th) => th.textContent)
-  const cardsIn = (time, date) => Array.from(dayRow(date).querySelectorAll('td')[columns().indexOf(time)].querySelectorAll('.wcal-card'))
+  const slotRow = (time) => Array.from(document.querySelectorAll('.wcal__table tbody tr')).find((tr) => tr.querySelector('th').textContent === time)
+  const dayIndex = (date) => Array.from(document.querySelectorAll('.wcal__day')).findIndex((th) => th.dataset.date === date)
+  const cardsIn = (time, date) => Array.from(slotRow(time).querySelectorAll('td')[dayIndex(date)].querySelectorAll('.wcal-card'))
   const viewButton = (text) => button(text, document.querySelector('.home-view-switch'))
 
   it('?view= 없으면 주 보기: 그 주(월~일) 15를 한 번 부르고 42·날짜 목록은 부르지 않는다', async () => {
@@ -846,7 +845,7 @@ describe('S-02 주 캘린더 (F-RSV-05, #36) — 기본 보기', () => {
     expect(viewButton('월').getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('카드는 30분 칸에(같은 칸 여러 건은 쌓음), 08:00 전은 맨 앞 열·20:00 이후는 맨 뒤 열, 담당 색 띠+이름', async () => {
+  it('카드는 30분 칸에(같은 칸 여러 건은 쌓음), 08:00 전은 표 위·20:00 이후는 표 아래 줄, 담당 색 띠+이름', async () => {
     handlers.list = week([
       at(1, '2030-03-11T07:30:00', { assignee: { staffId: 1, name: '박사장', colorIndex: 0 } }),
       at(2, '2030-03-13T10:00:00', { assignee: { staffId: 1, name: '박사장', colorIndex: 0 } }),
@@ -857,13 +856,12 @@ describe('S-02 주 캘린더 (F-RSV-05, #36) — 기본 보기', () => {
     renderHome('/?date=2030-03-13')
     await settle()
 
-    const cols = columns()
-    expect(cols[0]).toBe('08:00 전')
-    expect(cols[1]).toBe('08:00')
-    expect(cols.at(-2)).toBe('19:30')
-    expect(cols.at(-1)).toBe('20:00 이후')
-    expect(cols).toHaveLength(26) // 맨 앞 열 + 24칸 + 맨 뒤 열
-    expect(document.querySelectorAll('.wcal__table tbody tr')).toHaveLength(7) // 날짜 7줄
+    const rows = Array.from(document.querySelectorAll('.wcal__table tbody tr')).map((tr) => tr.querySelector('th').textContent)
+    expect(rows[0]).toBe('08:00 전')
+    expect(rows[1]).toBe('08:00')
+    expect(rows.at(-2)).toBe('19:30')
+    expect(rows.at(-1)).toBe('20:00 이후')
+    expect(rows).toHaveLength(26) // 위 영역 + 24칸 + 아래 영역
 
     expect(cardsIn('08:00 전', '2030-03-11').map((c) => c.querySelector('.wcal-card__plate').textContent)).toEqual(['12가0001'])
     const busy = cardsIn('10:00', '2030-03-13')
@@ -879,13 +877,12 @@ describe('S-02 주 캘린더 (F-RSV-05, #36) — 기본 보기', () => {
     expect(cardsIn('20:00 이후', '2030-03-17')).toHaveLength(1)
   })
 
-  it('빈 주: 칸만 비워 두고(문구 없음) 맨 앞·맨 뒤 열도 없다', async () => {
+  it('빈 주: 칸만 비워 두고(문구 없음) 위·아래 영역 줄도 없다', async () => {
     handlers.list = week([])
     renderHome('/?date=2030-03-13')
     await settle()
     expect(document.querySelectorAll('.wcal-card')).toHaveLength(0)
-    expect(columns()).toHaveLength(24)
-    expect(document.querySelectorAll('.wcal__table tbody tr')).toHaveLength(7)
+    expect(document.querySelectorAll('.wcal__table tbody tr')).toHaveLength(24)
     expect(document.querySelector('.wcal').textContent).not.toContain('없습니다')
   })
 
@@ -962,8 +959,7 @@ describe('S-02 주 캘린더 (F-RSV-05, #36) — 기본 보기', () => {
     await settle()
     await settle()
     expect(document.querySelector('.wcal').textContent).toContain('예약을 불러오지 못했습니다.')
-    expect(columns()).toHaveLength(24)
-    expect(document.querySelectorAll('.wcal__table tbody tr')).toHaveLength(7)
+    expect(document.querySelectorAll('.wcal__table tbody tr')).toHaveLength(24)
     expect(listCalls()).toHaveLength(1)
 
     handlers.list = week([at(4, '2030-03-13T15:00:00')])

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addDays, formatWeekLabel, todaySeoul, weekRange, weekdayIndex } from './dates'
 import { mockGetReservations, resetReservationMocks } from './mocks'
 import type { ReservationListItem } from './types'
-import { WEEK_SLOTS, hasItems, nowMarker, placeWeek } from './weekCalendar'
+import { WEEK_SLOTS, hasItems, placeWeek } from './weekCalendar'
 
 // S-02 주 캘린더 (04 F-RSV-05 「주 보기」, 09 S-02, D-63 B08, chagok-frontend#36):
 // 주 범위(월요일 시작, 달·해 넘김), 30분 칸 배치와 08:00 전·20:00 이후 영역 경계, 15 조회 기간
@@ -53,7 +53,7 @@ const item = (id: number, reservedAt: string, extra: Partial<ReservationListItem
   ...extra,
 })
 
-describe('placeWeek — 30분 칸, 08:00 전은 맨 앞 열·20:00 이후는 맨 뒤 열 (D-63 B08)', () => {
+describe('placeWeek — 30분 칸, 08:00 전은 위·20:00 이후는 아래 (D-63 B08)', () => {
   const { days } = weekRange('2026-11-24')
 
   it('시작 칸은 08:00 ~ 19:30, 24칸', () => {
@@ -102,22 +102,6 @@ describe('placeWeek — 30분 칸, 08:00 전은 맨 앞 열·20:00 이후는 맨
     const p = placeWeek([item(1, '2026-11-26T09:15:00'), item(2, '2026-11-26T09:45:00')], days)
     expect(p.slots['09:00']['2026-11-26'].map((r) => r.reservationId)).toEqual([1])
     expect(p.slots['09:30']['2026-11-26'].map((r) => r.reservationId)).toEqual([2])
-  })
-})
-
-describe('nowMarker — 현재 시각선 (#83)', () => {
-  it.each([
-    ['2026-11-24T08:00:00', '08:00', 0],
-    ['2026-11-24T10:15:30', '10:00', 0.5],
-    ['2026-11-24T10:30:00', '10:30', 0],
-    ['2026-11-24T19:45:00', '19:30', 0.5],
-  ])('%s → %s 칸 안 %s', (now, slot, offset) => {
-    expect(nowMarker(now)).toEqual({ date: '2026-11-24', slot, offset })
-  })
-
-  it('08:00 전·20:00 이후에는 선을 그리지 않는다', () => {
-    expect(nowMarker('2026-11-24T07:59:59')).toBeNull()
-    expect(nowMarker('2026-11-24T20:00:00')).toBeNull()
   })
 })
 

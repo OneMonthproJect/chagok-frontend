@@ -10,25 +10,21 @@
 
 .wcal__status { margin: 0; color: var(--ck-text-3, #5f646d); font-size: var(--ck-fs-small, 14px); }
 
-/* 가로 타임라인(#83): 표만 가로·세로로 스크롤한다(세로는 시간 머리줄 고정을 위해 높이 제한).
+/* 7열이 좁은 화면에서 찌그러지지 않게 표만 가로로 넘긴다.
    relative: 머리칸의 visually-hidden(absolute) 글자가 이 상자 밖으로 나가 페이지 가로 스크롤을 만들지 않게 */
-.wcal__scroll { position: relative; overflow: auto; max-height: 70vh; }
+.wcal__scroll { position: relative; overflow-x: auto; }
 .wcal__table {
-  width: max-content;
-  border-collapse: separate; /* sticky 칸의 테두리가 스크롤 때 따라오게 collapse를 쓰지 않는다 */
-  border-spacing: 0;
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
-
-/* 고정: 왼쪽 날짜·요일 열(z 2), 위 시간 머리줄(z 2), 둘이 만나는 모서리(z 3). 배경이 있어야 아래 카드가 비치지 않는다 */
 .wcal__corner,
-.wcal__day { position: sticky; left: 0; z-index: 2; width: 64px; min-width: 64px; background: var(--ck-surface, #fff); }
-.wcal__table thead th { position: sticky; top: 0; z-index: 2; background: var(--ck-surface, #fff); border-bottom: 1px solid #ecedf1; }
-.wcal__table thead .wcal__corner { z-index: 3; }
+.wcal__time { width: 64px; }
 
 .wcal__day {
-  padding: 6px 4px;
-  border-bottom: 1px solid #f0f1f4;
-  border-right: 1px solid #ecedf1;
+  padding: 6px 4px 8px;
+  border-bottom: 1px solid #ecedf1;
   color: var(--ck-text-4, #626770);
   font-size: var(--ck-fs-caption, 12px);
   font-weight: 600;
@@ -38,29 +34,24 @@
 .wcal__date { display: inline-flex; min-width: 24px; height: 24px; justify-content: center; align-items: center; color: #25282e; font-size: var(--ck-fs-meta, 13px); }
 .wcal__day.is-today .wcal__date { border-radius: 999px; background: var(--ck-brand, #1f2bff); color: #fff; }
 
-/* 시간 머리줄: 30분 칸마다 한 칸(정시는 굵게), 맨 앞·맨 뒤 열은 안내 글자 */
 .wcal__time {
-  width: 120px;
-  min-width: 120px;
-  padding: 6px 6px;
-  border-left: 1px solid #f0f1f4;
+  padding: 4px 8px 4px 0;
   color: var(--ck-text-4, #626770);
   font-size: 11px;
   font-weight: 500;
-  text-align: left;
+  text-align: right;
+  vertical-align: top;
   white-space: nowrap;
 }
-.wcal__time.is-hour { border-left-color: #ecedf1; color: #25282e; font-weight: 700; }
-.wcal__time--edge { font-weight: 700; background: var(--ck-surface-muted, #f7f8fa); }
+.wcal__table tbody tr { border-top: 1px dashed #f0f1f4; }
+.wcal__table tbody tr.is-hour { border-top: 1px solid #ecedf1; }
+.wcal__cell { height: 28px; padding: 2px; border-left: 1px solid #f0f1f4; vertical-align: top; }
 
-/* 칸: 예약은 시작 칸 하나만 차지하고, 같은 칸 여러 건은 칸 안에서 쌓여 줄 높이가 늘어난다.
-   relative: 현재 시각선(.wcal__now)의 기준 */
-.wcal__cell { position: relative; min-width: 120px; height: 44px; padding: 2px; border-bottom: 1px solid #f0f1f4; border-left: 1px solid #f0f1f4; vertical-align: top; }
-.wcal__table tbody tr.is-today .wcal__cell { background: var(--ck-brand-tint, #f0f1ff); }
-.wcal__table tbody tr.is-today .wcal__day { background: var(--ck-brand-tint, #f0f1ff); }
-
-/* 현재 시각선: 오늘 줄의 지금 칸 안, 위치는 인라인 left(칸 안 0~100%) */
-.wcal__now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ck-brand, #1f2bff); pointer-events: none; z-index: 1; }
+/* 08:00 전·20:00 이후 영역(D-63 B08): 표 위·아래에 띠로 구분 */
+.wcal__table tbody tr.wcal__band { background: var(--ck-surface-muted, #f7f8fa); }
+.wcal__band .wcal__time { font-weight: 700; }
+.wcal__table tbody tr.wcal__band--before { border-bottom: 2px solid #e2e4e8; }
+.wcal__table tbody tr.wcal__band--after { border-top: 2px solid #e2e4e8; }
 
 .wcal__cards { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
 

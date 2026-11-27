@@ -1,16 +1,14 @@
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
-import { WEEKDAYS, addDays, formatDayLabel, formatTime, formatWeekLabel, nowSeoul, weekRange, weekdayIndex } from '../dates'
-import { WEEK_SLOTS, hasItems, nowMarker, placeWeek } from '../weekCalendar'
+import { WEEKDAYS, addDays, formatDayLabel, formatTime, formatWeekLabel, weekRange, weekdayIndex } from '../dates'
+import { WEEK_SLOTS, hasItems, placeWeek } from '../weekCalendar'
 import AssigneeLabel, { assigneeColorClass } from './AssigneeLabel.jsx'
 import PeriodNavigator from './PeriodNavigator.jsx'
 import ReservationStatusBadge from './ReservationStatusBadge.jsx'
 import './WeekCalendar.css'
 
 // 홈 주 캘린더 (09 S-02 「주 보기」, 04 F-RSV-05, D-63 B08, chagok-frontend#36). 월 보기는 MonthCalendar(#30).
-// - 가로 타임라인(#83): 날짜(월요일 시작 7줄, 세로) × 30분 칸(가로), 기본 08:00~20:00(시작 칸 08:00~19:30).
-//   날짜·요일 열은 왼쪽, 시간 머리줄은 위에 고정하고 표만 스크롤한다. 08:00 전 시작 예약은 맨 앞 열,
-//   20:00 이후 시작 예약은 맨 뒤 열에 보인다(그 열에 예약이 있을 때만 열을 그린다). 예약은 시작 칸 하나만 차지한다.
-// - 오늘 줄은 강조하고, 지금이 08:00~20:00이면 그 칸에 현재 시각선을 그린다(렌더할 때 한 번 계산, weekCalendar.nowMarker).
+// - 7일(월요일 시작) × 30분 칸, 기본 08:00~20:00(시작 칸 08:00~19:30). 08:00 전 시작 예약은 표 위,
+//   20:00 이후 시작 예약은 표 아래 줄에 날짜 열을 맞춰 보인다(그 영역에 예약이 있을 때만 줄을 그린다).
 // - 카드: 시각·차량번호·고객명 + 담당 색 띠·이름(AssigneeLabel). 상태는 "예약"이 아닐 때만 배지, 처리 필요 표시.
 //   모두 08 15 응답 값 그대로 — 상태를 화면에서 계산하지 않는다.
 // - 카드를 누르면 onSelectReservation(id) — 상세 패널은 화면(pages)이 연다. 열린 예약 카드는 aria-current.
@@ -49,13 +47,11 @@ function ReservationCard({ reservation, selected, onSelect }) {
   )
 }
 
-/** 한 칸(날짜 × 시각 또는 맨 앞·맨 뒤 열)의 카드들. nowOffset: 현재 시각선의 칸 안 위치(0~1) */
-function Cell({ items, selectedId, onSelect, nowOffset = null }) {
-  const line = nowOffset === null ? null : <span className="wcal__now" style={{ left: `${nowOffset * 100}%` }} aria-hidden="true" />
-  if (!items || items.length === 0) return <td className="wcal__cell">{line}</td>
+/** 한 칸(날짜 × 시각 또는 위·아래 영역)의 카드들 */
+function Cell({ items, selectedId, onSelect }) {
+  if (!items || items.length === 0) return <td className="wcal__cell" />
   return (
     <td className="wcal__cell">
-      {line}
       <ul className="wcal__cards">
         {items.map((r) => (
           <ReservationCard key={r.reservationId} reservation={r} selected={r.reservationId === selectedId} onSelect={onSelect} />
@@ -65,13 +61,10 @@ function Cell({ items, selectedId, onSelect, nowOffset = null }) {
   )
 }
 
-export default function WeekCalendar({ date, today, state, selectedId = null, now = nowSeoul(), onSelectDate, onSelectReservation, onReload }) {
+export default function WeekCalendar({ date, today, state, selectedId = null, onSelectDate, onSelectReservation, onReload }) {
   const { days, from, to } = weekRange(date)
   const placement = placeWeek(state.kind === 'ok' ? state.items : [], days)
   const label = formatWeekLabel(from, to)
-  const marker = nowMarker(now)
-  const showBefore = hasItems(placement.before)
-  const showAfter = hasItems(placement.after)
 
   /** 그 주로 옮길 때 고를 날짜: 그 주에 오늘이 있으면 오늘, 아니면 월요일 */
   function moveWeek(weeks) {
@@ -79,14 +72,11 @@ export default function WeekCalendar({ date, today, state, selectedId = null, no
     onSelectDate(weekRange(target).days.includes(today) ? today : target)
   }
 
-  const cell = (key, byDate, day, slot) => (
-    <Cell
-      key={key}
-      items={byDate?.[day]}
-      selectedId={selectedId}
-      onSelect={onSelectReservation}
-      nowOffset={marker && slot === marker.slot && day === marker.date ? marker.offset : null}
-    />
+  const row = (key, head, byDate, className) => (
+    <tr key={key} className={className}>
+      <th scope="row" className="wcal__time">{head}</th>
+      {days.map((day) => <Cell key={day} items={byDate?.[day]} selectedId={selectedId} onSelect={onSelectReservation} />)}
+    </tr>
   )
 
   return (
@@ -113,29 +103,22 @@ export default function WeekCalendar({ date, today, state, selectedId = null, no
         <table className="wcal__table" aria-label={`${label} 예약 주간 표`} aria-busy={state.kind === 'loading'}>
           <thead>
             <tr>
-              <th scope="col" className="wcal__corner"><span className="visually-hidden">날짜</span></th>
-              {showBefore && <th scope="col" className="wcal__time wcal__time--edge">08:00 전</th>}
-              {WEEK_SLOTS.map((slot) => (
-                <th key={slot} scope="col" className={`wcal__time${slot.endsWith(':00') ? ' is-hour' : ''}`}>{slot}</th>
-              ))}
-              {showAfter && <th scope="col" className="wcal__time wcal__time--edge">20:00 이후</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {days.map((day) => (
-              <tr key={day} className={day === today ? 'is-today' : undefined}>
-                <th scope="row" className={`wcal__day${day === today ? ' is-today' : ''}`} data-date={day}>
+              <th scope="col" className="wcal__corner"><span className="visually-hidden">시각</span></th>
+              {days.map((day) => (
+                <th key={day} scope="col" className={`wcal__day${day === today ? ' is-today' : ''}`} data-date={day}>
                   <span className="visually-hidden">{formatDayLabel(day)}{day === today ? ', 오늘' : ''}</span>
                   <span aria-hidden="true">
                     <span className="wcal__weekday">{WEEKDAYS[weekdayIndex(day)]}</span>
                     <span className="wcal__date">{Number(day.slice(8, 10))}</span>
                   </span>
                 </th>
-                {showBefore && cell('before', placement.before, day)}
-                {WEEK_SLOTS.map((slot) => cell(slot, placement.slots[slot], day, slot))}
-                {showAfter && cell('after', placement.after, day)}
-              </tr>
-            ))}
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {hasItems(placement.before) && row('before', '08:00 전', placement.before, 'wcal__band wcal__band--before')}
+            {WEEK_SLOTS.map((slot) => row(slot, slot, placement.slots[slot], slot.endsWith(':00') ? 'is-hour' : undefined))}
+            {hasItems(placement.after) && row('after', '20:00 이후', placement.after, 'wcal__band wcal__band--after')}
           </tbody>
         </table>
       </div>
