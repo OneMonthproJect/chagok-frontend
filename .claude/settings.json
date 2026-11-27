@@ -39,7 +39,11 @@
       "Bash(git push * --force*)",
       "Bash(git push * -f *)",
       "Bash(git push * -f)",
-      "Bash(git push * +*)"
+      "Bash(git push * +*)",
+      "Bash(gh api *-X=DELETE*)",
+      "Read(./**/.env.staging)",
+      "Read(./**/.env.prod)",
+      "Read(./**/.env.dev)"
     ],
     "ask": [
       "Bash(git commit *)",
@@ -120,7 +124,22 @@
       "Bash(git * reset *)",
       "Bash(git * clean *)",
       "Bash(git * rebase *)",
-      "Bash(git * branch -*)"
+      "Bash(git * branch -*)",
+      "Bash(gh pr -* merge *)",
+      "Bash(gh pr -* review *)",
+      "Bash(gh pr -* comment *)",
+      "Bash(gh pr -* create *)",
+      "Bash(gh pr -* close *)",
+      "Bash(gh pr -* reopen *)",
+      "Bash(gh pr -* edit *)",
+      "Bash(gh pr -* ready *)",
+      "Bash(gh issue -* close *)",
+      "Bash(gh issue -* reopen *)",
+      "Bash(gh issue -* comment *)",
+      "Bash(gh issue -* create *)",
+      "Bash(gh issue -* edit *)",
+      "Bash(gh issue -* transfer *)",
+      "Bash(gh release -* create *)"
     ],
     "additionalDirectories": [
       "../chagok-docs",
