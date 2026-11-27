@@ -194,7 +194,6 @@ function RecordEditDialog({ target, missing, reloadFailed, vehicleLabel, today, 
     <RecordEditModal
       key={target.record.recordId}
       record={target.record}
-      visit={target.visit}
       missing={missing}
       reloadFailed={reloadFailed}
       vehicleLabel={vehicleLabel}

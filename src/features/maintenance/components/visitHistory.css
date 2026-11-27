@@ -85,7 +85,8 @@
   background: var(--ck-brand-tint);
   color: var(--ck-brand);
 }
-.visit-record__date {
+.visit-record__date,
+.visit-record__mileage {
   font-size: var(--ck-fs-meta);
   color: var(--ck-text-3);
 }

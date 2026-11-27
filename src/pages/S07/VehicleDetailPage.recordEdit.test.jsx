@@ -37,6 +37,7 @@ const RECORD = (over = {}) => ({
   version: 0,
   edited: false,
   staff: { staffId: 2, name: '김정비' },
+  mileage: 45000,
   ...over,
 })
 const visitsPage = (records, mileage = 45000) => ({
@@ -187,7 +188,7 @@ describe('S-07 정비 기록 수정 버튼 (09 S-07)', () => {
 })
 
 describe('M-03 정비 기록 수정 (08 37)', () => {
-  it('지금 값으로 열린다 — 차량은 표시만, 담당은 11 staff, 주행거리는 방문 주행거리', async () => {
+  it('지금 값으로 열린다 — 차량은 표시만, 담당은 11 staff, 주행거리는 그 기록의 주행거리', async () => {
     await openEdit()
     expect(dialog().textContent).toContain('55차0010')
     expect(field('방문일').value).toBe(TODAY)

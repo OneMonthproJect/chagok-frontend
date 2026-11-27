@@ -275,10 +275,10 @@ export function mockUpdateRecord(recordId: number, body: RecordUpdateRequest): M
   // ⑤ 구분·점검 결과 짝 (수정 뒤 값)
   const type = body.type ?? record.type
   if (body.inspectResult !== undefined && type !== 'INSPECT') return invalid([{ field: 'inspectResult', reason: EDIT_M.INSPECT_ONLY }])
-  // ⑥ 지금 값과 같은 필드를 뺀 뒤 바뀐 것이 있는지 (Mock은 기록별 주행거리가 없어 방문 주행거리와 비교)
+  // ⑥ 지금 값과 같은 필드를 뺀 뒤 바뀐 것이 있는지 (기록별 주행거리와 비교, 08 11 records[].mileage)
   const changed =
     (body.recordDate !== undefined && body.recordDate !== record.date) ||
-    (body.mileage !== undefined && body.mileage !== visit.mileage) ||
+    (body.mileage !== undefined && body.mileage !== record.mileage) ||
     (body.type !== undefined && body.type !== record.type) ||
     (body.itemId !== undefined && body.itemId !== record.itemId) ||
     (body.inspectResult !== undefined && body.inspectResult !== record.inspectResult) ||

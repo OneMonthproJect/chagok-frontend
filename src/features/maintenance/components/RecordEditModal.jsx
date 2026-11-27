@@ -29,12 +29,11 @@ import './recordEdit.css'
 // missing: 409 뒤 다시 받은 11 첫 쪽에 이 기록이 없음(더 보기 뒤쪽이었거나 그사이 바뀜). reloadFailed: 11 다시 부르기 실패.
 //   둘 다 최신 version을 모르는 상태라 409 뒤에는 저장을 막고 닫았다 다시 열게 안내한다(같은 409 반복 방지, POL-124).
 // - 403은 다시 보내도 같은 결과라 "다시 시도"를 두지 않는다(POL-127).
-// props: record(11 records[]) · visit(그 방문) · vehicleLabel(차량번호 표시) · items(08 13 [{ itemId, name }]) ·
+// props: record(11 records[]) · vehicleLabel(차량번호 표시) · items(08 13 [{ itemId, name }]) ·
 //        mechanicOptions([{ staffId, label }], 08 36) · today(서울 YYYY-MM-DD) · refreshing(11 다시 부르는 중) · onSaved · onConflict · onClose
 
 export default function RecordEditModal({
   record,
-  visit,
   missing = false,
   reloadFailed = false,
   vehicleLabel,
@@ -49,7 +48,7 @@ export default function RecordEditModal({
   const idPrefix = useId()
   const formId = `${idPrefix}-form`
   const fieldId = (name) => `${idPrefix}-${name}`
-  const initial = recordEditForm(record, visit)
+  const initial = recordEditForm(record)
   const { form, errors, shown, notice, submitting, formRef, update, blur, save } = useEditForm({
     source: initial,
     validate: (value) => validateRecordEdit(value, initial, today),

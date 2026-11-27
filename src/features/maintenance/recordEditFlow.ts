@@ -113,15 +113,13 @@ export interface RecordEditForm {
 export type RecordEditErrors = Partial<Record<keyof RecordEditForm, string>>
 
 /**
- * 11의 기록 → 처음 칸 값. 주행거리는 11에 기록별 값이 없어 그 방문의 주행거리로 채운다(#34 계획 ❓3, 추천안).
- * 사람이 칸을 고쳤을 때만 보내므로(toRecordUpdate) 채운 값이 실제 기록 값과 달라도 그대로 두면 바뀌지 않는다.
- * LIMIT: 외부 기록·행마다 값이 다른 방문은 처음 값이 실제 기록 값과 다를 수 있다 / chagok-docs#174(11·17 records[].mileage 결정)가
- *   (가)로 정해지면 records[].mileage로 바꾼다.
+ * 11의 기록 → 처음 칸 값. 주행거리는 그 기록의 `mileage`(08 11·17 records[].mileage, chagok-docs#174 (가)안)로 채운다 — 외부 기록·행마다 값이 다른 방문도 실제 기록 값이다.
+ * 사람이 칸을 고쳤을 때만 보낸다(toRecordUpdate). 값이 없는 기록(null)은 칸을 비워 둔다.
  */
-export function recordEditForm(record: VisitRecord, visit: Pick<Visit, 'mileage'>): RecordEditForm {
+export function recordEditForm(record: VisitRecord): RecordEditForm {
   return {
     recordDate: record.date,
-    mileage: visit.mileage == null ? '' : String(visit.mileage),
+    mileage: record.mileage == null ? '' : String(record.mileage),
     type: record.type,
     itemId: String(record.itemId),
     inspectResult: record.inspectResult ?? '',
