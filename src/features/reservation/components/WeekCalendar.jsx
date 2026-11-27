@@ -2,6 +2,7 @@ import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import { WEEKDAYS, addDays, formatDayLabel, formatTime, formatWeekLabel, weekRange, weekdayIndex } from '../dates'
 import { WEEK_SLOTS, hasItems, placeWeek } from '../weekCalendar'
 import AssigneeLabel, { assigneeColorClass } from './AssigneeLabel.jsx'
+import PeriodNavigator from './PeriodNavigator.jsx'
 import ReservationStatusBadge from './ReservationStatusBadge.jsx'
 import './WeekCalendar.css'
 
@@ -11,7 +12,8 @@ import './WeekCalendar.css'
 // - 카드: 시각·차량번호·고객명 + 담당 색 띠·이름(AssigneeLabel). 상태는 "예약"이 아닐 때만 배지, 처리 필요 표시.
 //   모두 08 15 응답 값 그대로 — 상태를 화면에서 계산하지 않는다.
 // - 카드를 누르면 onSelectReservation(id) — 상세 패널은 화면(pages)이 연다. 열린 예약 카드는 aria-current.
-// - 주 이동: 이전·다음 주는 그 주 월요일(그 주에 오늘이 있으면 오늘)을, "오늘로"는 오늘을 onSelectDate로 알린다.
+// - 주 이동(PeriodNavigator, #83): 이전·다음 주는 그 주 월요일(그 주에 오늘이 있으면 오늘)을, "오늘로"는 오늘을,
+//   주 표시를 눌러 고른 날짜는 그 날짜를 onSelectDate로 알린다(그 날짜가 속한 주를 보인다).
 // - 빈 칸은 비워 둔다(문구 없음, 09 S-02 빈 상태). 불러오는 중에는 표를 그대로 두고 안내 한 줄.
 //   실패하면 안내 + 사람이 누르는 다시 시도(onReload, 05 POL-125 자동 재요청 없음).
 // - state: usePeriodReservations(주 from·to)의 상태.
@@ -80,14 +82,16 @@ export default function WeekCalendar({ date, today, state, selectedId = null, on
   return (
     <div className="wcal">
       <div className="wcal__head">
-        <h2 className="wcal__title" aria-live="polite">{label}</h2>
-        <div className="wcal__nav" role="group" aria-label="주 이동">
-          <button type="button" aria-label="이전 주" onClick={() => moveWeek(-1)}>‹</button>
-          <button type="button" aria-label="다음 주" onClick={() => moveWeek(1)}>›</button>
-          <button type="button" className="wcal__today" disabled={date === today} onClick={() => onSelectDate(today)}>
-            오늘로
-          </button>
-        </div>
+        <PeriodNavigator
+          unit="week"
+          label={label}
+          date={date}
+          today={today}
+          onMove={moveWeek}
+          onToday={() => onSelectDate(today)}
+          onPick={onSelectDate}
+          classPrefix="wcal"
+        />
       </div>
 
       {state.kind === 'loading' && <p className="wcal__status" role="status">예약을 불러오는 중…</p>}

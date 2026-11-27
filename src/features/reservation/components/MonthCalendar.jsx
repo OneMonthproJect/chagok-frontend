@@ -1,5 +1,6 @@
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import { WEEKDAYS, formatDayLabel, formatMonthLabel, monthGrid, shiftMonth } from '../dates'
+import PeriodNavigator from './PeriodNavigator.jsx'
 import './MonthCalendar.css'
 
 // 홈 월 캘린더 (09 S-02 「월 보기」, 04 F-RSV-05, chagok-frontend#30). 주 보기·월↔주 전환은 #36.
@@ -7,7 +8,8 @@ import './MonthCalendar.css'
 //   숫자는 08 42 응답 값 그대로 — 총 건수(취소만 제외)를 화면에서 더하거나 다시 세지 않는다.
 //   예약이 없는 날(응답에 없음, 또는 모든 수가 0)은 칸만 비워 둔다(문구 없음, 09 S-02 빈 상태).
 // - 날짜를 누르면 onSelectDate(그 날짜). 그날 목록·예약 상세 패널은 화면(pages)이 연다.
-// - 달 이동: 이전·다음 달은 그 달 1일(그 달이 이번 달이면 오늘)을, "오늘로"는 오늘을 onSelectDate로 알린다.
+// - 달 이동(PeriodNavigator, #83): 이전·다음 달은 그 달 1일(그 달이 이번 달이면 오늘)을, "오늘로"는 오늘을,
+//   달 표시를 눌러 고른 날짜는 그 날짜를 onSelectDate로 알린다(그 달 + 그날 목록).
 // - 오늘은 서울 날짜(today, 화면이 todaySeoul()로 넘김). 칸은 날짜 문자열로만 정한다(08 0.1).
 // - state: useMonthSummary의 상태. 실패하면 안내 + 사람이 누르는 다시 시도(onReload), 달력 칸은 그대로 보인다.
 // 사용: <MonthCalendar date="2026-11-24" today="2026-11-24" state={summary.state} onSelectDate={...} onReload={summary.reload} />
@@ -50,14 +52,16 @@ export default function MonthCalendar({ date, today, state, onSelectDate, onRelo
   return (
     <div className="mcal">
       <div className="mcal__head">
-        <h2 className="mcal__title" aria-live="polite">{formatMonthLabel(date)}</h2>
-        <div className="mcal__nav" role="group" aria-label="달 이동">
-          <button type="button" aria-label="이전 달" onClick={() => moveMonth(-1)}>‹</button>
-          <button type="button" aria-label="다음 달" onClick={() => moveMonth(1)}>›</button>
-          <button type="button" className="mcal__today" disabled={date === today} onClick={() => onSelectDate(today)}>
-            오늘로
-          </button>
-        </div>
+        <PeriodNavigator
+          unit="month"
+          label={formatMonthLabel(date)}
+          date={date}
+          today={today}
+          onMove={moveMonth}
+          onToday={() => onSelectDate(today)}
+          onPick={onSelectDate}
+          classPrefix="mcal"
+        />
       </div>
 
       {state.kind === 'error' && (

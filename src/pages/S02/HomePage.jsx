@@ -33,7 +33,9 @@ import './HomePage.css'
 //   날짜(?date=)·열린 패널(?reservation=)은 바꿔도 그대로다. 지금 보이는 보기의 API만 부른다.
 //   · 주 보기: 그 날짜가 속한 주(월요일 시작)를 08 15로 부르고 카드를 시각 칸에 놓는다. 카드를 누르면 상세 패널. 아래 날짜 목록은 없다.
 //   · 월 보기: 그 날짜가 속한 달(08 42 건수), 날짜 칸을 누르면 ?date=가 바뀌어 아래 목록(08 15, P0-핵심 목록 재사용)이 그날로 바뀐다.
-//   "내 담당만" 토글은 아직 넣지 않았다(chagok-docs#146 결정 전, #36 다음 PR).
+//   · "내 담당만" 토글(04 F-RSV-05·09 S-02 「보기 옵션」, docs#146 (c)안): 주 보기에서만 보인다. 기본 전체, 켜면 ?mine=1.
+//     주 15에 03 staffId를 assigneeId로 붙인다(화면 필터일 뿐 데이터 권한이 아님, 06). 월 보기는 토글이 없고 42·15 모두 정비소 전체다.
+//     03을 아직 못 받았으면 토글은 잠그고, ?mine=1이면 주 15를 받을 때까지 부르지 않는다. 03이 실패하면 토글을 끈 채 잠그고 전체를 보인다.
 // - 예약 상세 패널은 ?reservation=<id> (#26). 줄을 누르면 열고(기록 하나 추가), 닫기·Esc·뒤로 가기는 쿼리를 지운다.
 //   패널 안 [방문 완료](08 18)가 성공하면 S-08(/visits/new?vehicleId=&reservationId=)로, 409면 패널·목록·캘린더 건수(42)·요약을 다시 불러오고 이동하지 않는다.
 //   [상세 이동]은 S-07(/vehicles/:vehicleId). [변경]은 M-02 변경 모드(#25).
@@ -44,10 +46,12 @@ import './HomePage.css'
 //   여기서 조립한다(feature끼리 import 금지). 등록·변경되면 그 날짜 목록으로 옮겨 다시 불러온다.
 // - 요약 숫자(#28, 08 04): 오늘 예약·오늘 연락할 고객. 다른 날짜를 볼 때만 "목록 →"(오늘로), [보기 →]는 S-04 라우트가 있을 때만(→ /targets).
 //   예약이 바뀌면(등록·변경·취소·노쇼·409) 함께 다시 부른다.
-// - 다음 이슈가 이어서 고친다: "내 담당만" 토글(#36 다음 PR, docs#146), M-02 담당 선택·재배정(#37).
 
 /** ?view= 값 (09 S-02 월/주 전환). 기본(주)은 URL에 넣지 않는다 */
 const VIEW_MONTH = 'month'
+
+/** ?mine= 값 ("내 담당만" 켬). 기본(전체)은 URL에 넣지 않는다 */
+const MINE_ON = '1'
 
 /** 패널을 목록에서 열었는지(이때만 닫기 = 뒤로 가기). 주소로 바로 들어왔으면 쿼리만 지운다 */
 const PANEL_FROM_LIST = 'panelFromList'
@@ -68,16 +72,19 @@ export default function HomePage() {
   const queryDate = searchParams.get(QUERY.DATE)
   const date = isValidDate(queryDate) ? queryDate : today
   const isMonth = searchParams.get(QUERY.VIEW) === VIEW_MONTH
+  // 정정 상태 선택(#33)·M-02 담당 기본값·재배정 가능 구간(#37)·"내 담당만"(#36) — 08 03 staffId·role. 한 번만 부른다
+  const { me, error: meError } = useMe()
+  const meFailed = me === null && meError !== null
+  const mine = !isMonth && searchParams.get(QUERY.MINE) === MINE_ON && !meFailed // 월 보기에서는 쿼리가 남아 있어도 끈 것
   const { state, reload: reloadList } = useDayReservations(date, isMonth)
   const month = useMonthSummary(date, isMonth)
   const weekPeriod = weekRange(date)
-  const week = usePeriodReservations(weekPeriod.from, weekPeriod.to, !isMonth)
+  const week = usePeriodReservations(weekPeriod.from, weekPeriod.to, !isMonth && (!mine || me !== null), mine ? me?.staffId : undefined)
   const summary = useHomeSummary()
   const reservationId = parseReservationId(searchParams.get(QUERY.RESERVATION)) // undefined면 패널 닫힘
   const panelOpen = reservationId !== undefined
   const openedFromList = location.state?.[PANEL_FROM_LIST] === true
   const items = useServiceItems()
-  const { me } = useMe() // 정정 상태 선택(#33)·M-02 담당 기본값·재배정 가능 구간(#37) — 08 03 staffId·role. 한 번만 부른다
   const [createOpen, setCreateOpen] = useState(false)
   const [registerQuery, setRegisterQuery] = useState(null) // M-01을 열 때의 검색어 (null = 닫힘)
   const pickVehicleRef = useRef(null) // M-02 안의 차량 선택 함수 (M-01로 새로 등록한 차량을 채울 때)
@@ -97,6 +104,14 @@ export default function HomePage() {
     else params.delete(QUERY.VIEW)
     // 패널을 연 채 보기를 바꾸면 닫기는 뒤로 가기가 아니라 쿼리 지우기(뒤로 가면 이전 보기로 돌아가므로, changeDate와 같은 규칙)
     setSearchParams(params, { replace: true, state: null })
+  }
+
+  /** "내 담당만" 켜기·끄기 (주 보기만). 날짜·보기·패널 쿼리는 그대로 */
+  function toggleMine() {
+    const params = new URLSearchParams(searchParams)
+    if (mine) params.delete(QUERY.MINE)
+    else params.set(QUERY.MINE, MINE_ON)
+    setSearchParams(params, { replace: true, state: null }) // changeView와 같은 규칙
   }
 
   function changeDate(next) {
@@ -177,9 +192,27 @@ export default function HomePage() {
           <section className="home-card" aria-labelledby="home-calendar-title">
             <div className="home-card__head">
               <h2 id="home-calendar-title" className="home-card__title">예약 캘린더</h2>
-              <div className="home-view-switch" role="group" aria-label="보기 전환">
-                <button type="button" aria-pressed={!isMonth} onClick={() => changeView('week')}>주</button>
-                <button type="button" aria-pressed={isMonth} onClick={() => changeView(VIEW_MONTH)}>월</button>
+              <div className="home-card__tools">
+                {!isMonth && (
+                  <label className="home-mine">
+                    <button
+                      type="button"
+                      role="switch"
+                      className="home-mine__switch"
+                      aria-checked={mine}
+                      disabled={me === null}
+                      title={meFailed ? '내 계정 정보를 불러오지 못해 쓸 수 없습니다.' : undefined}
+                      onClick={toggleMine}
+                    >
+                      <i aria-hidden="true" />
+                    </button>
+                    내 담당만
+                  </label>
+                )}
+                <div className="home-view-switch" role="group" aria-label="보기 전환">
+                  <button type="button" aria-pressed={!isMonth} onClick={() => changeView('week')}>주</button>
+                  <button type="button" aria-pressed={isMonth} onClick={() => changeView(VIEW_MONTH)}>월</button>
+                </div>
               </div>
             </div>
             <div className="home-card__body">
