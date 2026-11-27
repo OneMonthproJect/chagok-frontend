@@ -1,14 +1,18 @@
-// 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 15~21·42의 사본이며 계약의 기준은 08이다.
+// 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 15~21·39~42의 사본이며 계약의 기준은 08이다.
 // 값은 07 7.1~7.3 시드(seed.json). 예약 날짜는 오늘(서울) 기준으로 계산하고, 바뀐 상태는 메모리에만 둔다(새로 고치면 처음으로).
 // 15 목록의 담당(assignee, P0-나머지)은 07 7.3 담당 계정(seed.json staff·assigneeStaffId, #30).
 // 패널(17)의 최근 방문·총 방문 수는 07 7.2 기록(seed.json visits, #26)으로 만든다(11 모양, 최신순 2회, 외부만 있는 방문은 세지 않음 POL-45).
 // LIMIT: 점검 주기(itemStatuses)는 단순화 — 항목 상태 모두 미확인. 상태 판정은 서버(cycle)의 일이라 Mock에서 계산하지 않는다. 실제 값은 백엔드 연결로 확인한다.
+// 39 방문 접수가 채운 차량 연식·주행거리, 40 정정·41 이력도 메모리에만 둔다(#33).
+// LIMIT: Mock은 로그인 계정을 모른다. 40은 사장으로 보고(상태·메모 모두 허용) 이력의 바꾼 사람도 사장(owner_a)으로 둔다.
+//   정비사 권한·3일 기간(403 FORBIDDEN·EDIT_PERIOD_EXPIRED)은 백엔드 연결로 확인한다.
 // api.ts만 동적 import()로 부른다. 화면·pages는 import하지 않는다.
 
 import type { MockResponse } from '@/shared/api/client'
 import { addDays, nowSeoul, todaySeoul } from '../dates'
 import type {
   ReservationCompleteRequest,
+  ReservationCorrectRequest,
   ReservationCreateRequest,
   ReservationListItem,
   ReservationPanel,
@@ -16,6 +20,8 @@ import type {
   ReservationStatus,
   ReservationSummaryQuery,
   ReservationDaySummary,
+  ReservationRevision,
+  ReservationStartRequest,
   ReservationStatusChangeRequest,
   ReservationUpdateRequest,
   RecentVisit,
@@ -40,6 +46,10 @@ const MAX_DAYS = 42
 const DEFAULT_ASSIGNEE_ID = 1
 let store: MockReservation[] | null = null
 let nextId = 100
+/** 39가 채운 차량 값 (vehicleId → 값). seed.json은 바꾸지 않는다 */
+let vehicleFills = new Map<number, { modelYear?: number; latestMileage?: number }>()
+/** 40 정정 이력 (reservationId → 오래된 것부터). LIMIT: 19 재배정(ASSIGNEE) 이력은 mockUpdate를 고치는 #37이 더한다 — 그 전까지 Mock 41에는 나오지 않는다 */
+let revisions = new Map<number, ReservationRevision[]>()
 
 function reservations(): MockReservation[] {
   if (store === null) {
@@ -63,6 +73,8 @@ function reservations(): MockReservation[] {
 export function resetReservationMocks(): void {
   store = null
   nextId = 100
+  vehicleFills = new Map()
+  revisions = new Map()
 }
 
 const ok = (data: unknown, status = 200): MockResponse => ({ status, body: { success: true, data, error: null } })
@@ -72,7 +84,10 @@ const fail = (status: number, code: string, message: string, field?: string, det
 })
 const notFound = () => fail(404, 'NOT_FOUND', '찾을 수 없습니다.')
 
-const vehicleOf = (vehicleId: number) => seed.vehicles.find((v) => v.vehicleId === vehicleId)
+function vehicleOf(vehicleId: number) {
+  const vehicle = seed.vehicles.find((v) => v.vehicleId === vehicleId)
+  return vehicle && { ...vehicle, ...vehicleFills.get(vehicleId) }
+}
 const customerOf = (customerId: number) => seed.customers.find((c) => c.customerId === customerId)
 const itemOf = (itemId: number) => seed.items.find((i) => i.itemId === itemId)
 const assigneeOf = (staffId: number) => seed.staff.find((s) => s.staffId === staffId)
@@ -225,6 +240,7 @@ export function mockGetPanel(reservationId: number): MockResponse {
       needsAction: needsAction(r),
       version: r.version,
       purpose: { items: r.itemIds.map((id) => ({ itemId: id, name: itemOf(id)?.name ?? '' })), other: r.other, memo: r.memo },
+      assignee: assigneeOf(r.assigneeStaffId),
     },
     customer: { customerId: customer.customerId, name: customer.name, phone: customer.phone, consent: customer.consent },
     vehicle: { vehicleId: vehicle.vehicleId, plateNumber: vehicle.plateNumber, model: vehicle.model, modelYear: vehicle.modelYear, latestMileage: vehicle.latestMileage },
@@ -262,13 +278,13 @@ function checkVersion(version: number, r: MockReservation): MockResponse | null 
   return null
 }
 
-/** 08 18 — 형식(400) → 소유(404) → 상태(P0-핵심은 RESERVED만, IN_PROGRESS는 P0-나머지) → version 순 */
+/** 08 18 — 형식(400) → 소유(404) → 상태(RESERVED, P0-나머지부터 IN_PROGRESS도) → version 순 */
 export function mockComplete(reservationId: number, body: ReservationCompleteRequest): MockResponse {
   const invalid = invalidVersion(body?.version)
   if (invalid) return invalid
   const r = reservations().find((x) => x.reservationId === reservationId)
   if (!r) return notFound()
-  if (r.status !== 'RESERVED') return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
+  if (r.status !== 'RESERVED' && r.status !== 'IN_PROGRESS') return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
   const versionError = checkVersion(body.version, r)
   if (versionError) return versionError
   r.status = 'COMPLETED'
@@ -332,4 +348,78 @@ export function mockUpdate(reservationId: number, body: ReservationUpdateRequest
   }
   r.version += 1
   return ok({ reservationId: r.reservationId, status: r.status, reservedAt: r.reservedAt, vehicleId: r.vehicleId, version: r.version })
+}
+
+/** 08 39 — 형식 → 소유 → 상태(RESERVED만) → version → 차량 연식·주행거리(비어 있으면 필수, D-58) 순. 응답은 18과 같은 4필드(08 7.1 39) */
+export function mockStart(reservationId: number, body: ReservationStartRequest): MockResponse {
+  const invalid = invalidVersion(body?.version)
+  if (invalid) return invalid
+  const r = reservations().find((x) => x.reservationId === reservationId)
+  if (!r) return notFound()
+  if (r.status !== 'RESERVED') return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
+  const versionError = checkVersion(body.version, r)
+  if (versionError) return versionError
+  const vehicle = vehicleOf(r.vehicleId)!
+  const fieldErrors = []
+  if (vehicle.modelYear == null && body.modelYear == null) fieldErrors.push({ field: 'modelYear', reason: '차량의 연식이 비어 있어 입력해 주세요.' })
+  if (vehicle.latestMileage == null && body.mileage == null) fieldErrors.push({ field: 'mileage', reason: '차량의 주행거리가 비어 있어 입력해 주세요.' })
+  if (fieldErrors.length > 0) {
+    return { status: 400, body: { success: false, data: null, error: { code: 'INVALID_INPUT', message: '입력값을 확인해 주세요.', fieldErrors, details: null } } }
+  }
+  const fill = { ...vehicleFills.get(r.vehicleId) }
+  if (vehicle.modelYear == null && body.modelYear != null) fill.modelYear = body.modelYear
+  if (body.mileage != null && (vehicle.latestMileage == null || body.mileage > vehicle.latestMileage)) fill.latestMileage = body.mileage
+  vehicleFills.set(r.vehicleId, fill)
+  r.status = 'IN_PROGRESS'
+  r.version += 1
+  return ok({ reservationId: r.reservationId, status: r.status, vehicleId: r.vehicleId, version: r.version })
+}
+
+/** 40 상태 정정 허용표 (08 7.1 40): 취소↔노쇼, 취소·노쇼 → 완료. 완료 → 취소·노쇼는 안 됨 */
+const CORRECTABLE: Record<string, ReservationStatus[]> = {
+  CANCELED: ['NO_SHOW', 'COMPLETED'],
+  NO_SHOW: ['CANCELED', 'COMPLETED'],
+  COMPLETED: [],
+}
+const MOCK_OWNER = { staffId: 1, name: '박사장' }
+
+function addRevision(reservationId: number, revision: ReservationRevision): void {
+  revisions.set(reservationId, [...(revisions.get(reservationId) ?? []), revision])
+}
+
+/** 08 40 — 형식 → 소유 → 끝난 예약인지 → version → (권한: Mock은 사장) → 바뀐 것 있는지 → 허용표 순. 응답은 18과 같은 모양 */
+export function mockCorrect(reservationId: number, body: ReservationCorrectRequest): MockResponse {
+  const invalid = invalidVersion(body?.version)
+  if (invalid) return invalid
+  if (body.status !== undefined && !['COMPLETED', 'CANCELED', 'NO_SHOW'].includes(body.status)) {
+    return fail(400, 'INVALID_INPUT', '정정할 수 있는 상태는 완료·취소·노쇼입니다.', 'status')
+  }
+  const r = reservations().find((x) => x.reservationId === reservationId)
+  if (!r) return notFound()
+  if (!(r.status in CORRECTABLE)) return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
+  const versionError = checkVersion(body.version, r)
+  if (versionError) return versionError
+  const nextStatus = body.status !== undefined && body.status !== r.status ? body.status : undefined
+  const nextMemo = body.purposeMemo !== undefined ? (body.purposeMemo === '' ? null : body.purposeMemo) : undefined
+  const memoChanged = nextMemo !== undefined && nextMemo !== r.memo
+  if (!nextStatus && !memoChanged) return fail(400, 'INVALID_INPUT', '바뀐 항목이 없습니다.', body.status !== undefined ? 'status' : 'purposeMemo')
+  if (nextStatus && !CORRECTABLE[r.status].includes(nextStatus)) return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
+  const changedAt = nowSeoul()
+  const reason = body.reason?.trim() ? body.reason : null
+  if (nextStatus) {
+    addRevision(r.reservationId, { kind: 'STATUS', changedAt, changedBy: MOCK_OWNER, reason, changes: [{ field: 'status', before: r.status, after: nextStatus }] })
+    r.status = nextStatus
+  }
+  if (memoChanged) {
+    addRevision(r.reservationId, { kind: 'MEMO', changedAt, changedBy: MOCK_OWNER, reason, changes: [{ field: 'purposeMemo', before: r.memo, after: nextMemo ?? null }] })
+    r.memo = nextMemo ?? null
+  }
+  r.version += 1
+  return ok({ reservationId: r.reservationId, status: r.status, vehicleId: r.vehicleId, version: r.version })
+}
+
+/** 08 41 — 오래된 것부터, 없으면 [] */
+export function mockGetRevisions(reservationId: number): MockResponse {
+  if (!reservations().some((x) => x.reservationId === reservationId)) return notFound()
+  return ok({ items: revisions.get(reservationId) ?? [] })
 }
