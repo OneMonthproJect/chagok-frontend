@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act } from 'react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, click, keyDown, render } from '@/shared/lib/domTest'
 import { todaySeoul } from '@/shared/lib/date'
@@ -389,5 +389,40 @@ describe('수정됨 → 수정 이력 패널 (08 38)', () => {
     click(button('다시 불러오기', dialog()))
     await settle()
     expect(dialog().textContent).toContain('수정 이력이 없습니다.')
+  })
+})
+
+describe('다른 차량으로 바뀔 때 (릴리스 리뷰, frontend#97)', () => {
+  it('열려 있던 M-03이 닫힌다 — 이전 차량의 기록이 새 차량 화면에 수정 모달로 남지 않는다', async () => {
+    let go
+    function Nav() {
+      go = useNavigate()
+      return null
+    }
+    const base = fetchMock.getMockImplementation()
+    fetchMock.mockImplementation((path, init) => {
+      if (path === '/api/vehicles/11') return ok({ ...VEHICLE, vehicleId: 11, plateNumber: '99가0011' })
+      if (path === '/api/vehicles/11/item-status') return ok({ vehicleId: 11, asOf: TODAY, inputMileage: null, items: [] })
+      if (path === '/api/vehicles/11/visits') return ok({ items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 })
+      return base(path, init)
+    })
+    render(
+      <MemoryRouter initialEntries={['/vehicles/10']}>
+        <Nav />
+        <Routes>
+          <Route path="/vehicles/:vehicleId" element={<VehicleDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    await settle()
+    click(editButton())
+    await settle()
+    expect(dialog()).not.toBeNull()
+
+    act(() => go('/vehicles/11'))
+    await settle()
+    await settle()
+
+    expect(dialog()).toBeNull()
   })
 })

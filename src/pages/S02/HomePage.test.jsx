@@ -543,7 +543,7 @@ describe('S-02 예약 취소·노쇼', () => {
     expect(dialog().textContent).toContain('예약을 취소할까요?')
     expect(dialog().textContent).toContain('55차0010 · 오세훈')
     expect(dialog().textContent).toContain('11월 23일 (월) 15:00')
-    expect(dialog().textContent).toContain('취소한 예약은 정정으로만 되돌릴 수 있습니다.')
+    expect(dialog().textContent).toContain('취소한 예약은 예약 상태로 되돌릴 수 없습니다.')
     expect(document.activeElement.textContent).toBe('돌아가기')
 
     click(button('예약 취소', dialog()))

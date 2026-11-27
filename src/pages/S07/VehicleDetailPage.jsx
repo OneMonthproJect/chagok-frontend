@@ -66,6 +66,16 @@ export default function VehicleDetailPage() {
   const today = todaySeoul()
   const [recordEdit, setRecordEdit] = useState(null) // { record, visit } — M-03을 연 기록(11에서 읽은 값)
   const [revisionRecord, setRevisionRecord] = useState(null) // 수정 이력 패널을 연 기록
+  // 이 페이지는 /vehicles/:vehicleId가 바뀌어도 다시 마운트되지 않는다. 다른 차량으로 바뀌면 열려 있던 입력·모달·패널을 닫는다
+  // (안 그러면 이전 차량의 기록이 새 차량 화면에서 수정 모달로 남는다)
+  const [shownFor, setShownFor] = useState(vehicleId)
+  if (shownFor !== vehicleId) {
+    setShownFor(vehicleId)
+    setReserving(false)
+    setEditing(false)
+    setRecordEdit(null)
+    setRevisionRecord(null)
+  }
   // 409 뒤 11을 다시 받으면 같은 기록의 최신 값·version으로 바꾼다. 다시 받는 중에는 연 때 값을 그대로 둔다(입력 유지).
   const latestEdit = recordEdit && history.status === 'ready' ? findRecord(history.visits, recordEdit.record.recordId) : null
   const editTarget = latestEdit ?? recordEdit
