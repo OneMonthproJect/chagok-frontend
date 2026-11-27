@@ -166,7 +166,7 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
   })
   if (external.length > 0) return invalid(external)
 
-  // 5. 같은 항목 중복
+  // 4. 같은 항목 중복
   const seen = new Set<number>()
   const duplicates: FieldError[] = []
   records.forEach((r, i) => {
@@ -175,12 +175,12 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
   })
   if (duplicates.length > 0) return invalid(duplicates)
 
-  // 6. 그 정비소의 쓰는 항목 (없음·남의 것·쓰지 않음 모두 같은 응답, X11)
+  // 5. 그 정비소의 쓰는 항목 (없음·남의 것·쓰지 않음 모두 같은 응답, X11)
   if (records.some((r) => !ACTIVE_ITEM_IDS.has(r.itemId as number))) {
     return invalid([{ field: 'records[].itemId', reason: M.ITEM_NOT_USABLE }])
   }
 
-  // 6-1. 담당 정비사 (P0-나머지, X13): 없음·남의 정비소 직원 모두 같은 400. 보내지 않으면 저장한 계정(서버)
+  // 6. 담당 정비사 (P0-나머지, X13): 없음·남의 정비소 직원 모두 같은 400. 보내지 않으면 저장한 계정(서버)
   if (request.mechanicId != null && !SHOP_STAFF_IDS.has(request.mechanicId)) {
     return invalid([{ field: 'mechanicId', reason: M.MECHANIC_NOT_IN_SHOP }])
   }

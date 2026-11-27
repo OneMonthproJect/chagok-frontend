@@ -123,6 +123,13 @@ describe('12 Mock의 mechanicId (07 7.1 A 정비소 = 1 박사장·2 김정비)'
     expect(badItem.fieldErrors[0].field).toBe('records[].itemId')
   })
 
+  it('외부 정비일 검사(#29)가 담당(X13)보다 먼저 (백엔드 validateRecordInputs → resolveMechanic)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
+    const error = parseError(mockSaveVisit(4, { visitDate: '2026-11-24', mechanicId: 3, records: [{ itemId: 3, type: 'EXTERNAL', memo: null }] }))
+    expect(error.fieldErrors.map((f) => f.field)).toEqual(['records[0].externalDate'])
+  })
+
   it('담당(X13)이 차량 빈 값(D-58)보다 먼저', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
