@@ -76,12 +76,15 @@ describe('Mock 42 (08 7.1 JSON 예시 모양) · 15 assignee', () => {
     expect(days.map((d) => d.date)).toEqual([...days.map((d) => d.date)].sort())
   })
 
-  it('42일까지 받고 43일이면 400(to), from > to는 400(from), 누락은 그 파라미터 (08 7.1 42)', () => {
+  it.each([
+    ['42 (08 7.1 42)', mockGetReservationSummary],
+    ['15 (08 15, chagok-docs#164)', mockGetReservations],
+  ])('%s: 42일까지 받고 43일이면 400(to), from > to는 400(from), 누락은 그 파라미터', (_, mock) => {
     const field = (from: string, to: string) => {
-      const res = mockGetReservationSummary({ from, to })
+      const res = mock({ from, to })
       return [res.status, (res.body as { error: { fieldErrors: { field: string }[] } | null }).error?.fieldErrors[0]?.field]
     }
-    expect(mockGetReservationSummary({ from: '2026-11-01', to: '2026-12-12' }).status).toBe(200)
+    expect(mock({ from: '2026-11-01', to: '2026-12-12' }).status).toBe(200)
     expect(field('2026-11-01', '2026-12-13')).toEqual([400, 'to'])
     expect(field('2026-11-02', '2026-11-01')).toEqual([400, 'from'])
     expect(field('', '2026-11-01')).toEqual([400, 'from'])

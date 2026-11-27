@@ -134,12 +134,19 @@ function invalidReservedAt(value: string): MockResponse | null {
   return null
 }
 
+/** 15·42 기간 위반의 fieldErrors 필드 (08 15·7.1 42): 누락은 그 파라미터, from > to는 from, 42일 초과는 to. 위반이 없으면 null */
+function periodErrorField(from: string, to: string): 'from' | 'to' | null {
+  if (!from) return 'from'
+  if (!to) return 'to'
+  if (from > to) return 'from'
+  return addDays(from, MAX_DAYS - 1) < to ? 'to' : null
+}
+
 /** 08 15 */
 export function mockGetReservations(query: ReservationPeriodQuery): MockResponse {
   const { from, to } = query
-  if (!from || !to || from > to || addDays(from, MAX_DAYS - 1) < to) {
-    return fail(400, 'INVALID_INPUT', '조회 기간을 확인해 주세요.', !from ? 'from' : 'to')
-  }
+  const invalidField = periodErrorField(from, to)
+  if (invalidField) return fail(400, 'INVALID_INPUT', '조회 기간을 확인해 주세요.', invalidField)
   const items = reservations()
     .filter((r) => r.reservedAt.slice(0, 10) >= from && r.reservedAt.slice(0, 10) <= to)
     .sort((a, b) => a.reservedAt.localeCompare(b.reservedAt) || a.reservationId - b.reservationId)
@@ -147,11 +154,10 @@ export function mockGetReservations(query: ReservationPeriodQuery): MockResponse
   return ok({ from, to, items })
 }
 
-/** 08 42 — 날짜별 건수. total은 취소만 제외(진행중·노쇼 포함). 예약이 하나도 없는 날은 넣지 않는다.
- *  기간 위반의 fieldErrors 필드(08 7.1 42): 누락은 그 파라미터, from > to는 from, 42일 초과는 to */
+/** 08 42 — 날짜별 건수. total은 취소만 제외(진행중·노쇼 포함). 예약이 하나도 없는 날은 넣지 않는다. 기간 규칙은 15와 같다 */
 export function mockGetReservationSummary(query: ReservationSummaryQuery): MockResponse {
   const { from, to } = query
-  const invalidField = !from ? 'from' : !to ? 'to' : from > to ? 'from' : addDays(from, MAX_DAYS - 1) < to ? 'to' : null
+  const invalidField = periodErrorField(from, to)
   if (invalidField) return fail(400, 'INVALID_INPUT', '조회 기간을 확인해 주세요.', invalidField)
   const byDate = new Map<string, ReservationDaySummary>()
   for (const r of reservations()) {
