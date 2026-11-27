@@ -282,7 +282,7 @@ export function mockUpdateRecord(recordId: number, body: RecordUpdateRequest): M
     (body.type !== undefined && body.type !== record.type) ||
     (body.itemId !== undefined && body.itemId !== record.itemId) ||
     (body.inspectResult !== undefined && body.inspectResult !== record.inspectResult) ||
-    (body.memo !== undefined && body.memo !== (record.memo ?? '')) ||
+    (body.memo !== undefined && (body.memo.trim() || null) !== record.memo) || // 백엔드 blankToNull과 같게 앞뒤 공백을 자르고 비교
     (body.mechanicId !== undefined && body.mechanicId !== record.staff.staffId)
   if (!changed) {
     const first = EDIT_FIELD_ORDER.find((field) => body[field] !== undefined) ?? 'recordDate'
@@ -296,7 +296,8 @@ export function mockUpdateRecord(recordId: number, body: RecordUpdateRequest): M
   return ok({ recordId, vehicleId, version: record.version + 1 })
 }
 
-/** 08 38 — 기록 16은 08 38 JSON 예시 첫 수정의 주행거리 보완 한 건(visits.json의 version 1·edited와 같음), 그 밖은 이력 없음. 남의 기록은 404(X14) */
+/** 08 38 — 기록 16은 수정 한 건(visits.json의 version 1·edited와 같음). 11 Mock은 07 7.2 시드 그대로라(주행거리·메모 null) 08 38 예시(null → 52000·"합성유 사용")
+ *  대신 수정 뒤 값이 지금 11 값과 맞는 메모 지우기로 둔다(계약 점검 ⚠️, 2026-11-27), 그 밖은 이력 없음. 남의 기록은 404(X14) */
 export function mockGetRecordRevisions(recordId: number): MockResponse {
   if (!findOwnedRecord(recordId)) return notFound()
   if (recordId !== 16) return ok({ items: [] })
@@ -306,10 +307,8 @@ export function mockGetRecordRevisions(recordId: number): MockResponse {
         revisionNo: 1,
         changedAt: '2026-11-25T10:05:00',
         changedBy: { staffId: 1, name: '박사장' },
-        reason: '입력 누락 보완',
-        changes: [
-          { field: 'mileage', before: null, after: 52000 },
-        ],
+        reason: '다른 차량 메모를 잘못 입력',
+        changes: [{ field: 'memo', before: '합성유 사용', after: null }],
       },
     ],
   })
