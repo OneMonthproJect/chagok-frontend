@@ -97,7 +97,6 @@ const button = (text, root = document) => Array.from(root.querySelectorAll('butt
 const calls = (match) => fetchMock.mock.calls.filter(([url, init]) => match(url, init))
 const panelCalls = () => calls((url) => url === '/api/reservations/4/panel')
 const listCalls = () => calls((url) => url.startsWith('/api/reservations?'))
-const summaryCalls = () => calls((url) => url.startsWith('/api/reservations/summary?'))
 const startCalls = () => calls((url) => url.endsWith('/start'))
 const correctCalls = () => calls((url) => url.endsWith('/correct'))
 const revisionCalls = () => calls((url) => url.endsWith('/revisions'))
@@ -136,7 +135,7 @@ describe('버튼 조건', () => {
     await settle()
     const label = panel().querySelector('.assignee-label')
     expect(label.textContent).toContain('김정비')
-    expect(label.className).toContain('assignee-label--c1')
+    expect(label.className).toContain('assignee-color--c1') // #36에서 색 클래스가 assignee-color--cN으로 바뀜
 
     cleanup()
     open({ assignee: undefined })
@@ -154,8 +153,7 @@ describe('방문 접수 (08 39)', () => {
     }
     open({ version: 3 })
     await settle()
-    const listBefore = listCalls().length
-    const summaryBefore = summaryCalls().length
+    const listBefore = listCalls().length // 기본 주 보기(#36)라 월 건수(42)는 부르지 않는다
     click(button('방문 접수', panel()))
     await settle()
     await settle()
@@ -165,7 +163,6 @@ describe('방문 접수 (08 39)', () => {
     expect(bodyOf(startCalls()[0])).toEqual({ version: 3 })
     expect(panelCalls()).toHaveLength(2)
     expect(listCalls().length).toBe(listBefore + 1)
-    expect(summaryCalls().length).toBe(summaryBefore + 1)
     expect(location.pathname).toBe('/')
     expect(panel().querySelector('.rsv-status').textContent).toBe('진행중')
     expect(panel().querySelector('.error-notice--info').textContent).toContain('방문 접수했습니다.')

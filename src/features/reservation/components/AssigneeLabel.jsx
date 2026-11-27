@@ -5,15 +5,22 @@ import './AssigneeLabel.css'
 // 색 8개(💡 04): 보라·청록·분홍·갈색·연두·남색·올리브·자주 — 상태 색(회색·파랑·주황·빨강)과 겹치지 않는다.
 // assignee가 없으면(P0-핵심 서버 응답) 아무것도 그리지 않는다.
 // 사용: <AssigneeLabel assignee={{ staffId: 1, name: '박사장', colorIndex: 0 }} />
+// 색 클래스 assigneeColorClass(assignee)는 다른 담당 표시(주 캘린더 카드 색 띠, #36)도 쓴다 — 색 규칙은 이 파일·AssigneeLabel.css 한 곳.
 
 const COLOR_COUNT = 8
 
+/** 담당 색 클래스 "assignee-color--c0"~"c7" (--assignee-color를 정한다). assignee가 없으면 null.
+ *  서버가 0~7을 주지만, 범위 밖 값이 와도 색이 사라지지 않게 8로 나눈 나머지로 고른다 */
+export function assigneeColorClass(assignee) {
+  if (!assignee) return null
+  const color = ((assignee.colorIndex % COLOR_COUNT) + COLOR_COUNT) % COLOR_COUNT
+  return `assignee-color--c${color}`
+}
+
 export default function AssigneeLabel({ assignee }) {
   if (!assignee) return null
-  // 서버가 0~7을 주지만, 범위 밖 값이 와도 라벨이 사라지지 않게 8로 나눈 나머지로 고른다
-  const color = ((assignee.colorIndex % COLOR_COUNT) + COLOR_COUNT) % COLOR_COUNT
   return (
-    <span className={`assignee-label assignee-label--c${color}`} title={`담당 ${assignee.name}`}>
+    <span className={`assignee-label ${assigneeColorClass(assignee)}`} title={`담당 ${assignee.name}`}>
       <i className="assignee-label__dot" aria-hidden="true" />
       <span className="visually-hidden">담당 </span>
       {assignee.name}
