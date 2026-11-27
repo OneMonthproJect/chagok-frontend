@@ -4,8 +4,6 @@ import {
   baseRecordText,
   dateText,
   hasMoreVisits,
-  isCustomerStatement,
-  itemNoteTag,
   itemStatusTableRows,
   kmText,
   visitCountText,
@@ -84,14 +82,7 @@ describe('itemStatusTableRows (ItemStatusList table)', () => {
   })
 })
 
-describe('꼬리표 (04 F-CYC-02, 08 10 lastDecline·lastCaution)', () => {
-  it('지난 방문 거절(날짜) · 지난 점검 주의(날짜, 메모), 메모가 없으면 날짜만, 둘 다 null이면 없음', () => {
-    expect(itemNoteTag(ITEM({}))).toBeUndefined()
-    expect(itemNoteTag(ITEM({ lastDecline: { date: '2026-10-24', memo: '다음에 하기로 함' } }))).toBe('지난 방문 거절(2026.10.24)')
-    expect(itemNoteTag(ITEM({ lastCaution: { date: '2026-09-24', memo: '앞 타이어 마모' } }))).toBe('지난 점검 주의(2026.09.24, 앞 타이어 마모)')
-    expect(itemNoteTag(ITEM({ lastCaution: { date: '2026-09-24', memo: null } }))).toBe('지난 점검 주의(2026.09.24)')
-  })
-
+describe('꼬리표 (04 F-CYC-02, 08 10 lastDecline·lastCaution) — 문구는 shared/lib/noteTag', () => {
   it('꼬리표는 줄의 tag로만 붙고 상태는 서버 값 그대로 (꼬리표가 상태를 바꾸지 않음)', () => {
     const [row] = itemStatusTableRows([ITEM({ status: 'AHEAD', lastDecline: { date: '2026-10-24', memo: null } })])
     expect(row.status).toBe('AHEAD')
@@ -100,14 +91,6 @@ describe('꼬리표 (04 F-CYC-02, 08 10 lastDecline·lastCaution)', () => {
   })
 })
 
-describe('고객 진술 (09 S-07, 08 11 source)', () => {
-  it('source가 있으면 source로, 없으면(P0-핵심 서버) type EXTERNAL로 — 07 3.7 CHECK로 둘은 같다', () => {
-    expect(isCustomerStatement({ type: 'EXTERNAL', source: 'CUSTOMER_STATEMENT' })).toBe(true)
-    expect(isCustomerStatement({ type: 'REPLACE', source: 'SHOP' })).toBe(false)
-    expect(isCustomerStatement({ type: 'EXTERNAL' })).toBe(true)
-    expect(isCustomerStatement({ type: 'DECLINE' })).toBe(false)
-  })
-})
 
 describe('더 보기', () => {
   it('마지막 쪽이 아니면 더 있다', () => {

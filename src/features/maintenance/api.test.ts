@@ -161,7 +161,7 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     )
     expect(tagged).toEqual([
       { vehicleId: 6, itemId: 1, lastDecline: { date: '2026-10-24', memo: null }, lastCaution: null },
-      { vehicleId: 8, itemId: 5, lastDecline: null, lastCaution: { date: '2026-09-24', memo: '앞 타이어 마모' } },
+      { vehicleId: 8, itemId: 5, lastDecline: null, lastCaution: { date: '2026-09-24', memo: '타이어 트레드 마모 진행, 다음 방문 때 교체 권장' } },
     ])
     // 꼬리표는 상태를 바꾸지 않는다: 11바0006 엔진오일은 기준(교체 D-8M) 그대로 도래, 33아0008 타이어는 임박
     expect(parse<ItemStatusResponse>(mockGetItemStatus(8)).items[4]).toMatchObject({ status: 'SOON' })
@@ -235,7 +235,7 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     const records = Object.keys(FIXTURES[1]).flatMap((id) => parse<VisitListResponse>(mockGetVisits(Number(id))).items.flatMap((v) => v.records))
     expect(records.every((r) => (r.type === 'EXTERNAL') === (r.source === 'CUSTOMER_STATEMENT'))).toBe(true)
     expect(records.every((r) => r.inspectResult === null || r.type === 'INSPECT')).toBe(true)
-    expect(records.find((r) => r.recordId === 11)).toMatchObject({ type: 'INSPECT', inspectResult: 'CAUTION', memo: '앞 타이어 마모' })
+    expect(records.find((r) => r.recordId === 11)).toMatchObject({ type: 'INSPECT', inspectResult: 'CAUTION', memo: '타이어 트레드 마모 진행, 다음 방문 때 교체 권장' })
   })
 
   it('11 기록이 없는 차량은 items [] (90마0005)', () => {

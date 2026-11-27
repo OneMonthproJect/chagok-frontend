@@ -226,3 +226,18 @@
 | 프로토타입 실행본 | 09-C 소스 빌드 | 09-E 소스 빌드(`index.html`만 바뀜, 이미지 8개 동일) | — | E2·E3 |
 
 캔버스(Claude Design)는 아직 반영 전이다. 전달용 명령어는 작업공간의 `Claude_Design_E2-E3_추가수정명령어.txt`.
+
+## 구현 후 개선 — 그림자 제거 (2026-11-27, chagok-frontend#82)
+
+상용 B2B CRM처럼 평평한 화면으로 맞춘다. 브랜드 색·마스코트·레이아웃·기능은 그대로다. 프로토타입(`improved-v3.0/`)과 캡처는 바꾸지 않았고, 기준은 앱의 `src/shared/ui/theme.css`다.
+
+| 변경 | 전 | 후 |
+|---|---|---|
+| `--ck-shadow-card` | 0 8px 24px rgba(17,24,39,.045) | none. 그림자만으로 구분되던 카드(S-05·S-06·S-07·S-08)에 1px `--ck-border-soft` 테두리 |
+| `--ck-shadow-brand` | 0 10px 25px rgba(31,43,255,.22) | none (기본 버튼, 사이드바 활성 항목) |
+| `--ck-shadow-pop` | 0 18px 48px rgba(17,24,39,.16) | 0 4px 16px rgba(17,24,39,.08). 모달에만 |
+| 모달 | 직접 쓴 0 26px 70px, 흰 반투명 테두리 | `--ck-shadow-pop` + `--ck-border` 테두리 |
+| 홈 요약 카드, 로그인 카드·버튼·로고, 로그인 그림 | 직접 쓴 그림자·drop-shadow, 로그인 버튼 hover 1px 떠오름 | 없음 |
+| S-08 고정 하단 바 | `--ck-shadow-pop` | `--ck-border` 테두리 |
+| S-08 항목 구분 고른 칸 | `--ck-shadow-card` | 안쪽 1px 테두리 |
+| 유지 | 포커스 링(0 0 0 3px), 로고 눈의 1.5px 광택(로고 그림의 일부) | — |

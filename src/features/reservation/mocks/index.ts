@@ -4,6 +4,8 @@
 // 16·19의 담당(P0-나머지, #37): 16 assigneeId 필수(R19)·X13·담당 중복(R15), 19 재배정(R24)·담당 중복(R18), 응답 assignee.
 // 패널(17)의 최근 방문·총 방문 수는 07 7.2 기록(seed.json visits, #26)으로 만든다(11 모양, 최신순 2회, 외부만 있는 방문은 세지 않음 POL-45).
 // LIMIT: 점검 주기(itemStatuses)는 단순화 — 항목 상태 모두 미확인. 상태 판정은 서버(cycle)의 일이라 Mock에서 계산하지 않는다. 실제 값은 백엔드 연결로 확인한다.
+//   예외: 꼬리표(lastDecline·lastCaution, #29)는 시드 기록에서 계산한다(notesOf, Mock 전용 — F-CYC-02 판정은 서버 cycle의 일이고 화면은
+//   받은 값만 보인다). 고정값으로 두면 예약마다 차량이 바뀌어 seed.json에 차량별 표를 따로 둬야 하기 때문이다. 최근 방문의 source·inspectResult는 시드 그대로.
 // 39 방문 접수가 채운 차량 연식·주행거리, 40 정정·41 이력도 메모리에만 둔다(#33).
 // LIMIT: Mock은 로그인 계정을 모른다. 40은 사장으로 보고(상태·메모 모두 허용) 이력의 바꾼 사람도 사장(owner_a)으로 둔다.
 //   정비사 권한·3일 기간(403 FORBIDDEN·EDIT_PERIOD_EXPIRED)은 백엔드 연결로 확인한다.
@@ -25,6 +27,7 @@ import type {
   ReservationStartRequest,
   ReservationStatusChangeRequest,
   ReservationUpdateRequest,
+  PanelItemStatus,
   RecentVisit,
   VisitRecord,
 } from '../types'
@@ -259,6 +262,9 @@ function visitsOf(vehicleId: number): RecentVisit[] {
         type: r.type as VisitRecord['type'],
         date: visitDate,
         memo: r.memo,
+        // P0-나머지 (#29): 외부만 고객 진술(07 3.7 CHECK), 점검 결과는 07 7.2 시드의 33아0008 마지막 점검만 CAUTION
+        source: r.type === 'EXTERNAL' ? ('CUSTOMER_STATEMENT' as const) : ('SHOP' as const),
+        inspectResult: 'inspectResult' in r ? (r.inspectResult as VisitRecord['inspectResult']) : null,
         // P0-나머지 (#34): 수정 확인용 번호·수정 여부·담당(그 방문의 담당). 11 Mock(maintenance visits.json)과 같은 기록은 같은 값 —
         // 기록 16만 1회 수정한 모양(version 1·edited), 나머지는 수정 전
         ...(EDITED_RECORDS[r.recordId] ?? { version: 0, edited: false }),
@@ -274,6 +280,19 @@ const EDITED_RECORDS: Record<number, { version: number; edited: boolean }> = { 1
 function staffRefOf(name: string): { staffId: number; name: string } {
   const staff = seed.staff.find((s) => s.name === name)
   return { staffId: staff?.staffId ?? 0, name }
+}
+
+/**
+ * 17 itemStatuses의 꼬리표 (P0-나머지 #29, 08 10 lastDecline·lastCaution). Mock 전용 — 시드 기록 중 그 항목의 가장 최근 기록이
+ * 거절이면 lastDecline, 결과 CAUTION인 점검이면 lastCaution. 실제 판정은 서버(cycle CycleNotes)의 일이고 화면은 받은 값만 보인다.
+ */
+function notesOf(visits: RecentVisit[], itemId: number): Pick<PanelItemStatus, 'lastDecline' | 'lastCaution'> {
+  const latest = visits.flatMap((v) => v.records).find((r) => r.itemId === itemId) // visits는 최신순
+  const note = latest ? { date: latest.date, memo: latest.memo } : null
+  return {
+    lastDecline: latest?.type === 'DECLINE' ? note : null,
+    lastCaution: latest?.type === 'INSPECT' && latest.inspectResult === 'CAUTION' ? note : null,
+  }
 }
 
 /** 08 17 (최근 방문은 07 7.2 기록, 점검 주기는 단순화 — 위 주석) */
@@ -307,6 +326,7 @@ export function mockGetPanel(reservationId: number): MockResponse {
       baseRecord: null,
       nextDueDate: null,
       nextDueMileage: null,
+      ...notesOf(visits, item.itemId),
       highlighted: r.itemIds.includes(item.itemId),
     })),
   }

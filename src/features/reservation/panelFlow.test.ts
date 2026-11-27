@@ -92,7 +92,7 @@ describe('panelFlow', () => {
   })
 
   it('점검 주기 줄: 받은 순서 그대로, 목적 항목은 자리를 옮기지 않고 강조·꼬리표만 (D-63 B02)', () => {
-    const base = { dueReason: null, baseRecord: null, nextDueDate: null, nextDueMileage: null } as const
+    const base = { dueReason: null, baseRecord: null, nextDueDate: null, nextDueMileage: null, lastDecline: null, lastCaution: null } as const
     const items: PanelItemStatus[] = [
       { ...base, itemId: 1, code: 'ENGINE_OIL', name: '엔진오일', status: 'AHEAD', highlighted: false },
       { ...base, itemId: 6, code: 'BATTERY', name: '배터리', status: 'SOON', highlighted: true },
@@ -100,6 +100,18 @@ describe('panelFlow', () => {
     expect(itemStatusRows(items)).toEqual([
       { id: 1, name: '엔진오일', status: 'AHEAD', highlighted: false, tag: undefined },
       { id: 6, name: '배터리', status: 'SOON', highlighted: true, tag: '예약 목적' },
+    ])
+  })
+
+  it('꼬리표 (#29, F-CYC-02): 서버 값 그대로 붙이고 상태는 바꾸지 않는다, 예약 목적과 함께면 " · "로 잇는다', () => {
+    const base = { dueReason: null, baseRecord: null, nextDueDate: null, nextDueMileage: null, lastDecline: null, lastCaution: null } as const
+    const items: PanelItemStatus[] = [
+      { ...base, itemId: 1, code: 'ENGINE_OIL', name: '엔진오일', status: 'DUE', highlighted: false, lastDecline: { date: '2026-10-24', memo: null } },
+      { ...base, itemId: 5, code: 'TIRE', name: '타이어 상태 점검', status: 'AHEAD', highlighted: true, lastCaution: { date: '2026-09-24', memo: '앞 타이어 마모' } },
+    ]
+    expect(itemStatusRows(items)).toEqual([
+      { id: 1, name: '엔진오일', status: 'DUE', highlighted: false, tag: '지난 방문 거절(2026.10.24)' },
+      { id: 5, name: '타이어 상태 점검', status: 'AHEAD', highlighted: true, tag: '예약 목적 · 지난 점검 주의(2026.09.24, 앞 타이어 마모)' },
     ])
   })
 })
