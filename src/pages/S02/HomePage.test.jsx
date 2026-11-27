@@ -1022,3 +1022,114 @@ describe('S-02 주 캘린더 (F-RSV-05, #36) — 기본 보기', () => {
     expect(summaryCalls()).toHaveLength(0)
   })
 })
+
+// "내 담당만" 토글 (04 F-RSV-05, 09 S-02 「보기 옵션」, chagok-docs#146 (c)안, chagok-frontend#36):
+// 주 보기에서만 보이고 기본 전체. 켜면 ?mine=1 + 주 15에 03 staffId(테스트 계정 김정비 = 2)를 assigneeId로. 월 보기는 토글 없음·42·15 전체.
+describe('S-02 "내 담당만" 토글 (F-RSV-05, #36) — 주 보기만', () => {
+  const WEEK_ALL = '/api/reservations?from=2030-03-11&to=2030-03-17'
+  const WEEK_MINE = `${WEEK_ALL}&assigneeId=2`
+  const mineSwitch = () => document.querySelector('[role="switch"]')
+  const listUrls = () => listCalls().map(([url]) => url)
+  let meResponse
+
+  beforeEach(() => {
+    meResponse = () => Promise.resolve(ok({ staffId: 2, name: '김정비', role: 'MECHANIC', shopId: 1, shopName: '차곡카센터' }))
+    const base = fetchMock.getMockImplementation()
+    fetchMock.mockImplementation((url, init) => (url === '/api/me' ? meResponse() : base(url, init)))
+  })
+
+  it('기본은 꺼짐(전체): 스위치 이름 "내 담당만", 15에 assigneeId 없음', async () => {
+    renderHome('/?date=2030-03-13')
+    await settle()
+    expect(mineSwitch().getAttribute('aria-checked')).toBe('false')
+    expect(mineSwitch().disabled).toBe(false)
+    expect(mineSwitch().closest('label').textContent.trim()).toBe('내 담당만')
+    expect(listUrls()).toEqual([WEEK_ALL])
+  })
+
+  it('켜면 ?mine=1 + 15 assigneeId=03 staffId, 끄면 쿼리를 지우고 전체를 다시 부른다', async () => {
+    renderHome('/?date=2030-03-13')
+    await settle()
+    click(mineSwitch())
+    await settle()
+    expect(location.search).toBe('?date=2030-03-13&mine=1')
+    expect(mineSwitch().getAttribute('aria-checked')).toBe('true')
+    expect(listUrls()).toEqual([WEEK_ALL, WEEK_MINE])
+
+    click(mineSwitch())
+    await settle()
+    expect(location.search).toBe('?date=2030-03-13')
+    expect(mineSwitch().getAttribute('aria-checked')).toBe('false')
+    expect(listUrls()).toEqual([WEEK_ALL, WEEK_MINE, WEEK_ALL])
+  })
+
+  it('?mine=1로 들어오면 03을 받은 뒤 처음부터 내 담당만 부른다(전체를 먼저 부르지 않음), 받기 전엔 스위치 잠금', async () => {
+    let resolveMe
+    meResponse = () => new Promise((resolve) => { resolveMe = resolve })
+    renderHome('/?date=2030-03-13&mine=1')
+    await settle()
+    expect(mineSwitch().disabled).toBe(true)
+    expect(listUrls()).toEqual([])
+
+    resolveMe(ok({ staffId: 2, name: '김정비', role: 'MECHANIC', shopId: 1, shopName: '차곡카센터' }))
+    await settle()
+    await settle()
+    expect(mineSwitch().disabled).toBe(false)
+    expect(mineSwitch().getAttribute('aria-checked')).toBe('true')
+    expect(listUrls()).toEqual([WEEK_MINE])
+  })
+
+  it('03이 실패하면 스위치를 끈 채 잠그고 전체를 보인다(자동 재요청 없음)', async () => {
+    meResponse = () => Promise.resolve(fail(500, 'INTERNAL_ERROR', '서버 오류'))
+    renderHome('/?date=2030-03-13&mine=1')
+    await settle()
+    await settle()
+    expect(mineSwitch().disabled).toBe(true)
+    expect(mineSwitch().getAttribute('aria-checked')).toBe('false')
+    expect(mineSwitch().title).toBe('내 계정 정보를 불러오지 못해 쓸 수 없습니다.')
+    expect(listUrls()).toEqual([WEEK_ALL])
+    expect(calls((url) => url === '/api/me')).toHaveLength(1)
+  })
+
+  it('주를 옮겨도 켠 상태가 남고 그 주 15에 assigneeId를 붙인다', async () => {
+    renderHome('/?date=2030-03-13&mine=1')
+    await settle()
+    click(document.querySelector('[aria-label="다음 주"]'))
+    await settle()
+    expect(location.search).toBe('?date=2030-03-18&mine=1')
+    expect(listUrls()).toEqual([WEEK_MINE, '/api/reservations?from=2030-03-18&to=2030-03-24&assigneeId=2'])
+  })
+
+  it('월 보기에는 토글이 없고 42·15 모두 전체, [주]로 돌아오면 켠 상태 그대로', async () => {
+    renderHome('/?date=2030-03-13&view=month&mine=1')
+    await settle()
+    expect(mineSwitch()).toBeNull()
+    expect(summaryCalls().every(([url]) => !url.includes('assigneeId'))).toBe(true)
+    expect(listUrls()).toEqual(['/api/reservations?from=2030-03-13&to=2030-03-13'])
+
+    click(button('주', document.querySelector('.home-view-switch')))
+    await settle()
+    expect(location.search).toBe('?date=2030-03-13&mine=1')
+    expect(mineSwitch().getAttribute('aria-checked')).toBe('true')
+    expect(listUrls().at(-1)).toBe(WEEK_MINE)
+  })
+
+  it('카드 → 패널, 예약이 바뀐 뒤 다시 부를 때도 내 담당만', async () => {
+    handlers.list = () => ok({ from: '2030-03-11', to: '2030-03-17', items: [{ ...LIST_ITEM, reservedAt: '2030-03-13T15:00:00' }] })
+    renderHome('/?date=2030-03-13&mine=1')
+    await settle()
+    click(document.querySelector('.wcal-card'))
+    await settle()
+    expect(location.search).toBe('?date=2030-03-13&mine=1&reservation=4')
+    expect(mineSwitch().getAttribute('aria-checked')).toBe('true')
+
+    handlers.complete = () => fail(409, 'CONCURRENT_MODIFICATION', '다른 직원이 먼저 수정했습니다.')
+    const listBefore = listCalls().length
+    click(button('방문 완료', panel()))
+    await settle()
+    await settle()
+    expect(completeCalls()).toHaveLength(1)
+    expect(listCalls().length).toBe(listBefore + 1)
+    expect(listUrls().every((url) => url === WEEK_MINE)).toBe(true)
+  })
+})
