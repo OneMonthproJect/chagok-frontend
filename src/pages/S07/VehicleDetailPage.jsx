@@ -62,7 +62,7 @@ export default function VehicleDetailPage() {
   const navigate = useNavigate()
   const [reserving, setReserving] = useState(false)
   const [editing, setEditing] = useState(false)
-  const { me } = useMe()
+  const { me, error: meError } = useMe()
   const today = todaySeoul()
   const [recordEdit, setRecordEdit] = useState(null) // { record, visit } — M-03을 연 기록(11에서 읽은 값)
   const [revisionRecord, setRevisionRecord] = useState(null) // 수정 이력 패널을 연 기록
@@ -70,7 +70,7 @@ export default function VehicleDetailPage() {
   const latestEdit = recordEdit && history.status === 'ready' ? findRecord(history.visits, recordEdit.record.recordId) : null
   const editTarget = latestEdit ?? recordEdit
   const recordActions = {
-    permissionOf: (record) => editPermission(record, me, today),
+    permissionOf: (record) => editPermission(record, me, today, meError != null),
     onEdit: (record, visit) => setRecordEdit({ record, visit }),
     onShowRevisions: (record) => setRevisionRecord(record),
   }
@@ -130,6 +130,7 @@ export default function VehicleDetailPage() {
         <RecordEditDialog
           target={editTarget}
           missing={recordEdit != null && history.status === 'ready' && latestEdit == null}
+          reloadFailed={history.status === 'error'}
           vehicleLabel={loaded.plateNumber}
           today={today}
           refreshing={history.status === 'loading'}
@@ -185,7 +186,7 @@ function ReserveModal({ vehicle, me, onClose, onOpenExisting }) {
  * M-03 (기록 수정). 항목(08 13)·담당 후보(08 36)는 열 때만 부른다. 후보를 받기 전·실패면 지금 담당만 고를 수 있다
  * (나머지 칸은 고칠 수 있음 — 담당 칸은 RecordEditModal이 지금 담당을 한 줄 더해 비지 않는다).
  */
-function RecordEditDialog({ target, missing, vehicleLabel, today, refreshing, onSaved, onConflict, onClose }) {
+function RecordEditDialog({ target, missing, reloadFailed, vehicleLabel, today, refreshing, onSaved, onConflict, onClose }) {
   const items = useServiceItems()
   const assignees = useAssignees()
   const mechanicOptions = (assignees.data ?? []).map((c) => ({ staffId: c.staffId, label: `${c.name} (${ROLE_LABEL[c.role] ?? c.role})` }))
@@ -195,6 +196,7 @@ function RecordEditDialog({ target, missing, vehicleLabel, today, refreshing, on
       record={target.record}
       visit={target.visit}
       missing={missing}
+      reloadFailed={reloadFailed}
       vehicleLabel={vehicleLabel}
       items={items}
       mechanicOptions={mechanicOptions}

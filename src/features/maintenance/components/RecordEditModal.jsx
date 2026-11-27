@@ -26,7 +26,9 @@ import './recordEdit.css'
 //   최신 값으로 바뀐다(shared/lib/useEditForm). 자동으로 다시 보내지 않는다(POL-124·125).
 // - 403 FORBIDDEN·EDIT_PERIOD_EXPIRED·404·500은 서버 문구를 그대로 위에 보이고 입력은 유지한다.
 // - 저장 성공은 onSaved — 화면이 11·10을 다시 불러온다(수정 즉시 상태·다음 정비일에 반영, H2).
-// missing: 409 뒤 다시 받은 11 첫 쪽에 이 기록이 없음(더 보기 뒤쪽이었거나 그사이 바뀜) — 안내만 바꾼다.
+// missing: 409 뒤 다시 받은 11 첫 쪽에 이 기록이 없음(더 보기 뒤쪽이었거나 그사이 바뀜). reloadFailed: 11 다시 부르기 실패.
+//   둘 다 최신 version을 모르는 상태라 409 뒤에는 저장을 막고 닫았다 다시 열게 안내한다(같은 409 반복 방지, POL-124).
+// - 403은 다시 보내도 같은 결과라 "다시 시도"를 두지 않는다(POL-127).
 // props: record(11 records[]) · visit(그 방문) · vehicleLabel(차량번호 표시) · items(08 13 [{ itemId, name }]) ·
 //        mechanicOptions([{ staffId, label }], 08 36) · today(서울 YYYY-MM-DD) · refreshing(11 다시 부르는 중) · onSaved · onConflict · onClose
 
@@ -34,6 +36,7 @@ export default function RecordEditModal({
   record,
   visit,
   missing = false,
+  reloadFailed = false,
   vehicleLabel,
   items,
   mechanicOptions,
@@ -60,6 +63,8 @@ export default function RecordEditModal({
     refreshing,
   })
   const error = (field) => (shown[field] ? errors[field] : undefined)
+  const stale = Boolean(notice?.conflict) && !refreshing && (missing || reloadFailed) // 409 뒤 최신 version을 받지 못함
+  const conflictBody = reloadFailed ? T.CONFLICT_RELOAD_FAILED : missing ? T.CONFLICT_GONE : T.CONFLICT_BODY
   const options = withCurrentStaff(mechanicOptions, record.staff)
   // 항목 목록에 지금 항목이 없으면(쓰지 않는 항목 등) 그 이름으로 한 줄 더한다
   const itemOptions = items.some((i) => i.itemId === record.itemId) ? items : [{ itemId: record.itemId, name: record.itemName }, ...items]
@@ -75,7 +80,7 @@ export default function RecordEditModal({
           <Button variant="secondary" onClick={onClose}>
             {T.CANCEL}
           </Button>
-          <Button type="submit" form={formId} loading={submitting} disabled={refreshing}>
+          <Button type="submit" form={formId} loading={submitting} disabled={refreshing || stale}>
             {T.SAVE}
           </Button>
         </>
@@ -92,8 +97,8 @@ export default function RecordEditModal({
           save()
         }}
       >
-        {notice?.conflict && <ErrorNotice tone="warn" title={T.CONFLICT_TITLE} body={missing ? T.CONFLICT_GONE : T.CONFLICT_BODY} />}
-        {notice?.error && <ErrorNotice error={notice.error} onRetry={save} />}
+        {notice?.conflict && <ErrorNotice tone="warn" title={T.CONFLICT_TITLE} body={conflictBody} />}
+        {notice?.error && <ErrorNotice error={notice.error} onRetry={notice.error.status === 403 ? undefined : save} />}
         {notice?.title && <ErrorNotice title={notice.title} />}
         <p className="record-edit__vehicle">
           <span className="record-edit__label">{T.VEHICLE}</span> <strong>{vehicleLabel}</strong>

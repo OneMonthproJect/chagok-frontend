@@ -33,6 +33,11 @@ const MECHANIC = { staffId: 2, role: 'MECHANIC' }
 const OTHER_MECHANIC = { staffId: 3, role: 'MECHANIC' }
 
 describe('editPermission (09 S-07 수정 버튼, 08 37 권한)', () => {
+  it('03을 아직 못 받았으면 확인 중, 실패했으면 불러오지 못함 — 둘 다 비활성', () => {
+    expect(editPermission(RECORD(), null, '2026-11-27')).toEqual({ enabled: false, reason: EDIT_DISABLED_REASON.LOADING })
+    expect(editPermission(RECORD(), null, '2026-11-27', true)).toEqual({ enabled: false, reason: EDIT_DISABLED_REASON.ME_FAILED })
+  })
+
   it('사장은 남의 담당·기간과 관계없이 활성 (H11)', () => {
     expect(editPermission(RECORD({ date: '2020-01-01' }), OWNER, '2026-11-27')).toEqual({ enabled: true, reason: null })
   })

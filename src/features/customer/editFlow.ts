@@ -99,9 +99,7 @@ export function toVehicleUpdate(form: VehicleEditForm, current: VehicleDetail): 
   return Object.keys(changes).length > 0 ? { version: current.version, ...changes } : null
 }
 
-// ---- 저장 한 번 (22·23 공통) — shared/lib/submitEdit (정비 기록 수정 37과 함께 씀, #34) ----
-
-export { submitEdit, type EditOutcome } from '@/shared/lib/submitEdit'
+// ---- 저장 한 번(22·23)은 shared/lib/submitEdit — 정비 기록 수정 37과 함께 씀(#34). 아래는 그 함수에 넘길 칸 이름 ----
 
 export const CUSTOMER_EDIT_FIELDS = ['name', 'phone', 'consent'] as const
 export const VEHICLE_EDIT_FIELDS = ['plateNumber', 'model', 'modelYear', 'latestMileage'] as const

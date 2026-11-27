@@ -7,12 +7,12 @@ import {
   CONFLICT_BODY,
   CONFLICT_TITLE,
   VEHICLE_EDIT_FIELDS,
-  submitEdit,
   toVehicleUpdate,
   validateVehicleEdit,
   vehicleEditForm,
 } from '../editFlow'
 import { MIN_MODEL_YEAR } from '../registerFlow'
+import { submitEdit } from '@/shared/lib/submitEdit'
 import { useEditForm } from '@/shared/lib/useEditForm'
 import './customer.css'
 import './addVehicleInline.css'

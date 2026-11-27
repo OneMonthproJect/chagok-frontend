@@ -8,11 +8,11 @@ import {
   CONFLICT_TITLE,
   CUSTOMER_EDIT_FIELDS,
   customerEditForm,
-  submitEdit,
   toCustomerUpdate,
   validateCustomerEdit,
 } from '../editFlow'
 import { CONSENT_HINT, CONSENT_LABEL } from '../registerFlow'
+import { submitEdit } from '@/shared/lib/submitEdit'
 import { useEditForm } from '@/shared/lib/useEditForm'
 import './customer.css'
 import './addVehicleInline.css'

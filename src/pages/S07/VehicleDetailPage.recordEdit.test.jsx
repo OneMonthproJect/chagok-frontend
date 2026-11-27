@@ -60,13 +60,13 @@ beforeEach(() => {
   revisions = () => ok({ items: [] })
   let visitIndex = 0
   fetchMock = vi.fn((path, init) => {
-    if (path === '/api/me') return ok(me)
+    if (path === '/api/me') return me ? ok(me) : fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.')
     if (path === '/api/vehicles/10') return ok(VEHICLE)
     if (path === '/api/vehicles/10/item-status') return ok({ vehicleId: 10, asOf: TODAY, inputMileage: null, items: [] })
     if (path === '/api/vehicles/10/visits') {
       const data = visitResponses[Math.min(visitIndex, visitResponses.length - 1)]
       visitIndex += 1
-      return ok(data)
+      return data === 'fail' ? fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.') : ok(data)
     }
     if (path === '/api/items') {
       return ok([
@@ -170,6 +170,14 @@ describe('S-07 정비 기록 수정 버튼 (09 S-07)', () => {
     expect(editButton().getAttribute('aria-disabled')).toBe('true')
   })
 
+  it('03 조회 실패: 확인 중이 아니라 불러오지 못했다는 이유로 비활성 (리뷰 m2)', async () => {
+    me = null
+    renderPage()
+    await settle()
+    expect(editButton().getAttribute('aria-disabled')).toBe('true')
+    expect(editButton().title).toBe('계정 정보를 불러오지 못했습니다. 화면을 새로 고쳐 주세요.')
+  })
+
   it('정비사: 본인 담당·오늘 기록이면 활성', async () => {
     me = MECHANIC
     renderPage()
@@ -249,6 +257,29 @@ describe('M-03 정비 기록 수정 (08 37)', () => {
     expect(patchBodies()[1]).toEqual({ version: 1, mileage: 52000 })
   })
 
+  it('409 뒤 11 다시 부르기가 실패하면 옛 version으로 저장하지 않게 저장을 막고 닫았다 다시 열게 안내 (리뷰 m1, POL-124)', async () => {
+    visitResponses = [visitsPage([RECORD()]), 'fail']
+    patch = () => fail(409, 'CONCURRENT_MODIFICATION', '다른 직원이 먼저 수정했습니다. 최신 내용을 다시 불러와 주세요.')
+    await openEdit()
+    setValue(field('메모'), '메모 보완')
+    await save()
+    expect(dialog().textContent).toContain('최신 내용을 불러오지 못했습니다.')
+    expect(dialog().textContent).not.toContain('최신 내용을 다시 불러왔습니다.')
+    expect(button('저장', dialog()).disabled).toBe(true)
+    expect(field('메모').value).toBe('메모 보완')
+    expect(patchBodies()).toHaveLength(1)
+  })
+
+  it('409 뒤 다시 받은 11에 그 기록이 없으면 저장을 막는다 (리뷰 m1)', async () => {
+    visitResponses = [visitsPage([RECORD()]), visitsPage([RECORD({ recordId: 99 })])]
+    patch = () => fail(409, 'CONCURRENT_MODIFICATION', '다른 직원이 먼저 수정했습니다. 최신 내용을 다시 불러와 주세요.')
+    await openEdit()
+    setValue(field('메모'), '메모 보완')
+    await save()
+    expect(dialog().textContent).toContain('최신 이력에서 이 기록을 찾지 못했습니다.')
+    expect(button('저장', dialog()).disabled).toBe(true)
+  })
+
   it('403 EDIT_PERIOD_EXPIRED(외부 기록 저장일 기준 등): 서버 문구를 보이고 입력 유지, 다시 보내지 않음', async () => {
     patch = () => fail(403, 'EDIT_PERIOD_EXPIRED', '수정할 수 있는 기간이 지났습니다.')
     await openEdit()
@@ -256,6 +287,7 @@ describe('M-03 정비 기록 수정 (08 37)', () => {
     await save()
     expect(dialog().textContent).toContain('수정할 수 있는 기간이 지났습니다.')
     expect(field('메모').value).toBe('메모 보완')
+    expect(button('다시 시도', dialog())).toBeUndefined() // 403은 다시 보내도 같다 (리뷰 m3, POL-127)
     expect(patchBodies()).toHaveLength(1)
   })
 

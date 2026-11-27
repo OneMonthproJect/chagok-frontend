@@ -41,7 +41,8 @@ export const RECORD_EDIT_TEXT = {
   UNCHANGED: '바뀐 내용이 없습니다.',
   CONFLICT_TITLE: '다른 직원이 먼저 수정했습니다.',
   CONFLICT_BODY: '최신 내용을 다시 불러왔습니다. 정비 이력을 확인한 뒤 다시 저장해 주세요. 입력한 내용은 그대로 있습니다.',
-  CONFLICT_GONE: '최신 이력에서 이 기록을 찾지 못했습니다. 정비 이력을 다시 확인해 주세요.',
+  CONFLICT_GONE: '최신 이력에서 이 기록을 찾지 못했습니다. 창을 닫고 정비 이력에서 다시 열어 주세요.',
+  CONFLICT_RELOAD_FAILED: '최신 내용을 불러오지 못했습니다. 창을 닫고 정비 이력을 새로 고친 뒤 다시 열어 주세요.',
   REVISIONS_TITLE: '수정 이력',
   REVISIONS_EMPTY: '수정 이력이 없습니다.',
   REVISIONS_LOADING: '이력을 불러오는 중…',
@@ -52,6 +53,7 @@ export const RECORD_EDIT_TEXT = {
 /** "수정" 버튼을 쓸 수 없는 이유 (09 S-07 "비활성 + 이유 툴팁") */
 export const EDIT_DISABLED_REASON = {
   LOADING: '계정을 확인하는 중입니다.',
+  ME_FAILED: '계정 정보를 불러오지 못했습니다. 화면을 새로 고쳐 주세요.',
   NOT_ASSIGNEE: '본인이 담당한 기록만 수정할 수 있습니다.',
   PERIOD_EXPIRED: '방문일로부터 3일이 지나 수정할 수 없습니다. 사장에게 요청해 주세요.',
 } as const
@@ -84,8 +86,9 @@ export function editPermission(
   record: Pick<VisitRecord, 'type' | 'date' | 'staff'>,
   me: { staffId: number; role: string } | null,
   today: string,
+  meFailed = false,
 ): EditPermission {
-  if (!me) return { enabled: false, reason: EDIT_DISABLED_REASON.LOADING }
+  if (!me) return { enabled: false, reason: meFailed ? EDIT_DISABLED_REASON.ME_FAILED : EDIT_DISABLED_REASON.LOADING }
   if (me.role === 'OWNER') return { enabled: true, reason: null }
   if (record.staff.staffId !== me.staffId) return { enabled: false, reason: EDIT_DISABLED_REASON.NOT_ASSIGNEE }
   if (record.type !== 'EXTERNAL' && today > plusDays(record.date, MECHANIC_EDIT_DAYS)) {
