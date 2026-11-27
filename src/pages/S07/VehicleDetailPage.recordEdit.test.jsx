@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, click, render } from '@/shared/lib/domTest'
+import { cleanup, click, keyDown, render } from '@/shared/lib/domTest'
 import { todaySeoul } from '@/shared/lib/date'
 import VehicleDetailPage from './VehicleDetailPage.jsx'
 
@@ -288,6 +288,32 @@ describe('M-03 정비 기록 수정 (08 37)', () => {
     expect(dialog().textContent).toContain('수정할 수 있는 기간이 지났습니다.')
     expect(field('메모').value).toBe('메모 보완')
     expect(button('다시 시도', dialog())).toBeUndefined() // 403은 다시 보내도 같다 (리뷰 m3, POL-127)
+    expect(patchBodies()).toHaveLength(1)
+  })
+
+  it('저장 중에는 [취소]·×·Esc·바깥 누름으로 닫히지 않는다 — 늦게 온 저장 성공이 다른 모달을 닫지 않게 (PR #89 리뷰)', async () => {
+    let resolvePatch
+    patch = () =>
+      new Promise((resolve) => {
+        resolvePatch = () => resolve(ok({ recordId: 16, vehicleId: 10, version: 1 }))
+      })
+    await openEdit()
+    setValue(field('메모'), '메모 보완')
+    click(button('저장', dialog()))
+    await settle()
+    expect(button('취소', dialog()).disabled).toBe(true)
+    click(button('취소', dialog()))
+    click(dialog().querySelector('.modal__close'))
+    keyDown('Escape')
+    click(document.querySelector('.modal-backdrop'))
+    await settle()
+    expect(dialog()).not.toBeNull()
+    expect(field('메모').value).toBe('메모 보완')
+
+    resolvePatch()
+    await settle()
+    await settle()
+    expect(dialog()).toBeNull() // 저장 성공은 그대로 닫는다
     expect(patchBodies()).toHaveLength(1)
   })
 

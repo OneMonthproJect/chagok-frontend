@@ -63,6 +63,10 @@ export default function RecordEditModal({
     refreshing,
   })
   const error = (field) => (shown[field] ? errors[field] : undefined)
+  // 저장 중에는 닫지 않는다([취소]·×·Esc·바깥 누름 모두). 닫고 다른 기록을 연 뒤 늦게 온 onSaved가 그 모달을 닫아 입력이 사라지지 않게(PR #89 리뷰).
+  const close = () => {
+    if (!submitting) onClose()
+  }
   const stale = Boolean(notice?.conflict) && !refreshing && (missing || reloadFailed) // 409 뒤 최신 version을 받지 못함
   const conflictBody = reloadFailed ? T.CONFLICT_RELOAD_FAILED : missing ? T.CONFLICT_GONE : T.CONFLICT_BODY
   const options = withCurrentStaff(mechanicOptions, record.staff)
@@ -74,10 +78,10 @@ export default function RecordEditModal({
       open
       title={T.TITLE}
       subtitle={T.NO_DELETE_HINT}
-      onClose={onClose}
+      onClose={close}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={close} disabled={submitting}>
             {T.CANCEL}
           </Button>
           <Button type="submit" form={formId} loading={submitting} disabled={refreshing || stale}>
