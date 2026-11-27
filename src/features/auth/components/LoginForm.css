@@ -8,7 +8,6 @@
   background: var(--ck-surface, #fff);
   border: 1px solid #ecedf1e6;
   border-radius: 24px;
-  box-shadow: 0 14px 40px #11182712;
   font-family: var(--ck-font, Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif);
   color: var(--ck-text-1, #111318);
 }
@@ -36,7 +35,6 @@
   display: inline-flex;
   flex: none;
   border-radius: 28%;
-  filter: drop-shadow(0 8px 16px #1f2bff33);
 }
 .chagok-logo svg { display: block; }
 .chagok-logo__eyes { filter: drop-shadow(0 0 1.5px #ffffff80); }
@@ -160,11 +158,10 @@
   font-size: var(--ck-fs-body-lg, 16px);
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 18px #1f2bff33;
-  transition: background 0.14s, transform 0.14s;
+  transition: background 0.14s;
 }
-.login-submit:hover { background: #1721df; transform: translateY(-1px); }
-.login-submit:disabled { cursor: progress; background: #4a54ff; transform: none; }
+.login-submit:hover { background: #1721df; }
+.login-submit:disabled { cursor: progress; background: #4a54ff; }
 .login-submit:focus-visible { outline: 3px solid #1f2bff52; outline-offset: 2px; }
 .login-submit__spinner {
   width: 16px;

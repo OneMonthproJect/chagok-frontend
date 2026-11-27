@@ -59,8 +59,8 @@
   min-width: 0;
   overflow: hidden;
   border-radius: var(--ck-radius-xl);
+  border: 1px solid var(--ck-border-soft);
   background: var(--ck-surface);
-  box-shadow: var(--ck-shadow-card);
 }
 .s07__card--padded {
   padding: var(--ck-space-6);
@@ -101,8 +101,8 @@
 }
 .s07__skeleton-block {
   border-radius: var(--ck-radius-xl);
+  border: 1px solid var(--ck-border-soft);
   background: var(--ck-surface);
-  box-shadow: var(--ck-shadow-card);
 }
 .s07__skeleton-block--header {
   height: 150px;

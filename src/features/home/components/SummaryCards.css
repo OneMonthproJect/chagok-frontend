@@ -18,7 +18,6 @@
   border-radius: 14px;
   background: var(--ck-surface);
   color: var(--ck-text-1);
-  box-shadow: 0 8px 24px #11182709;
 }
 .summary-card p {
   margin: 0;
@@ -57,7 +56,6 @@
   border-color: transparent;
   background: var(--ck-brand);
   color: #fff;
-  box-shadow: 0 10px 25px #1f2bff38;
 }
 .summary-card--brand p,
 .summary-card--brand strong span { color: #ffffffe6; }
