@@ -175,13 +175,14 @@ const savedOf = (r: MockReservation) => ({
   reservationId: r.reservationId, status: r.status, reservedAt: r.reservedAt, vehicleId: r.vehicleId, version: r.version, assignee: assigneeOf(r.assigneeStaffId),
 })
 
-/** 08 15 */
+/** 08 15. assigneeId(P0-나머지)가 있으면 그 담당만 — 없는 id·다른 정비소 직원 id도 오류가 아니라 200 + 빈 items */
 export function mockGetReservations(query: ReservationPeriodQuery): MockResponse {
-  const { from, to } = query
+  const { from, to, assigneeId } = query
   const invalidField = periodErrorField(from, to)
   if (invalidField) return fail(400, 'INVALID_INPUT', '조회 기간을 확인해 주세요.', invalidField)
   const items = reservations()
     .filter((r) => r.reservedAt.slice(0, 10) >= from && r.reservedAt.slice(0, 10) <= to)
+    .filter((r) => assigneeId === undefined || r.assigneeStaffId === assigneeId)
     .sort((a, b) => a.reservedAt.localeCompare(b.reservedAt) || a.reservationId - b.reservationId)
     .map(toListItem)
   return ok({ from, to, items })

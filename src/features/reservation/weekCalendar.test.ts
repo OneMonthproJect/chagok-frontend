@@ -118,3 +118,29 @@ describe('Mock 15 — 주 기간(7일) 조회', () => {
     expect(data.items.every((r) => r.reservedAt.slice(0, 10) >= from && r.reservedAt.slice(0, 10) <= to)).toBe(true)
   })
 })
+
+// "내 담당만"(04 F-RSV-05, 09 S-02 「보기 옵션」, docs#146 (c)안) — 08 15 assigneeId
+describe('Mock 15 — assigneeId (내 담당만)', () => {
+  // 07 7.3 시드: 1(오늘 10:00)·3(+2일) 김정비(2), 2(오늘 14:30)·4(-1일) 박사장(1)
+  const ids = (query: { from: string; to: string; assigneeId?: number }) => {
+    const res = mockGetReservations(query)
+    expect(res.status).toBe(200)
+    return (res.body as { data: { items: ReservationListItem[] } }).data.items
+  }
+  const today = todaySeoul()
+  const period = { from: addDays(today, -1), to: addDays(today, 2) }
+
+  it('없으면 정비소 전체, 있으면 그 담당 예약만', () => {
+    resetReservationMocks()
+    expect(ids(period).map((r) => r.reservationId)).toEqual([4, 1, 2, 3])
+    const mine = ids({ ...period, assigneeId: 2 })
+    expect(mine.map((r) => r.reservationId)).toEqual([1, 3])
+    expect(mine.every((r) => r.assignee?.staffId === 2)).toBe(true)
+    expect(ids({ ...period, assigneeId: 1 }).map((r) => r.reservationId)).toEqual([4, 2])
+  })
+
+  it('없는 id·다른 정비소 직원 id는 오류가 아니라 200 + 빈 items (08 15)', () => {
+    resetReservationMocks()
+    expect(ids({ ...period, assigneeId: 99 })).toEqual([])
+  })
+})
