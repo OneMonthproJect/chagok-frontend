@@ -12,10 +12,9 @@ export const INSPECT_RESULT_LABELS: Record<'GOOD' | 'CAUTION', string> = {
 }
 
 /**
- * 기록이 고객 진술인지. source(P0-나머지)를 먼저 보고, 없으면 type EXTERNAL로 정한다.
+ * 기록이 고객 진술인지. 08 11·17 records[].source를 그대로 본다(서버 값, 프론트에서 다시 정하지 않음).
  * 구분과 출처는 항상 짝이다(07 3.7 CHECK (record_type = 'EXTERNAL') = (source = 'CUSTOMER_STATEMENT'), 04 F-MNT-04).
- * LIMIT: backend develop의 11·17은 아직 source를 주지 않는다(chagok-backend#110 PR-B) / 11·17이 source를 싣기 전에는 type 대체를 지우지 않는다.
  */
-export function isCustomerStatement(record: { type: string; source?: string | null }): boolean {
-  return record.source != null ? record.source === 'CUSTOMER_STATEMENT' : record.type === 'EXTERNAL'
+export function isCustomerStatement(record: { source: string }): boolean {
+  return record.source === 'CUSTOMER_STATEMENT'
 }
