@@ -12,18 +12,18 @@
 
 ## 지금 상태
 
-공통 기반(B-2, chagok-frontend#10)이 들어간 상태입니다: API 클라이언트(공통 응답·오류 처리·토큰·Mock 전환), 공통 UI(StatusBadge·Button·Layout), 라우팅·로그인 가드. **업무 화면(S-xx)은 아직 없습니다** — 각 화면 이슈가 `features`·`pages`에 더합니다. S-01 로그인 화면이 생기기 전까지 로그인 경로(`/login`)는 백엔드 연결 확인 화면이고, 다른 모든 경로는 그리로 갑니다.
+P0-핵심과 P0-나머지 화면이 들어간 상태입니다(2026-11-27, develop `9491f19`). M2 통합 검증(태그 `v0.5-m2-integration`, 2026-11-26)을 통과했고, P0-나머지 구현 이슈(chagok-docs 12 백로그 5장)는 모두 닫혔습니다. 화면은 S-01 로그인, S-02 홈(오늘 예약 목록 → 월·주 캘린더, 예약 상세 패널), S-04 재점검 대상, S-05 고객·차량 목록, S-06 고객 상세, S-07 차량 상세, S-08 방문·정비 기록과 모달 M-01·M-02·M-03입니다. P1 화면(S-09 설정, S-10 서비스 관리자, S-01 비밀번호 변경·약관 단계)은 아직 없습니다. 다음 마일스톤 순서는 `chagok-docs` README 「지금 단계」를 봅니다.
 
 ```text
 src/
 ├── main.jsx      공통 스타일(theme.css) + App
-├── app/          App.jsx(라우팅) · paths.js(경로 상수) · RequireAuth(로그인 가드) · UnauthorizedRedirect(401 → 로그인) · ServerCheck(임시 진입 화면)
+├── app/          App.jsx · routes.js·routeCollect.ts(화면 route 수집) · paths.js(경로 상수, 09 S-xx와 1:1) · RequireAuth(로그인 가드) · UnauthorizedRedirect(401 → 로그인, from·reason, D-68) · AppLayout·AppHeader·AppMenu
 ├── shared/       ← features·pages를 import하지 않음
-│   ├── api/client.ts    유일한 fetch 위치. request() · ApiError · onUnauthorized · MOCK_ENABLED
-│   ├── ui/              StatusBadge · Button · Layout · theme.css(⚠ 임시 색·여백)
-│   └── lib/             tokenStore(토큰 저장 한 곳) · submitGuard(중복 제출 잠금)
-├── features/     도메인별 api.ts · types.ts(08 그대로) · components/ · mocks/(개발용)   ← 다른 feature를 import하지 않음
-└── pages/        화면 조립, 09의 S-xx와 1:1
+│   ├── api/client.ts    유일한 fetch 위치. request() · ApiError · onUnauthorized · MOCK_ENABLED · 10초 시간 초과(05 POL-125)
+│   ├── ui/              StatusBadge · Button · Layout · Modal · FormField · EmptyState · ErrorNotice · ItemStatusList · theme.css
+│   └── lib/             tokenStore(토큰 저장 한 곳) · submitGuard(중복 제출 잠금) · date · noteTag · recordDisplay · submitEdit · useEditForm
+├── features/     auth · customer · home · maintenance · reservation · target — 도메인별 api.ts · types.ts(08 그대로) · components/ · mocks/(개발용)   ← 다른 feature를 import하지 않음
+└── pages/        S01 · S02 · S04 · S05 · S06 · S07 · S08 — 화면 조립, 09의 S-xx와 1:1
 ```
 
 ### 공통 모듈 쓰는 법
@@ -52,7 +52,7 @@ src/
 ```bash
 cp .env.example .env.local     # Windows PowerShell: copy .env.example .env.local
 npm ci
-npm run dev                    # http://localhost:5173 → /login에 "백엔드 상태: UP"이 보이면 연결 성공
+npm run dev                    # http://localhost:5173/login → 시연 계정(chagok-docs 07 7.1, 예: owner_a / 1234)으로 로그인해 홈이 보이면 연결 성공 (시연 시드를 넣은 DB 기준)
 ```
 
 | 명령 | 하는 일 |
@@ -60,7 +60,7 @@ npm run dev                    # http://localhost:5173 → /login에 "백엔드 
 | `npm run dev` | 개발 서버. `/api`·`/actuator` 요청을 `VITE_DEV_PROXY_TARGET`(기본 `http://localhost:8080`)로 넘김 |
 | `npm run lint` | ESLint (경계 규칙·Mock import 금지 포함). CI에서도 실행 |
 | `npm run typecheck` | 타입 검사만 |
-| `npm test` | Vitest (공통 모듈: API 응답·오류 처리, 중복 제출 잠금). CI에서도 실행 |
+| `npm test` | Vitest (공통 모듈·공통 UI와 각 feature의 api·흐름·화면 컴포넌트 테스트). CI에서도 실행 |
 | `npm run build` | 타입 검사 + 빌드. CI에서도 실행 |
 
 CI(`frontend-ci`)는 `npm ci` → `npm run lint` → `npm test` → `npm run build`를 모든 PR과 develop·main push에서 돌립니다. `package.json`·`package-lock.json`이 없으면 실패합니다. 실패(❌)한 PR은 머지하지 않습니다(CONTRIBUTING 5장).
