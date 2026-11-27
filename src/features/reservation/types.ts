@@ -121,6 +121,10 @@ export interface VisitRecord {
   type: 'REPLACE' | 'INSPECT' | 'EXTERNAL' | 'DECLINE'
   date: string
   memo: string | null
+  /** P0-나머지 (#34, F-MNT-04). 11과 같은 모양 — 패널은 수정 버튼을 두지 않아 화면에서 쓰지 않는다(수정은 S-07) */
+  version: number
+  edited: boolean
+  staff: { staffId: number; name: string }
 }
 
 /** 08 11 방문 하나 */

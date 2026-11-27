@@ -169,4 +169,12 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
 
     expect(read(1).totalVisitCount).toBe(1) // 78라0004
   })
+
+  it('17 recentVisits records: version·edited·staff (#34, 08 11과 같은 모양) — 11 Mock과 같은 기록은 같은 값', () => {
+    type Rec = { recordId: number; version: number; edited: boolean; staff: { staffId: number; name: string } }
+    const panel = parseResponse<{ recentVisits: { records: Rec[] }[] }>(mockGetPanel(4).status, mockGetPanel(4).body)
+    const records = panel.recentVisits.flatMap((v) => v.records)
+    expect(records.find((r) => r.recordId === 16)).toMatchObject({ version: 1, edited: true, staff: { staffId: 2, name: '김정비' } })
+    expect(records.filter((r) => r.recordId !== 16).every((r) => r.version === 0 && !r.edited)).toBe(true)
+  })
 })

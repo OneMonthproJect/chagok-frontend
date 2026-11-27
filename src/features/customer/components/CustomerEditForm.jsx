@@ -13,7 +13,7 @@ import {
   validateCustomerEdit,
 } from '../editFlow'
 import { CONSENT_HINT, CONSENT_LABEL } from '../registerFlow'
-import { useEditForm } from '../useEditForm'
+import { useEditForm } from '@/shared/lib/useEditForm'
 import './customer.css'
 import './addVehicleInline.css'
 

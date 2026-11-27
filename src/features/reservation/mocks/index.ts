@@ -259,8 +259,21 @@ function visitsOf(vehicleId: number): RecentVisit[] {
         type: r.type as VisitRecord['type'],
         date: visitDate,
         memo: r.memo,
+        // P0-나머지 (#34): 수정 확인용 번호·수정 여부·담당(그 방문의 담당). 11 Mock(maintenance visits.json)과 같은 기록은 같은 값 —
+        // 기록 16만 1회 수정한 모양(version 1·edited), 나머지는 수정 전
+        ...(EDITED_RECORDS[r.recordId] ?? { version: 0, edited: false }),
+        staff: staffRefOf(v.staffName),
       })),
     }))
+}
+
+/** 11 Mock에서 수정 이력이 있는 기록 (maintenance mocks/visits.json과 같게 둔다 — feature끼리 import하지 않아 값을 옮겨 적음) */
+const EDITED_RECORDS: Record<number, { version: number; edited: boolean }> = { 16: { version: 1, edited: true } }
+
+/** 시드 방문의 담당 이름 → { staffId, name } (07 7.1 A 정비소 계정, seed.json staff) */
+function staffRefOf(name: string): { staffId: number; name: string } {
+  const staff = seed.staff.find((s) => s.name === name)
+  return { staffId: staff?.staffId ?? 0, name }
 }
 
 /** 08 17 (최근 방문은 07 7.2 기록, 점검 주기는 단순화 — 위 주석) */

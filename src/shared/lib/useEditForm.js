@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
-// S-06 고객 수정 · S-07 차량 수정 폼이 함께 쓰는 입력 상태 (editFlow의 규칙을 화면 상태로 옮긴 것).
+// 수정 폼의 입력 상태: S-06 고객 수정 · S-07 차량 수정(features/customer, #32) · M-03 정비 기록 수정(features/maintenance, #34).
+// 두 feature가 함께 써서 shared에 둔다(feature끼리 import하지 않음, CONVENTIONS 7장). 칸 규칙·요청 모양은 각 feature의 *Flow가 정한다.
 // - 칸 오류는 칸을 벗어날 때 보이고, 한 번 보인 칸은 입력마다 다시 검사한다(M-01·차량 추가와 같음). 저장 때 서버 400 fieldErrors를 칸 아래에.
 // - 저장 중 잠금(ref) + 버튼 비활성: 두 번 눌러도, 다시 시도와 저장을 겹쳐 눌러도 요청은 한 번(POL-120).
 // - 409 동시 수정이면 onConflict(화면이 07·09를 다시 부름)를 부르고 안내만 한다. 사람이 고친 칸은 지우지 않는다(POL-124).

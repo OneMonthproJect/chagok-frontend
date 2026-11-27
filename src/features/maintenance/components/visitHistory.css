@@ -104,3 +104,40 @@
   padding: var(--ck-space-4) var(--ck-space-5) var(--ck-space-5);
   border-top: 1px solid var(--ck-border-soft);
 }
+/* 기록 수정 (#34): 줄 오른쪽 "수정"(메모는 그 아래 줄), "수정됨" 꼬리표는 누르면 수정 이력 패널 */
+.visit-record__memo {
+  order: 1;
+}
+.visit-record__actions {
+  margin-left: auto;
+}
+.visit-record__edit,
+.visit-record__edited {
+  min-height: 28px;
+  padding: 2px 10px;
+  border-radius: var(--ck-radius-pill);
+  font: inherit;
+  font-size: var(--ck-fs-caption);
+  font-weight: var(--ck-fw-semibold);
+  cursor: pointer;
+}
+.visit-record__edit {
+  border: 1px solid var(--ck-border-soft);
+  background: var(--ck-surface, #fff);
+  color: var(--ck-text-1);
+}
+.visit-record__edit[aria-disabled='true'] {
+  color: var(--ck-text-4);
+  background: var(--ck-surface-muted);
+  cursor: not-allowed;
+}
+.visit-record__edited {
+  border: 1px dashed var(--ck-border-soft);
+  background: transparent;
+  color: var(--ck-text-2);
+}
+.visit-record__edit:focus-visible,
+.visit-record__edited:focus-visible {
+  outline: 2px solid var(--ck-brand);
+  outline-offset: 2px;
+}
