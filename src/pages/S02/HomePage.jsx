@@ -96,6 +96,10 @@ export default function HomePage() {
     week.reload()
     summary.reload()
   }
+  // 비동기 완료 뒤에는 그 사이 바뀐 날짜·기간의 reload를 써야 한다(호출 시점 클로저는 이전 기간을 다시 부른다)
+  const reloadRef = useRef(reload)
+  reloadRef.current = reload
+  const reloadLatest = () => reloadRef.current()
 
   /** [주]·[월] 전환: 날짜·패널 쿼리는 그대로 두고 view만 바꾼다 */
   function changeView(next) {
@@ -276,8 +280,8 @@ export default function HomePage() {
             items={items}
             login={me}
             onClose={closePanel}
-            onConflict={reload}
-            onStatusChanged={reload}
+            onConflict={reloadLatest}
+            onStatusChanged={reloadLatest}
             onEdited={showSaved}
             onCompleted={(done) => {
               const params = new URLSearchParams({

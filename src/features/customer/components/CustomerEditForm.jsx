@@ -99,7 +99,7 @@ export default function CustomerEditForm({ customer, refreshing = false, onSaved
         </div>
       </div>
       <div className="add-vehicle__actions">
-        <Button variant="secondary" onClick={onCancel}>
+        <Button variant="secondary" onClick={onCancel} disabled={submitting}>
           취소
         </Button>
         <Button type="submit" loading={submitting} disabled={refreshing}>

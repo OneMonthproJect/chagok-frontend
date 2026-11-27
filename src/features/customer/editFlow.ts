@@ -80,8 +80,8 @@ export function vehicleEditForm(vehicle: Pick<VehicleDetail, 'plateNumber' | 'mo
 export function validateVehicleEdit(form: VehicleEditForm, current: VehicleDetail, currentYear: number): VehicleEditErrors {
   const { mileage, ...rest } = validateVehicleFields({ ...form, mileage: form.latestMileage }, currentYear)
   const errors: VehicleEditErrors = { ...rest, latestMileage: mileage }
-  if (current.modelYear != null && form.modelYear.trim() === '') errors.modelYear = CANNOT_CLEAR
-  if (current.latestMileage != null && form.latestMileage.trim() === '') errors.latestMileage = CANNOT_CLEAR
+  if (current.modelYear != null && parseOptionalInt(form.modelYear) === null) errors.modelYear = CANNOT_CLEAR
+  if (current.latestMileage != null && parseOptionalInt(form.latestMileage) === null) errors.latestMileage = CANNOT_CLEAR
   return Object.fromEntries(Object.entries(errors).filter(([, message]) => message)) as VehicleEditErrors
 }
 

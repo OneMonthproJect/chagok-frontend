@@ -93,7 +93,7 @@ export default function VehicleEditForm({ vehicle, refreshing = false, onSaved, 
         </FormField>
       </div>
       <div className="add-vehicle__actions">
-        <Button variant="secondary" onClick={onCancel}>
+        <Button variant="secondary" onClick={onCancel} disabled={submitting}>
           취소
         </Button>
         <Button type="submit" loading={submitting} disabled={refreshing}>
