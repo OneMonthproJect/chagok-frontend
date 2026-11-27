@@ -72,6 +72,28 @@ const button = (text, root = document) => Array.from(root.querySelectorAll('butt
 const rows = () => Array.from(document.querySelectorAll('.target-row'))
 
 describe('S-04 재점검 대상', () => {
+  it('P0-나머지 꼬리표 (#29, F-CYC-02): 펼치면 항목 옆에 "지난 방문 거절"·"지난 점검 주의(메모)", 상태는 서버 값 그대로', async () => {
+    const withNotes = structuredClone(EXAMPLE)
+    withNotes.items[0].targetItems[0].lastDecline = { date: '2026-10-24', memo: null }
+    withNotes.items[1].targetItems[0].lastCaution = { date: '2026-09-24', memo: '앞 타이어 마모' }
+    handlers.targets = () => ok(withNotes)
+    renderPage()
+    await settle()
+    for (const row of rows()) click(row.querySelector('.target-row__toggle'))
+    await settle()
+    const tags = Array.from(document.querySelectorAll('.target-row__detail .item-status-list__tag')).map((t) => t.textContent)
+    expect(tags).toEqual(['지난 방문 거절(2026.10.24)', '지난 점검 주의(2026.09.24, 앞 타이어 마모)'])
+    expect(rows()[0].querySelector('.target-row__detail').textContent).toContain('도래')
+  })
+
+  it('꼬리표 필드가 null·없음(P0-핵심 서버)이면 꼬리표 없음', async () => {
+    renderPage()
+    await settle()
+    click(rows()[0].querySelector('.target-row__toggle'))
+    await settle()
+    expect(document.querySelectorAll('.target-row__detail .item-status-list__tag')).toHaveLength(0)
+  })
+
   it('머리(기준일·대상 차량 수)와 줄을 서버 순서 그대로, 연락처는 받은 값 그대로', async () => {
     renderPage()
     await settle()

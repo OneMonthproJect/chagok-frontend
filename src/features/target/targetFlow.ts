@@ -1,6 +1,7 @@
 // S-04 재점검 대상의 표시 규칙 (09 S-04, 08 14, chagok-frontend#27). 화면 없이 테스트하도록 순수 함수.
 // 상태·정렬·대상 판정은 서버 값 그대로 — 여기서는 글자로 바꾸기만 한다.
 
+import { itemNoteTag } from '@/shared/lib/noteTag'
 import type { ActiveReservation, Target, TargetItem } from './types'
 
 /** 빈 상태 문구 (09 S-04·5장) */
@@ -22,12 +23,16 @@ export function statusCounts(items: TargetItem[]): { status: TargetItem['status'
     .map((c) => ({ status: c.status, label: `${STATUS_WORD[c.status]} ${c.count}` }))
 }
 
-/** 펼침: ItemStatusList variant target 모양 (다음 정비일·기준 기록일) */
+/**
+ * 펼침: ItemStatusList variant target 모양 (다음 정비일·기준 기록일).
+ * 꼬리표(지난 방문 거절·지난 점검 주의, 04 F-CYC-02)는 08 14 값 그대로 이름 옆 tag로 — 상태는 바꾸지 않는다.
+ */
 export function itemRows(items: TargetItem[]) {
   return items.map((i) => ({
     id: i.itemId,
     name: i.name,
     status: i.status,
+    tag: itemNoteTag(i),
     details: [
       { label: '다음 정비일', value: dotDate(i.nextDueDate) },
       { label: '기준 기록일', value: dotDate(i.baseDate) },

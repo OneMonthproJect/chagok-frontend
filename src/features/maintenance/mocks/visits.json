@@ -187,7 +187,7 @@
           "itemName": "타이어 상태 점검",
           "type": "INSPECT",
           "date": "2026-09-24",
-          "memo": "앞 타이어 마모",
+          "memo": "타이어 트레드 마모 진행, 다음 방문 때 교체 권장",
           "source": "SHOP",
           "inspectResult": "CAUTION"
         }
