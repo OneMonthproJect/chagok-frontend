@@ -239,7 +239,7 @@ describe('S-02 예약 상세 패널', () => {
               { recordId: 17, itemId: 3, itemName: '에어컨필터', type: 'EXTERNAL', date: '2026-10-01', memo: null, source: 'CUSTOMER_STATEMENT', inspectResult: null },
             ],
           },
-          { ...base.recentVisits[1] }, // P0-핵심 모양(source·inspectResult 없음)
+          { ...base.recentVisits[1] }, // source·inspectResult 없는 기록: 꼬리표·결과를 표시하지 않는다(서버는 항상 source를 싣지만 방어 확인)
         ],
       })
     renderHome('/?reservation=4')
