@@ -109,6 +109,16 @@ describe('mocks 39·40·41 (08 모양, 백엔드와 같은 확인 순서)', () =
     expect(panel.vehicle).toMatchObject({ modelYear: 2020, latestMileage: 15000 })
   })
 
+  it('39: 보낸 연식·주행거리의 범위를 본다 — 연식 1980 ~ 현재 연도 + 1, 주행거리 0 ~ 2,000,000 (08 39, #106)', () => {
+    const created = data<{ reservationId: number }>(mockCreateReservation({ vehicleId: 11, reservedAt: `${addDays(todaySeoul(), 1)}T10:00:00`, assigneeId: 1 }))
+    const fields = (body: { modelYear: number; mileage: number }) =>
+      (mockStart(created.reservationId, { version: 0, ...body }).body as { error: { fieldErrors: { field: string }[] } }).error.fieldErrors.map((f) => f.field)
+    expect(fields({ modelYear: 1979, mileage: 15000 })).toEqual(['modelYear'])
+    expect(fields({ modelYear: 2020, mileage: 2_000_001 })).toEqual(['mileage'])
+    expect(fields({ modelYear: 3000, mileage: -1 })).toEqual(['modelYear', 'mileage'])
+    expect(mockStart(created.reservationId, { version: 0, modelYear: 2020, mileage: 15000 }).status).toBe(200)
+  })
+
   it('40: 끝난 예약만, 허용표 밖은 409, 바뀐 것 없으면 400. 정정은 이력(41)에 오래된 것부터 남는다', () => {
     expect(code(mockCorrect(4, { version: 0, purposeMemo: '메모' }))).toBe('INVALID_STATUS_TRANSITION') // 아직 예약
     mockNoShow(4, { version: 0 })

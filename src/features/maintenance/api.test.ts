@@ -308,6 +308,28 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     expect(parse<VisitSaveResponse>(mockSaveVisit(4, external({ externalDate: '2026-11-24', externalMileage: 0 }))).savedCount).toBe(1)
   })
 
+  it('12 구분과 맞지 않는 값은 무시하지 않고 400 records[i].<필드> (chagok-docs#176, #106)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
+    const save = (record: Partial<VisitSaveRequest['records'][number]>): VisitSaveRequest => ({
+      visitDate: '2026-11-24',
+      mileage: 55000,
+      records: [{ itemId: 1, type: 'REPLACE', memo: null, ...record }],
+    })
+    // 교체인데 외부 값·점검 결과를 보냄 → 모두 모아 400
+    expect(parseError(mockSaveVisit(4, save({ externalDate: '2026-10-01', externalMileage: 1000, inspectResult: 'GOOD' }))).fieldErrors).toEqual([
+      { field: 'records[0].externalDate', reason: '외부 기록일 때만 입력할 수 있습니다.' },
+      { field: 'records[0].externalMileage', reason: '외부 기록일 때만 입력할 수 있습니다.' },
+      { field: 'records[0].inspectResult', reason: '점검일 때만 입력할 수 있습니다.' },
+    ])
+    // 점검 결과 값은 GOOD·CAUTION만
+    expect(parseError(mockSaveVisit(4, save({ type: 'INSPECT', inspectResult: 'BAD' as never }))).fieldErrors).toEqual([
+      { field: 'records[0].inspectResult', reason: 'GOOD 또는 CAUTION만 입력할 수 있습니다.' },
+    ])
+    // 맞는 구분이면 저장된다
+    expect(parse<VisitSaveResponse>(mockSaveVisit(4, save({ type: 'INSPECT', inspectResult: 'GOOD' }))).savedCount).toBe(1)
+  })
+
   it('12 방문일 미래 · 같은 항목 중복 · 쓰지 않는 항목은 400', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
