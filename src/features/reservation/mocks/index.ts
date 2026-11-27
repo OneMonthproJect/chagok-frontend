@@ -213,8 +213,15 @@ export function mockGetReservationSummary(query: ReservationSummaryQuery): MockR
 /**
  * 08 16 형식 (chagok-docs#198): 필수 누락(vehicleId·reservedAt·assigneeId)·`purpose.memo` 200자 초과 → 400. 소유 확인보다 먼저.
  * 백엔드 `ReservationCreateRequest`의 Bean Validation과 같게 틀린 필드를 모두 모은다. 없는 번호(0·음수)는 형식이 아니라 404다.
+ * 타입이 틀린 값(숫자가 아닌 id, 날짜·시각으로 읽을 수 없는 reservedAt)은 백엔드가 본문을 읽지 못해 400 + fieldErrors [](08 0.2)라 그대로 흉내 낸다.
  */
 function invalidCreateFormat(body: ReservationCreateRequest): MockResponse | null {
+  const loose = body as unknown as Record<string, unknown>
+  const notNumber = (v: unknown) => v != null && typeof v !== 'number'
+  const notDateTime = (v: unknown) => v != null && (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(v))
+  if (notNumber(loose.vehicleId) || notNumber(loose.assigneeId) || notDateTime(loose.reservedAt)) {
+    return fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.')
+  }
   const required = '필수 입력입니다.'
   const fieldErrors: { field: string; reason: string }[] = []
   if (body.vehicleId == null) fieldErrors.push({ field: 'vehicleId', reason: required })

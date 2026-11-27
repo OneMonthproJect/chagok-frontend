@@ -111,11 +111,17 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
   })
 
   it('16 확인 순서(chagok-docs#198): 형식(필수 누락·메모 200자 초과) 400이 소유 404보다 먼저, 틀린 필드는 모두 모음', () => {
-    const fields = (r: { body: unknown }) => (r.body as { error: { code: string; fieldErrors: { field: string }[] } }).error.fieldErrors.map((f) => f.field)
+    const err = (r: { body: unknown }) => (r.body as { error: { code: string; fieldErrors: { field: string }[] } }).error
+    const fields = (r: { body: unknown }) => err(r).fieldErrors.map((f) => f.field)
     // 없는 차량(99)이라도 형식이 틀리면 400
     const missing = mockCreateReservation({ vehicleId: 99 } as never)
     expect(missing.status).toBe(400)
+    expect(err(missing).code).toBe('INVALID_INPUT')
     expect(fields(missing)).toEqual(['reservedAt', 'assigneeId'])
+    // 타입이 틀린 값: 본문을 읽지 못한 400, fieldErrors 없음 (08 0.2)
+    const badType = mockCreateReservation({ vehicleId: 99, reservedAt: '내일 오전', assigneeId: 1 })
+    expect(badType.status).toBe(400)
+    expect(fields(badType)).toEqual([])
     const longMemo = mockCreateReservation({
       vehicleId: 99, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1, purpose: { itemIds: [], other: true, memo: 'a'.repeat(201) },
     })
