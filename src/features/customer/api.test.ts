@@ -299,9 +299,13 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     )
   })
 
-  it('22·23 08의 확인 순서: 소유(404) → 입력 검증(400) → version(409). version이 숫자가 아니면 fieldErrors 없이 400 (08 0.2)', () => {
-    expect(() => parse(mockUpdateCustomer(11, { version: 0, name: '' }))).toThrowError(expect.objectContaining({ code: 'NOT_FOUND' }))
+  it('22·23 08의 확인 순서: 형식(400) → 소유(404) → version(409). version이 숫자가 아니면 fieldErrors 없이 400 (08 0.2, chagok-docs#153)', () => {
+    // 형식 오류는 남의 정비소 고객이어도 404보다 먼저 400 (서버와 같게, #106)
+    expect(() => parse(mockUpdateCustomer(11, { version: 0, name: '' }))).toThrowError(expect.objectContaining({ code: 'INVALID_INPUT' }))
+    expect(() => parse(mockUpdateCustomer(11, { version: 0, consent: true }))).toThrowError(expect.objectContaining({ code: 'NOT_FOUND' }))
+    expect(() => parse(mockUpdateVehicle(12, { version: 0, model: '' }))).toThrowError(expect.objectContaining({ code: 'INVALID_INPUT' }))
     expect(() => parse(mockUpdateVehicle(4, { version: 9, model: '' }))).toThrowError(expect.objectContaining({ code: 'INVALID_INPUT' }))
+    expect(() => parse(mockUpdateVehicle(4, { version: 9, model: 'K3' }))).toThrowError(expect.objectContaining({ code: 'CONCURRENT_MODIFICATION' }))
     expect(() => parse(mockUpdateCustomer(1, { version: '0' } as unknown as CustomerUpdateRequest))).toThrowError(
       expect.objectContaining({ code: 'INVALID_INPUT', fieldErrors: [] }),
     )

@@ -12,6 +12,7 @@
 // api.ts만 동적 import()로 부른다. 화면·pages는 import하지 않는다.
 
 import type { MockResponse } from '@/shared/api/client'
+import { maskPhone } from '@/shared/lib/phoneMask'
 import { addDays, nowSeoul, todaySeoul } from '../dates'
 import type {
   ReservationCompleteRequest,
@@ -125,7 +126,7 @@ function toListItem(r: MockReservation): ReservationListItem {
     plateNumber: vehicle.plateNumber,
     customerId: customer.customerId,
     customerName: customer.name,
-    phone: customer.phone,
+    phone: maskPhone(customer.phone), // 15 목록은 마스킹(08 0.5, F-CUS-07). 상세 17은 전체 번호
     purposeSummary: purposeSummary(r),
     assignee: assigneeOf(r.assigneeStaffId),
   }
@@ -454,7 +455,7 @@ export function mockUpdate(reservationId: number, body: ReservationUpdateRequest
   return ok(savedOf(r))
 }
 
-/** 08 39 — 형식 → 소유 → 상태(RESERVED만) → version → 차량 연식·주행거리(비어 있으면 필수, D-58) 순. 응답은 18과 같은 4필드(08 7.1 39) */
+/** 08 39 — 형식 → 소유 → 상태(RESERVED만) → version → 차량 연식·주행거리(비어 있으면 필수, D-58) → 보낸 값의 범위 순. 응답은 18과 같은 4필드(08 7.1 39) */
 export function mockStart(reservationId: number, body: ReservationStartRequest): MockResponse {
   const invalid = invalidVersion(body?.version)
   if (invalid) return invalid
@@ -469,6 +470,18 @@ export function mockStart(reservationId: number, body: ReservationStartRequest):
   if (vehicle.latestMileage == null && body.mileage == null) fieldErrors.push({ field: 'mileage', reason: '차량의 주행거리가 비어 있어 입력해 주세요.' })
   if (fieldErrors.length > 0) {
     return { status: 400, body: { success: false, data: null, error: { code: 'INVALID_INPUT', message: '입력값을 확인해 주세요.', fieldErrors, details: null } } }
+  }
+  // 보낸 값의 범위 (08 39): 연식 1980 ~ 현재 연도 + 1, 주행거리 0 ~ 2,000,000
+  const maxYear = Number(todaySeoul().slice(0, 4)) + 1
+  const rangeErrors = []
+  if (body.modelYear != null && (!Number.isInteger(body.modelYear) || body.modelYear < 1980 || body.modelYear > maxYear)) {
+    rangeErrors.push({ field: 'modelYear', reason: `1980년부터 ${maxYear}년까지 입력할 수 있습니다.` })
+  }
+  if (body.mileage != null && (!Number.isInteger(body.mileage) || body.mileage < 0 || body.mileage > 2_000_000)) {
+    rangeErrors.push({ field: 'mileage', reason: '0 이상 2,000,000 이하로 입력해 주세요.' })
+  }
+  if (rangeErrors.length > 0) {
+    return { status: 400, body: { success: false, data: null, error: { code: 'INVALID_INPUT', message: '입력값을 확인해 주세요.', fieldErrors: rangeErrors, details: null } } }
   }
   const fill = { ...vehicleFills.get(r.vehicleId) }
   if (vehicle.modelYear == null && body.modelYear != null) fill.modelYear = body.modelYear

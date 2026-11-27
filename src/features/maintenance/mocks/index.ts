@@ -126,8 +126,8 @@ type LooseVisitSave = Partial<VisitSaveRequest> & {
  * 08 12 — 검사 순서는 서버(chagok-backend#32·#102)와 같다: 형식(필수·길이) → 차량 소속(404, X5) → 방문일·외부 정비일 →
  * 항목 중복 → 쓰는 항목(X11) → 담당 정비사(X13, #62) → 차량이 비어 있을 때 필수(D-58, 교체·점검이 있을 때만) → 연식·주행거리 범위.
  * P0-나머지: 외부·거절·점검 결과(#29)와 담당 지정 mechanicId(#62)를 받는다.
- * LIMIT: 외부 주행거리 범위 문구는 공용 MILEAGE_RANGE를 써서 서버(chagok-backend#32, "0 ~ 2,000,000 사이로 입력해 주세요.")와 글자가 다르다(화면은 서버 문구를 그대로 보임).
- *   구분과 맞지 않는 값(점검이 아닌데 inspectResult 등 — 서버는 400)은 화면이 보내지 않으므로 흉내 내지 않는다.
+ * 구분과 맞지 않는 값은 서버와 같이 400이다(chagok-docs#176): externalDate·externalMileage는 외부일 때만, inspectResult는 점검일 때만 보낼 수 있고,
+ * inspectResult 값은 GOOD·CAUTION만 받는다. 틀린 필드는 모두 모아 알린다(`records[i].<필드>`).
  */
 export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockResponse {
   const request = (body ?? {}) as LooseVisitSave
@@ -157,12 +157,22 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
   if ((request.visitDate as string) > today) return invalid([{ field: 'visitDate', reason: M.VISIT_DATE_FUTURE }])
   const external: FieldError[] = []
   records.forEach((r, i) => {
-    if (r.type !== 'EXTERNAL') return
-    if (!r.externalDate) external.push({ field: `records[${i}].externalDate`, reason: M.REQUIRED })
-    else if (r.externalDate > today) external.push({ field: `records[${i}].externalDate`, reason: M.VISIT_DATE_FUTURE })
-    const km = r.externalMileage
-    if (km != null && (!Number.isInteger(km) || km < 0 || km > MAX_MILEAGE)) {
-      external.push({ field: `records[${i}].externalMileage`, reason: M.MILEAGE_RANGE })
+    if (r.type === 'EXTERNAL') {
+      if (!r.externalDate) external.push({ field: `records[${i}].externalDate`, reason: M.REQUIRED })
+      else if (r.externalDate > today) external.push({ field: `records[${i}].externalDate`, reason: M.VISIT_DATE_FUTURE })
+      const km = r.externalMileage
+      if (km != null && (!Number.isInteger(km) || km < 0 || km > MAX_MILEAGE)) {
+        external.push({ field: `records[${i}].externalMileage`, reason: '0 ~ 2,000,000 사이로 입력해 주세요.' })
+      }
+    } else {
+      if (r.externalDate != null) external.push({ field: `records[${i}].externalDate`, reason: '외부 기록일 때만 입력할 수 있습니다.' })
+      if (r.externalMileage != null) external.push({ field: `records[${i}].externalMileage`, reason: '외부 기록일 때만 입력할 수 있습니다.' })
+    }
+    if (r.inspectResult != null) {
+      if (r.type !== 'INSPECT') external.push({ field: `records[${i}].inspectResult`, reason: '점검일 때만 입력할 수 있습니다.' })
+      else if (r.inspectResult !== 'GOOD' && r.inspectResult !== 'CAUTION') {
+        external.push({ field: `records[${i}].inspectResult`, reason: 'GOOD 또는 CAUTION만 입력할 수 있습니다.' })
+      }
     }
   })
   if (external.length > 0) return invalid(external)

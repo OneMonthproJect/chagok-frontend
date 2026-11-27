@@ -78,12 +78,15 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
     return parseResponse<ReservationPeriodResponse>(res.status, res.body)
   }
 
-  it('오늘 2건(10:00 78라0004 엔진오일, 14:30 22사0007 기타) — 07 7.5', () => {
+  it('오늘 3건(09:00 90마0005 진행중, 10:00 78라0004 엔진오일, 14:30 22사0007 기타) — 07 7.3·7.5, 목록 phone은 마스킹(08 0.5)', () => {
     const { items } = period(today)
     expect(items.map((i) => [i.reservedAt.slice(11, 16), i.plateNumber, i.purposeSummary])).toEqual([
+      ['09:00', '90마0005', '엔진오일'],
       ['10:00', '78라0004', '엔진오일'],
       ['14:30', '22사0007', '기타'],
     ])
+    expect(items.map((i) => i.status)).toEqual(['IN_PROGRESS', 'RESERVED', 'RESERVED'])
+    expect(items.every((i) => /^010-\*{4}-\d{4}$/.test(i.phone))).toBe(true)
   })
 
   it('어제 15:00 예약은 "처리 필요", 빈 날은 items: []', () => {

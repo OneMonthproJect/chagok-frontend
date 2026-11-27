@@ -34,11 +34,16 @@ describe('getHome (08 04)', () => {
 })
 
 describe('mock (07 7.5)', () => {
-  it('오늘 예약 2건·오늘 연락할 고객 5명, 날짜는 오늘', () => {
+  it('오늘 예약 3건(진행중 1건 포함)·오늘 연락할 고객 5명, 날짜는 오늘, 목록은 마스킹·담당 포함 (07 7.5, 08 04 P0-나머지)', () => {
     const res = mockGetHome()
     const data = parseResponse<HomeSummary>(res.status, res.body)
-    expect(data.todayReservationCount).toBe(2)
+    expect(data.todayReservationCount).toBe(3)
     expect(data.todayContactCount).toBe(5)
+    expect(data.todayReservations.map((r) => [r.reservedAt.slice(11, 16), r.status, r.phone, r.assignee?.name])).toEqual([
+      ['09:00', 'IN_PROGRESS', '010-****-0005', '김정비'],
+      ['10:00', 'RESERVED', '010-****-0004', '김정비'],
+      ['14:30', 'RESERVED', '010-****-0007', '박사장'],
+    ])
     expect(data.todayReservations.every((r) => r.reservedAt.startsWith(data.date))).toBe(true)
   })
 })
