@@ -110,6 +110,23 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
     expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1 }).status).toBe(200)
   })
 
+  it('16 확인 순서(chagok-docs#198): 형식(필수 누락·메모 200자 초과) 400이 소유 404보다 먼저, 틀린 필드는 모두 모음', () => {
+    const fields = (r: { body: unknown }) => (r.body as { error: { code: string; fieldErrors: { field: string }[] } }).error.fieldErrors.map((f) => f.field)
+    // 없는 차량(99)이라도 형식이 틀리면 400
+    const missing = mockCreateReservation({ vehicleId: 99 } as never)
+    expect(missing.status).toBe(400)
+    expect(fields(missing)).toEqual(['reservedAt', 'assigneeId'])
+    const longMemo = mockCreateReservation({
+      vehicleId: 99, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1, purpose: { itemIds: [], other: true, memo: 'a'.repeat(201) },
+    })
+    expect(longMemo.status).toBe(400)
+    expect(fields(longMemo)).toEqual(['purpose.memo'])
+    // 형식이 맞으면 소유 확인(404), 200자는 허용
+    expect(mockCreateReservation({
+      vehicleId: 99, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1, purpose: { itemIds: [], other: true, memo: 'a'.repeat(200) },
+    }).status).toBe(404)
+  })
+
   it('18·19: version이 다르면 409, 완료 뒤 변경은 409 상태 전이', () => {
     // 18 확인 순서: 형식(400) → 소유(404). 누락만 fieldErrors[version]
     const missing = mockComplete(999, {} as never).body as { error: { code: string; fieldErrors: unknown[] } }

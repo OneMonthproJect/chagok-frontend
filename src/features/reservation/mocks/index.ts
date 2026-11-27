@@ -210,8 +210,25 @@ export function mockGetReservationSummary(query: ReservationSummaryQuery): MockR
   return ok({ from, to, items: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)) })
 }
 
-/** 08 16 (P0-나머지): 소유(404) → 30분 단위 → assigneeId(400) → 날짜(400) → 같은 차량 유효 예약(409) → 담당 중복(409) */
+/**
+ * 08 16 형식 (chagok-docs#198): 필수 누락(vehicleId·reservedAt·assigneeId)·`purpose.memo` 200자 초과 → 400. 소유 확인보다 먼저.
+ * 백엔드 `ReservationCreateRequest`의 Bean Validation과 같게 틀린 필드를 모두 모은다. 없는 번호(0·음수)는 형식이 아니라 404다.
+ */
+function invalidCreateFormat(body: ReservationCreateRequest): MockResponse | null {
+  const required = '필수 입력입니다.'
+  const fieldErrors: { field: string; reason: string }[] = []
+  if (body.vehicleId == null) fieldErrors.push({ field: 'vehicleId', reason: required })
+  if (body.reservedAt == null) fieldErrors.push({ field: 'reservedAt', reason: required })
+  if (body.assigneeId == null) fieldErrors.push({ field: 'assigneeId', reason: required })
+  if ((body.purpose?.memo?.length ?? 0) > 200) fieldErrors.push({ field: 'purpose.memo', reason: '200자 이하로 입력해 주세요.' })
+  if (fieldErrors.length === 0) return null
+  return { status: 400, body: { success: false, data: null, error: { code: 'INVALID_INPUT', message: '입력값을 확인해 주세요.', fieldErrors, details: null } } }
+}
+
+/** 08 16 (P0-나머지): 형식(400) → 소유(404) → 30분 단위 → assigneeId(400) → 날짜(400) → 같은 차량 유효 예약(409) → 담당 중복(409) */
 export function mockCreateReservation(body: ReservationCreateRequest): MockResponse {
+  const badFormat = invalidCreateFormat(body)
+  if (badFormat) return badFormat
   if (!vehicleOf(body.vehicleId)) return notFound()
   const invalid = invalidSlot(body.reservedAt ?? '') ?? invalidAssignee(body.assigneeId) ?? pastDate(body.reservedAt)
   if (invalid) return invalid
