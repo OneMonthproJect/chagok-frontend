@@ -177,3 +177,29 @@ export interface ReservationUpdateRequest {
   assigneeId?: number // P0-나머지
   reassignReason?: string // P0-나머지
 }
+
+// ---- 42 GET /api/reservations/summary?from=&to= (P0-나머지, F-RSV-05 월 보기) ----
+// 08 7.1 42 JSON 예시(chagok-docs#143): data는 15와 같은 { from, to, items }. from·to 규칙은 15와 같다(최대 42일).
+// 예약이 한 건도 없는 날짜는 items에 없다(0건으로 본다). 취소만 있는 날은 들어가고 total 0. items는 date 오름차순.
+
+export interface ReservationSummaryQuery {
+  from: string // YYYY-MM-DD
+  to: string
+}
+
+/** 날짜 하나의 건수. total은 취소만 제외한 수(진행중·노쇼 포함) — 서버 값 그대로 쓰고 화면에서 더하지 않는다 */
+export interface ReservationDaySummary {
+  date: string // YYYY-MM-DD
+  total: number
+  reserved: number
+  inProgress: number
+  completed: number
+  canceled: number
+  noShow: number
+}
+
+export interface ReservationSummaryResponse {
+  from: string // 요청 그대로
+  to: string
+  items: ReservationDaySummary[]
+}
