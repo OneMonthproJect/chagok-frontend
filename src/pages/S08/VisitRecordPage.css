@@ -46,8 +46,8 @@
 .s08__card {
   min-width: 0;
   border-radius: var(--ck-radius-xl);
+  border: 1px solid var(--ck-border-soft);
   background: var(--ck-surface);
-  box-shadow: var(--ck-shadow-card);
 }
 .s08__card--padded {
   padding: var(--ck-space-6);
@@ -84,8 +84,8 @@
   display: block;
   height: 360px;
   border-radius: var(--ck-radius-xl);
+  border: 1px solid var(--ck-border-soft);
   background: var(--ck-surface);
-  box-shadow: var(--ck-shadow-card);
 }
 .s08__footer {
   position: sticky;
@@ -97,9 +97,9 @@
   justify-content: space-between;
   gap: var(--ck-space-3);
   padding: var(--ck-space-4) var(--ck-space-6);
+  border: 1px solid var(--ck-border); /* 고정 하단 바: 그림자 대신 진한 테두리로 내용과 구분 (#82) */
   border-radius: var(--ck-radius-xl);
   background: var(--ck-surface);
-  box-shadow: var(--ck-shadow-pop);
 }
 .s08__summary {
   margin: 0;
