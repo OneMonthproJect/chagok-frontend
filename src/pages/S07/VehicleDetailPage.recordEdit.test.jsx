@@ -40,7 +40,7 @@ const RECORD = (over = {}) => ({
   mileage: 45000,
   ...over,
 })
-const visitsPage = (records, mileage = 45000) => ({
+const visitsPage = (records, mileage = 50000) => ({ // 방문 주행거리(50000)와 기록 주행거리(45000)를 다르게 둬 처음 값이 "기록 값"임을 구분한다
   items: [{ visitKey: '5eed0000-0000-4000-8000-000000000015', visitDate: records[0].date, mileage, staffName: '김정비', records }],
   page: 0,
   size: 20,
