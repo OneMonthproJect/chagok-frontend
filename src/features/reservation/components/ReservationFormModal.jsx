@@ -84,7 +84,7 @@ export default function ReservationFormModal({
   async function submit(event) {
     event?.preventDefault()
     if (lockRef.current) return
-    const found = validateForm(current, today, nowTime, mode, { reasonRequired })
+    const found = validateForm(current, today, nowTime, mode, { reasonRequired, originalReservedAt: editTarget?.reservedAt })
     setErrors(found)
     if (Object.keys(found).length > 0) return
     if (isEdit && !changes) return
