@@ -134,7 +134,8 @@ describe('S-07 차량 상세', () => {
     expect(document.querySelector('[role="status"]')).not.toBeNull() // 불러오는 중
     await settle()
 
-    expect(calledPaths().sort()).toEqual(['/api/vehicles/4', '/api/vehicles/4/item-status', '/api/vehicles/4/visits'])
+    // 03은 정비 이력 [수정] 활성 판단용(#34, 로그인 계정)
+    expect(calledPaths().sort()).toEqual(['/api/me', '/api/vehicles/4', '/api/vehicles/4/item-status', '/api/vehicles/4/visits'])
     const header = document.querySelector('.vehicle-header')
     expect(header.querySelector('h2').textContent).toBe('78라0004')
     expect(header.textContent).toContain('K5 · 2020년식 · 최근 주행거리 45,000 km')
@@ -348,7 +349,7 @@ describe('S-07 차량 상세', () => {
   it('주소의 id가 양의 정수가 아니면 부르지 않고 찾을 수 없음', async () => {
     renderPage('/vehicles/abc')
     await settle()
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url !== '/api/me')).toEqual([]) // 03(로그인 계정, #34)만
     expect(document.body.textContent).toContain('찾을 수 없습니다.')
   })
 

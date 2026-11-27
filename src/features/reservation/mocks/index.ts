@@ -266,8 +266,21 @@ function visitsOf(vehicleId: number): RecentVisit[] {
         // P0-나머지 (#29): 외부만 고객 진술(07 3.7 CHECK), 점검 결과는 07 7.2 시드의 33아0008 마지막 점검만 CAUTION
         source: r.type === 'EXTERNAL' ? ('CUSTOMER_STATEMENT' as const) : ('SHOP' as const),
         inspectResult: 'inspectResult' in r ? (r.inspectResult as VisitRecord['inspectResult']) : null,
+        // P0-나머지 (#34): 수정 확인용 번호·수정 여부·담당(그 방문의 담당). 11 Mock(maintenance visits.json)과 같은 기록은 같은 값 —
+        // 기록 16만 1회 수정한 모양(version 1·edited), 나머지는 수정 전
+        ...(EDITED_RECORDS[r.recordId] ?? { version: 0, edited: false }),
+        staff: staffRefOf(v.staffName),
       })),
     }))
+}
+
+/** 11 Mock에서 수정 이력이 있는 기록 (maintenance mocks/visits.json과 같게 둔다 — feature끼리 import하지 않아 값을 옮겨 적음) */
+const EDITED_RECORDS: Record<number, { version: number; edited: boolean }> = { 16: { version: 1, edited: true } }
+
+/** 시드 방문의 담당 이름 → { staffId, name } (07 7.1 A 정비소 계정, seed.json staff) */
+function staffRefOf(name: string): { staffId: number; name: string } {
+  const staff = seed.staff.find((s) => s.name === name)
+  return { staffId: staff?.staffId ?? 0, name }
 }
 
 /**

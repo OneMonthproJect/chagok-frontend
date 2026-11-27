@@ -126,6 +126,10 @@ export interface VisitRecord {
   source: 'SHOP' | 'CUSTOMER_STATEMENT'
   /** P0-나머지 (#29). 점검이고 결과를 남겼을 때만 */
   inspectResult: 'GOOD' | 'CAUTION' | null
+  /** P0-나머지 (#34, F-MNT-04). 11과 같은 모양 — 패널은 수정 버튼을 두지 않아 화면에서 쓰지 않는다(수정은 S-07) */
+  version: number
+  edited: boolean
+  staff: { staffId: number; name: string }
 }
 
 /** 08 10 items[].lastDecline·lastCaution (P0-나머지 #29, F-CYC-02) */

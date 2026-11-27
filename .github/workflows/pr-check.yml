@@ -26,7 +26,8 @@ jobs:
         run: |
           fail=0
           # 이슈 닫는 키워드 (D-49). 기본 브랜치가 main이라 main에 들어가는 제목·본문·커밋의 키워드는 이슈를 닫는다.
-          close_re='(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
+          # 키워드 앞에 영문·숫자·_가 오면(hotfix #n, Prefix #n) GitHub이 닫지 않으므로 잡지 않는다(로캘 무관, chagok-docs#173).
+          close_re='(^|[^A-Za-z0-9_])(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
           # PR 제목 = Squash 커밋 제목이므로 제목에는 닫는 키워드를 쓰지 않는다
           if printf '%s' "$TITLE" | grep -Eiq "$close_re"; then
             echo "::error::PR 제목에 이슈 닫는 키워드(Closes·Fixes·Resolves #번호)를 쓰지 않습니다. 본문에 적어 주세요 (D-49)."; fail=1
@@ -77,7 +78,8 @@ jobs:
         run: |
           # 릴리스 머지 때 커밋 메시지의 닫는 키워드가 이슈를 닫는다. done-verified 없이 열어 둔 이슈가
           # 의도치 않게 닫히지 않도록, 열린 이슈를 가리키는 키워드가 있으면 실패시킨다(이미 닫힌 이슈는 영향 없음).
-          close_re='(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
+          # 키워드 앞 경계는 위 close_re와 같다(chagok-docs#173).
+          close_re='(^|[^A-Za-z0-9_])(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
           refs=$(git log --format=%B "$BASE_SHA..$HEAD_SHA" | grep -oiE "$close_re" \
             | grep -oE '([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+$' | sort -u || true)
           fail=0

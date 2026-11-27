@@ -14,7 +14,13 @@
           "date": "2026-09-24",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     },
@@ -32,7 +38,13 @@
           "date": "2026-05-17",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     }
@@ -52,7 +64,13 @@
           "date": "2026-05-14",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     }
@@ -72,7 +90,13 @@
           "date": "2025-12-14",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     }
@@ -92,7 +116,13 @@
           "date": "2026-09-24",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     }
@@ -113,7 +143,13 @@
           "date": "2026-10-24",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     },
@@ -131,7 +167,13 @@
           "date": "2026-03-24",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     }
@@ -151,7 +193,13 @@
           "date": "2026-10-24",
           "memo": null,
           "source": "CUSTOMER_STATEMENT",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     },
@@ -169,7 +217,13 @@
           "date": "2025-10-24",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     }
@@ -189,7 +243,13 @@
           "date": "2026-09-24",
           "memo": "타이어 트레드 마모 진행, 다음 방문 때 교체 권장",
           "source": "SHOP",
-          "inspectResult": "CAUTION"
+          "inspectResult": "CAUTION",
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     },
@@ -207,7 +267,13 @@
           "date": "2026-06-13",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     }
@@ -227,7 +293,13 @@
           "date": "2026-04-24",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     }
@@ -247,7 +319,13 @@
           "date": "2026-10-24",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 1,
+          "edited": true,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     },
@@ -265,7 +343,13 @@
           "date": "2026-08-24",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         },
         {
           "recordId": 15,
@@ -275,7 +359,13 @@
           "date": "2026-08-24",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     },
@@ -293,7 +383,13 @@
           "date": "2023-12-14",
           "memo": null,
           "source": "SHOP",
-          "inspectResult": null
+          "inspectResult": null,
+          "version": 0,
+          "edited": false,
+          "staff": {
+            "staffId": 2,
+            "name": "김정비"
+          }
         }
       ]
     }
