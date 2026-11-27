@@ -83,3 +83,23 @@ export function monthGrid(date: string): { month: string; days: string[]; from: 
 export function formatMonthLabel(date: string): string {
   return `${Number(date.slice(0, 4))}년 ${Number(date.slice(5, 7))}월`
 }
+
+// ---- 주 캘린더 (F-RSV-05, #36). 월요일 시작(#36 결정, 디자인 Home-Week). 날짜 문자열만 다룬다 ----
+
+/** 주 한 장의 날짜 수 */
+export const WEEK_DAYS = 7
+
+/** 그 날짜가 속한 주(월요일 시작)의 7일과 조회 기간(08 15 from·to) */
+export function weekRange(date: string): { days: string[]; from: string; to: string } {
+  const from = addDays(date, -((weekdayIndex(date) + 6) % 7))
+  const days = Array.from({ length: WEEK_DAYS }, (_, i) => addDays(from, i))
+  return { days, from, to: days[WEEK_DAYS - 1] }
+}
+
+/** "2026년 11월 23일 ~ 29일" · 달 넘김 "2026년 11월 30일 ~ 12월 6일" · 해 넘김 "2026년 12월 28일 ~ 2027년 1월 3일" */
+export function formatWeekLabel(from: string, to: string): string {
+  const [fy, fm, fd] = from.split('-').map(Number)
+  const [ty, tm, td] = to.split('-').map(Number)
+  const end = fy !== ty ? `${ty}년 ${tm}월 ${td}일` : fm !== tm ? `${tm}월 ${td}일` : `${td}일`
+  return `${fy}년 ${fm}월 ${fd}일 ~ ${end}`
+}

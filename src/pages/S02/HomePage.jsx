@@ -5,9 +5,10 @@ import MonthCalendar from '@/features/reservation/components/MonthCalendar.jsx'
 import ReservationList from '@/features/reservation/components/ReservationList.jsx'
 import ReservationPanel from '@/features/reservation/components/ReservationPanel.jsx'
 import ReservationFormModal from '@/features/reservation/components/ReservationFormModal.jsx'
-import { formatFullDate, isValidDate, todaySeoul } from '@/features/reservation/dates'
+import WeekCalendar from '@/features/reservation/components/WeekCalendar.jsx'
+import { formatFullDate, isValidDate, todaySeoul, weekRange } from '@/features/reservation/dates'
 import { parseReservationId } from '@/features/reservation/panelFlow'
-import { useDayReservations } from '@/features/reservation/useDayReservations'
+import { useDayReservations, usePeriodReservations } from '@/features/reservation/useDayReservations'
 import { useMonthSummary } from '@/features/reservation/useMonthSummary'
 import { useReservationPanel } from '@/features/reservation/useReservationPanel'
 import SummaryCards from '@/features/home/components/SummaryCards.jsx'
@@ -24,11 +25,14 @@ import { useServiceItems } from './useServiceItems'
 import mascotLaptop from './assets/home-mascot-laptop.png'
 import './HomePage.css'
 
-// S-02 홈 — 월 캘린더(P0-나머지 #30) + 고른 날짜의 예약 목록 + 예약 상세 패널 + 예약 등록·변경 M-02
-//   (09 S-02·M-02, F-RSV-01·02·03·04·05·06·07, 디자인 v3.0 Home-Core-TodayList·Home-Week·Modal-Create·Modal-Edit).
+// S-02 홈 — 캘린더(주 #36 · 월 #30, P0-나머지) + 월 보기에서 고른 날짜의 예약 목록 + 예약 상세 패널 + 예약 등록·변경 M-02
+//   (09 S-02·M-02, F-RSV-01·02·03·04·05·06·07, 디자인 v3.0 Home-Core-TodayList·Home-Week·Home-Month·Modal-Create·Modal-Edit).
 // - 날짜는 ?date=YYYY-MM-DD (없거나 잘못되면 오늘, 오늘이면 URL에서 뺌). 새로 고쳐도 같은 날짜.
-//   캘린더는 그 날짜가 속한 달을 보이고(08 42 건수), 날짜 칸을 누르면 ?date=가 바뀌어 아래 목록(08 15, P0-핵심 목록 재사용)이 그날로 바뀐다.
-//   주 보기·월↔주 전환(기본 주 보기)은 #36이 이어서 고친다. "내 담당만" 토글은 #30에서 넣지 않았다(42에 담당 쿼리가 없음, ❓ PR 본문).
+// - 보기는 ?view=month일 때만 월 보기, 그 밖에는 주 보기(09 S-02 기본 주 보기, #36). 캘린더 카드 오른쪽 위 [주][월]로 바꾼다.
+//   날짜(?date=)·열린 패널(?reservation=)은 바꿔도 그대로다. 지금 보이는 보기의 API만 부른다.
+//   · 주 보기: 그 날짜가 속한 주(월요일 시작)를 08 15로 부르고 카드를 시각 칸에 놓는다. 카드를 누르면 상세 패널. 아래 날짜 목록은 없다.
+//   · 월 보기: 그 날짜가 속한 달(08 42 건수), 날짜 칸을 누르면 ?date=가 바뀌어 아래 목록(08 15, P0-핵심 목록 재사용)이 그날로 바뀐다.
+//   "내 담당만" 토글은 아직 넣지 않았다(chagok-docs#146 결정 전, #36 다음 PR).
 // - 예약 상세 패널은 ?reservation=<id> (#26). 줄을 누르면 열고(기록 하나 추가), 닫기·Esc·뒤로 가기는 쿼리를 지운다.
 //   패널 안 [방문 완료](08 18)가 성공하면 S-08(/visits/new?vehicleId=&reservationId=)로, 409면 패널·목록·캘린더 건수(42)·요약을 다시 불러오고 이동하지 않는다.
 //   [상세 이동]은 S-07(/vehicles/:vehicleId). [변경]은 M-02 변경 모드(#25).
@@ -37,7 +41,10 @@ import './HomePage.css'
 //   여기서 조립한다(feature끼리 import 금지). 등록·변경되면 그 날짜 목록으로 옮겨 다시 불러온다.
 // - 요약 숫자(#28, 08 04): 오늘 예약·오늘 연락할 고객. 다른 날짜를 볼 때만 "목록 →"(오늘로), [보기 →]는 S-04 라우트가 있을 때만(→ /targets).
 //   예약이 바뀌면(등록·변경·취소·노쇼·409) 함께 다시 부른다.
-// - 다음 이슈가 이어서 고친다: 주 캘린더(P0-나머지 #36), 방문 접수·정정(#33).
+// - 다음 이슈가 이어서 고친다: "내 담당만" 토글(#36 다음 PR, docs#146), 방문 접수·정정(#33).
+
+/** ?view= 값 (09 S-02 월/주 전환). 기본(주)은 URL에 넣지 않는다 */
+const VIEW_MONTH = 'month'
 
 /** 패널을 목록에서 열었는지(이때만 닫기 = 뒤로 가기). 주소로 바로 들어왔으면 쿼리만 지운다 */
 const PANEL_FROM_LIST = 'panelFromList'
@@ -57,8 +64,11 @@ export default function HomePage() {
   const today = todaySeoul()
   const queryDate = searchParams.get(QUERY.DATE)
   const date = isValidDate(queryDate) ? queryDate : today
-  const { state, reload: reloadList } = useDayReservations(date)
-  const month = useMonthSummary(date)
+  const isMonth = searchParams.get(QUERY.VIEW) === VIEW_MONTH
+  const { state, reload: reloadList } = useDayReservations(date, isMonth)
+  const month = useMonthSummary(date, isMonth)
+  const weekPeriod = weekRange(date)
+  const week = usePeriodReservations(weekPeriod.from, weekPeriod.to, !isMonth)
   const summary = useHomeSummary()
   const reservationId = parseReservationId(searchParams.get(QUERY.RESERVATION)) // undefined면 패널 닫힘
   const panelOpen = reservationId !== undefined
@@ -68,11 +78,21 @@ export default function HomePage() {
   const [registerQuery, setRegisterQuery] = useState(null) // M-01을 열 때의 검색어 (null = 닫힘)
   const pickVehicleRef = useRef(null) // M-02 안의 차량 선택 함수 (M-01로 새로 등록한 차량을 채울 때)
 
-  /** 목록·캘린더 건수·요약을 함께 다시 부른다 (예약이 바뀐 뒤) */
+  /** 목록·캘린더(주 15 / 월 42)·요약을 함께 다시 부른다 (예약이 바뀐 뒤). 보이지 않는 보기는 부르지 않는다 */
   function reload() {
     reloadList()
     month.reload()
+    week.reload()
     summary.reload()
+  }
+
+  /** [주]·[월] 전환: 날짜·패널 쿼리는 그대로 두고 view만 바꾼다 */
+  function changeView(next) {
+    const params = new URLSearchParams(searchParams)
+    if (next === VIEW_MONTH) params.set(QUERY.VIEW, VIEW_MONTH)
+    else params.delete(QUERY.VIEW)
+    // 패널을 연 채 보기를 바꾸면 닫기는 뒤로 가기가 아니라 쿼리 지우기(뒤로 가면 이전 보기로 돌아가므로, changeDate와 같은 규칙)
+    setSearchParams(params, { replace: true, state: null })
   }
 
   function changeDate(next) {
@@ -106,8 +126,9 @@ export default function HomePage() {
     const savedDate = saved.reservedAt.slice(0, 10)
     if (savedDate === date) reload()
     else {
-      changeDate(savedDate) // 날짜가 바뀌면 목록은 새로 불린다(다른 달이면 캘린더도)
-      month.reload() // 같은 달이면 조회 기간이 같아 저절로 다시 부르지 않는다. 다른 달이면 새 달 응답이 이 요청을 덮는다
+      changeDate(savedDate) // 날짜가 바뀌면 목록은 새로 불린다(다른 달·주면 캘린더도)
+      month.reload() // 같은 달·주면 조회 기간이 같아 저절로 다시 부르지 않는다. 다른 달·주면 새 기간 응답이 이 요청을 덮는다
+      week.reload()
       summary.reload()
     }
   }
@@ -149,46 +170,67 @@ export default function HomePage() {
 
       <div className="home-layout">
         <div className="home-main">
-          <section className="home-card" aria-label="예약 캘린더">
-            <div className="home-card__body">
-              <MonthCalendar date={date} today={today} state={month.state} onSelectDate={changeDate} onReload={month.reload} />
-            </div>
-          </section>
-
-          <section className="home-card" aria-labelledby="home-list-title">
+          <section className="home-card" aria-labelledby="home-calendar-title">
             <div className="home-card__head">
-              <div>
-                <h2 id="home-list-title" className="home-card__title">{listTitle(date, today)}</h2>
-                <p className="home-card__sub">시각순</p>
+              <h2 id="home-calendar-title" className="home-card__title">예약 캘린더</h2>
+              <div className="home-view-switch" role="group" aria-label="보기 전환">
+                <button type="button" aria-pressed={!isMonth} onClick={() => changeView('week')}>주</button>
+                <button type="button" aria-pressed={isMonth} onClick={() => changeView(VIEW_MONTH)}>월</button>
               </div>
-              <DateNavigator date={date} today={today} onChange={changeDate} />
             </div>
-
-            <div className="home-card__body" aria-busy={state.kind === 'loading'}>
-              {state.kind === 'loading' && <p className="home-state">예약을 불러오는 중…</p>}
-
-              {state.kind === 'error' && (
-                <ErrorNotice title="예약을 불러오지 못했습니다." error={state.error} onRetry={reloadList} />
-              )}
-
-              {state.kind === 'ok' && state.items.length === 0 && (
-                <EmptyState
-                  title={emptyDayMessage(date, today)}
-                  illustration={<img className="home-empty__mascot" src={mascotLaptop} alt="" />}
-                  action={date >= today ? { label: '예약 등록', onClick: () => setCreateOpen(true) } : undefined}
-                />
-              )}
-
-              {state.kind === 'ok' && state.items.length > 0 && (
-                <ReservationList
-                  items={state.items}
-                  label={listTitle(date, today)}
+            <div className="home-card__body">
+              {isMonth ? (
+                <MonthCalendar date={date} today={today} state={month.state} onSelectDate={changeDate} onReload={month.reload} />
+              ) : (
+                <WeekCalendar
+                  date={date}
+                  today={today}
+                  state={week.state}
                   selectedId={reservationId ?? null}
-                  onSelect={openReservation}
+                  onSelectDate={changeDate}
+                  onSelectReservation={openReservation}
+                  onReload={week.reload}
                 />
               )}
             </div>
           </section>
+
+          {isMonth && (
+            <section className="home-card" aria-labelledby="home-list-title">
+              <div className="home-card__head">
+                <div>
+                  <h2 id="home-list-title" className="home-card__title">{listTitle(date, today)}</h2>
+                  <p className="home-card__sub">시각순</p>
+                </div>
+                <DateNavigator date={date} today={today} onChange={changeDate} />
+              </div>
+
+              <div className="home-card__body" aria-busy={state.kind === 'loading'}>
+                {state.kind === 'loading' && <p className="home-state">예약을 불러오는 중…</p>}
+
+                {state.kind === 'error' && (
+                  <ErrorNotice title="예약을 불러오지 못했습니다." error={state.error} onRetry={reloadList} />
+                )}
+
+                {state.kind === 'ok' && state.items.length === 0 && (
+                  <EmptyState
+                    title={emptyDayMessage(date, today)}
+                    illustration={<img className="home-empty__mascot" src={mascotLaptop} alt="" />}
+                    action={date >= today ? { label: '예약 등록', onClick: () => setCreateOpen(true) } : undefined}
+                  />
+                )}
+
+                {state.kind === 'ok' && state.items.length > 0 && (
+                  <ReservationList
+                    items={state.items}
+                    label={listTitle(date, today)}
+                    selectedId={reservationId ?? null}
+                    onSelect={openReservation}
+                  />
+                )}
+              </div>
+            </section>
+          )}
         </div>
 
         {panelOpen && (
