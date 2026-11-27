@@ -35,8 +35,10 @@ describe('시각 선택지', () => {
 
 describe('validateForm', () => {
   it('등록: 차량·날짜·시각 필수, 예약 목적은 선택', () => {
-    expect(validateForm(emptyForm(TODAY), TODAY, '09:00', 'create')).toEqual({ vehicle: '차량을 골라 주세요.', time: '시각을 골라 주세요.' })
-    const ok = { ...emptyForm('2026-11-27', { vehicleId: 1, plateNumber: '12가0001' }), time: '10:00' }
+    expect(validateForm(emptyForm(TODAY), TODAY, '09:00', 'create')).toEqual({
+      vehicle: '차량을 골라 주세요.', time: '시각을 골라 주세요.', assignee: '담당 정비사를 골라 주세요.',
+    })
+    const ok = { ...emptyForm('2026-11-27', { vehicleId: 1, plateNumber: '12가0001' }), time: '10:00', assigneeId: 1 }
     expect(validateForm(ok, TODAY, '09:00', 'create')).toEqual({})
   })
 
@@ -54,10 +56,10 @@ describe('validateForm', () => {
 })
 
 describe('요청 만들기', () => {
-  it('16: 담당 필드 없이(D-51), 메모가 비면 null', () => {
-    const values = { ...emptyForm('2026-11-27', { vehicleId: 1, plateNumber: '12가0001' }), time: '11:30', itemIds: [1, 4], memo: '  ' }
+  it('16: 담당(assigneeId, P0-나머지 필수 #37)과 함께, 메모가 비면 null', () => {
+    const values = { ...emptyForm('2026-11-27', { vehicleId: 1, plateNumber: '12가0001' }), time: '11:30', itemIds: [1, 4], memo: '  ', assigneeId: 2 }
     expect(createRequest(values)).toEqual({
-      vehicleId: 1, reservedAt: '2026-11-27T11:30:00', purpose: { itemIds: [1, 4], other: false, memo: null },
+      vehicleId: 1, reservedAt: '2026-11-27T11:30:00', assigneeId: 2, purpose: { itemIds: [1, 4], other: false, memo: null },
     })
   })
 
