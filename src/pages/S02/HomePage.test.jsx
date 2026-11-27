@@ -300,12 +300,16 @@ describe('S-02 예약 상세 패널', () => {
     handlers.complete = () => fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.')
     renderHome('/?reservation=4')
     await settle()
+    const listBefore = listCalls().length
+    const summaryBefore = summaryCalls().length
     click(button('방문 완료', panel()))
     await settle()
     await settle()
 
     expect(completeCalls()).toHaveLength(1)
     expect(panelCalls()).toHaveLength(1)
+    expect(listCalls().length).toBe(listBefore) // 목록·캘린더 건수도 다시 부르지 않는다
+    expect(summaryCalls().length).toBe(summaryBefore)
     expect(location.pathname).toBe('/')
     const notice = panel().querySelector('.error-notice--error')
     expect(notice.textContent).toContain('일시적인 오류가 발생했습니다.')
@@ -527,6 +531,8 @@ describe('S-02 예약 취소·노쇼', () => {
     handlers.cancel = () => fail(500, 'INTERNAL_ERROR', '일시적인 오류가 발생했습니다.')
     renderHome('/?reservation=4')
     await settle()
+    const listBefore = listCalls().length
+    const summaryBefore = summaryCalls().length
     click(button('취소', panel()))
     await settle()
     click(button('예약 취소', dialog()))
@@ -534,6 +540,8 @@ describe('S-02 예약 취소·노쇼', () => {
     await settle()
     expect(cancelCalls()).toHaveLength(1)
     expect(panelCalls()).toHaveLength(1)
+    expect(listCalls().length).toBe(listBefore)
+    expect(summaryCalls().length).toBe(summaryBefore)
     expect(panel().querySelector('.error-notice--error').textContent).toContain('일시적인 오류가 발생했습니다.')
   })
 
