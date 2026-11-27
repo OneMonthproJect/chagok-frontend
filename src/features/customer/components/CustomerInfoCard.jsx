@@ -4,7 +4,7 @@ import './customerDetail.css'
 
 // S-06 고객 정보 카드: 고객명 · 연락처(전체, D-40) · 안내 수신 동의 (09 S-06, 08 07, 디자인 v3.0 Customer-Detail).
 // 연락처는 서버가 준 전체 번호 그대로 보인다(상세 화면은 마스킹하지 않음, 09 0장).
-// 수정(P0-나머지 #32)·비활성화/삭제·지표(P1)는 그 이슈가 더한다 — 지금은 버튼을 두지 않는다(09 0장 빈 화면 금지).
+// [수정](#32)은 화면(S-06)이 카드 옆에 두고 CustomerEditForm을 연다. 비활성화/삭제·지표(P1)는 그 이슈가 더한다(09 0장 빈 화면 금지).
 
 export default function CustomerInfoCard({ customer }) {
   const { name, phone, consent } = customer

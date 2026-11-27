@@ -229,15 +229,34 @@ export function mergeSearchItems(lists: CustomerSearchItem[][]): CustomerSearchI
 }
 
 /**
+ * 목록(05)의 연락처가 입력한 번호와 같을 수 있는지. P0-나머지부터 05의 phone은 서버가 가린 값이다(08 0.5, F-CUS-07).
+ * 숫자와 `*`만 남겨 자리마다 비교한다(`*`는 어느 숫자와도 맞음). 마스킹은 숫자 수만큼 `*`를 쓰고 하이픈 위치는 따르지 않으므로
+ * 자리 수가 같아야 한다. 가리지 않은 값이면 숫자가 모두 같은지와 같다. 화면은 이 값을 풀거나 다시 가리지 않는다(비교만).
+ */
+export function phoneMatches(listPhone: string, input: string): boolean {
+  const shown = listPhone.replace(/[^0-9*]/g, '')
+  const typed = digits(input)
+  if (typed === '' || shown.length !== typed.length) return false
+  return [...shown].every((char, index) => char === '*' || char === typed[index])
+}
+
+/**
  * 입력한 연락처·차량번호와 같은 기존 고객만 골라, 둘 다 같은 고객을 먼저 보인다.
  * 같아도 막지 않는다 — 가족 공동 번호 등은 그대로 새로 등록할 수 있다(09 M-01 ②).
+ * phoneHitIds: 입력한 연락처로 05를 검색해 나온 고객 id. 가린 연락처는 뒤 4자리만 보여 다른 번호도 맞을 수 있으므로,
+ * 서버가 실제 번호로 찾아 준 이 결과에 있을 때만 "같은 연락처"로 본다(차량번호 검색에만 나온 고객은 아님).
  */
-export function duplicateCandidates(items: CustomerSearchItem[], form: Pick<RegisterForm, 'phone' | 'plateNumber'>): DuplicateCandidate[] {
+export function duplicateCandidates(
+  items: CustomerSearchItem[],
+  form: Pick<RegisterForm, 'phone' | 'plateNumber'>,
+  phoneHitIds: ReadonlySet<number> = new Set(),
+): DuplicateCandidate[] {
   const phone = digits(form.phone)
   const plate = plateKey(form.plateNumber)
   return items
     .map((customer) => {
-      const samePhone = phone !== '' && digits(customer.phone) === phone
+      const masked = customer.phone.includes('*')
+      const samePhone = phoneMatches(customer.phone, phone) && (!masked || phoneHitIds.has(customer.customerId))
       const vehicle = plate === '' ? undefined : customer.vehicles.find((v) => plateKey(v.plateNumber) === plate)
       return { customer, samePhone, samePlate: vehicle !== undefined, vehicleId: vehicle?.vehicleId ?? null }
     })

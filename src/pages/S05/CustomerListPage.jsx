@@ -18,6 +18,8 @@ import './CustomerListPage.css'
 // - 등록 뒤: 화면 위에 결과 문구, 목록을 처음(최근 등록순)부터 다시 불러온다(09는 목록에서 연 M-01의 저장 뒤 이동을 정하지 않음).
 // - M-01 같은 연락처·차량번호의 기존 고객 → "이 고객에 차량 추가"(09 M-01 ① 기존 고객 선택, 차량만 추가):
 //   M-01을 닫고 S-06으로 `state.openAddVehicle`을 보내 차량 추가 입력(#21)을 연 채 시작한다. 지금 검색도 넘겨 S-06의 "고객·차량"이 돌아오게 한다.
+//   "기존 고객 수정"(09 M-01 ③, #32)도 같은 방식으로 `state.openEdit`을 보내 S-06 고객 수정 입력을 연 채 시작한다.
+// - 연락처는 05가 준 값 그대로 보인다(P0-나머지부터 서버가 마스킹, 08 0.5). 화면이 다시 가리거나 풀지 않는다.
 // - 줄 → S-06 (#20). 지금 검색어·쪽(`?q=&page=`)을 state로 넘겨 S-06의 "고객·차량"이 같은 목록으로 돌아오게 한다.
 // - P1(비활성 포함 토글·최근 방문·방문 횟수·점검 예정)은 넣지 않는다.
 
@@ -73,9 +75,10 @@ export default function CustomerListPage() {
   }
 
   function handlePick({ kind, customerId }) {
-    if (kind !== 'add') return
+    if (kind !== 'add' && kind !== 'edit') return
     setRegisterQuery(null)
-    navigate(customerPath(customerId), { state: { listSearch: location.search, openAddVehicle: true } })
+    const open = kind === 'add' ? { openAddVehicle: true } : { openEdit: true }
+    navigate(customerPath(customerId), { state: { listSearch: location.search, ...open } })
   }
 
   return (
@@ -113,7 +116,7 @@ export default function CustomerListPage() {
         <CustomerVehicleFormModal
           initialQuery={registerQuery}
           context="list"
-          pickKinds={['add']}
+          pickKinds={['add', 'edit']}
           onPick={handlePick}
           onCreated={handleCreated}
           onClose={() => setRegisterQuery(null)}

@@ -252,13 +252,13 @@ describe('S-07 차량 상세', () => {
     expect(location.search).toBe('?vehicleId=4')
   })
 
-  it('머리 버튼은 [예약]·[방문 기록]만 — 수정(P0-나머지)·비활성화(P1)는 없다 (09 S-07·0장)', async () => {
+  it('머리 버튼은 [수정](#32)·[예약]·[방문 기록]만 — 비활성화(P1)는 없다 (09 S-07·0장)', async () => {
     serve()
     renderPage()
     await settle()
     const labels = Array.from(document.querySelectorAll('.s07__actions button')).map((b) => b.textContent.trim())
-    expect(labels).toEqual(['예약', '방문 기록'])
-    for (const label of ['수정', '비활성화']) expect(button(label)).toBeUndefined()
+    expect(labels).toEqual(['수정', '예약', '방문 기록'])
+    expect(button('비활성화')).toBeUndefined()
   })
 
   it('[방문 기록] → S-08 `/visits/new?vehicleId=4` (09 S-07 → S-08)', async () => {

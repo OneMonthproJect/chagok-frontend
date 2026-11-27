@@ -176,6 +176,35 @@ describe('S-05 고객·차량 목록', () => {
     expect(document.querySelector('[role="dialog"]')).toBeNull()
   })
 
+  it('M-01 같은 연락처 기존 고객 → "기존 고객 수정": M-01을 닫고 S-06으로, 고객 수정을 연 채 (09 M-01 ③, #32)', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([OH]))))
+    renderPage('/customers?q=%EC%98%A4')
+    await waitSearch()
+    click(button('+ 신규 고객·차량 등록'))
+    await settle()
+    const phone = document.querySelector('[role="dialog"] input[placeholder="010-0000-0000"]')
+    typeInto(phone, '010-0000-0010')
+    act(() => phone.dispatchEvent(new FocusEvent('focusout', { bubbles: true })))
+    await waitSearch()
+
+    click(button('기존 고객 수정'))
+    await settle()
+    expect(location.pathname).toBe('/customers/10')
+    expect(location.state).toEqual({ listSearch: '?q=%EC%98%A4', openEdit: true })
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
+  })
+
+  it('연락처는 05가 준 값 그대로 — 서버가 가린 값을 다시 가리거나 풀지 않는다 (08 0.5, F-CUS-07)', async () => {
+    const masked = { ...KIM, phone: '010-****-0001' }
+    const seoul = { ...OH, phone: '02-***-4567' }
+    fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([masked, seoul]))))
+    renderPage()
+    await waitSearch()
+    const text = document.querySelector('.s05__card').textContent
+    expect(text).toContain('010-****-0001')
+    expect(text).toContain('02-***-4567')
+  })
+
   it('등록된 고객이 없으면 "등록된 고객이 없습니다."', async () => {
     fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([]))))
     renderPage()

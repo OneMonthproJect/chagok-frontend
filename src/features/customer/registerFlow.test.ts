@@ -8,6 +8,7 @@ import {
   initialRegisterForm,
   mergeSearchItems,
   modelYearRangeMessage,
+  phoneMatches,
   submitRegistration,
   toCreateRequest,
   validateRegisterForm,
@@ -162,6 +163,27 @@ describe('같은 연락처·차량번호 기존 고객 (09 M-01)', () => {
 
   it('입력이 비어 있으면 후보 없음', () => {
     expect(duplicateCandidates([phoneOnly, plateOnly], { phone: '', plateNumber: '' })).toEqual([])
+  })
+
+  it('05가 가린 연락처(08 0.5): 연락처 검색에 나온 고객만, 자리가 맞으면 같은 연락처 (#32)', () => {
+    const masked = customer(5, '010-****-0005', ['11바0006'])
+    const maskedPlateOnly = customer(6, '010-****-0005', ['90마0005']) // 뒤 4자리만 같은 다른 번호일 수 있음
+    const candidates = duplicateCandidates([masked, maskedPlateOnly], FILLED, new Set([5]))
+    expect(candidates.map((c) => [c.customer.customerId, c.samePhone, c.samePlate])).toEqual([
+      [5, true, false],
+      [6, false, true],
+    ])
+    expect(duplicateCandidates([masked], FILLED)).toEqual([]) // 연락처 검색 결과가 아니면 같은 연락처로 보지 않음
+  })
+
+  it('phoneMatches: `*`는 어느 숫자와도 맞고, 하이픈 위치는 무시, 자리 수는 같아야', () => {
+    expect(phoneMatches('010-****-0005', '01000000005')).toBe(true)
+    expect(phoneMatches('02-***-4567', '02-123-4567')).toBe(true)
+    expect(phoneMatches('****-1234', '1588 1234')).toBe(true)
+    expect(phoneMatches('010-****-0005', '010-0000-0006')).toBe(false)
+    expect(phoneMatches('010-****-0005', '010-000-0005')).toBe(false)
+    expect(phoneMatches('010-0000-0005', '010-0000-0005')).toBe(true)
+    expect(phoneMatches('010-****-0005', '')).toBe(false)
   })
 
   it('연락처·차량번호로 따로 검색한 결과를 고객 하나씩으로 합친다', () => {
