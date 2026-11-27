@@ -1,6 +1,6 @@
 // 08 10~13 정비 기록·항목 — 필드 이름·타입·nullable은 08 표·JSON 예시와 글자까지 같게 둔다.
-// P0-핵심 기준. P0-나머지(10 lastDecline·lastCaution, 11 records[]의 source·inspectResult·version·edited·staff,
-// 12 mechanicId·externalDate·externalMileage·inspectResult)는 그 이슈가 더한다.
+// P0-나머지 중 #29(F-MNT-02·03·F-CYC-02): 10 lastDecline·lastCaution, 11 records[]의 source·inspectResult,
+// 12 records[]의 externalDate·externalMileage·inspectResult. 11의 version·edited·staff는 #34, 12의 mechanicId는 #62가 더한다.
 
 /** 08 0.4 점검 주기 상태. 서버 값 그대로 보인다(프론트에서 다시 계산하지 않음) */
 export type ItemStatus = 'UNKNOWN' | 'AHEAD' | 'SOON' | 'DUE'
@@ -11,6 +11,12 @@ export type DueReason = 'DATE' | 'KM'
 /** 08 0.4 정비 구분. 조회 응답(10·11)에는 P0-핵심에서도 4개가 모두 나올 수 있다 */
 export type RecordType = 'REPLACE' | 'INSPECT' | 'EXTERNAL' | 'DECLINE'
 
+/** 08 0.4 출처 */
+export type RecordSource = 'SHOP' | 'CUSTOMER_STATEMENT'
+
+/** 08 0.4 점검 결과 (P0-나머지) */
+export type InspectResult = 'GOOD' | 'CAUTION'
+
 /** 08 0.4 항목 code */
 export type ItemCode = 'ENGINE_OIL' | 'AIR_CLEANER' | 'AC_FILTER' | 'BRAKE_PAD' | 'TIRE' | 'BATTERY'
 
@@ -19,6 +25,12 @@ export interface BaseRecord {
   date: string
   mileage: number | null
   type: RecordType
+}
+
+/** 08 10 items[].lastDecline·lastCaution (P0-나머지, F-CYC-02) — `{ date, memo }` */
+export interface LastNote {
+  date: string
+  memo: string | null
 }
 
 /** 08 10 items[] */
@@ -31,6 +43,10 @@ export interface ItemStatusItem {
   baseRecord: BaseRecord | null
   nextDueDate: string | null
   nextDueMileage: number | null
+  /** P0-나머지. 지난 방문 거절 */
+  lastDecline: LastNote | null
+  /** P0-나머지. 지난 점검 주의 */
+  lastCaution: LastNote | null
 }
 
 /** 08 10 응답 data */
@@ -55,6 +71,10 @@ export interface VisitRecord {
   type: RecordType
   date: string
   memo: string | null
+  /** P0-나머지 */
+  source: RecordSource
+  /** P0-나머지. INSPECT일 때만 값이 있다 */
+  inspectResult: InspectResult | null
 }
 
 /** 08 11 items[] — 방문 한 번(같은 visitKey의 기록 묶음) */
@@ -75,11 +95,17 @@ export interface VisitListResponse {
   totalPages: number
 }
 
-/** 08 12 요청 records[] — P0-핵심 입력은 REPLACE·INSPECT */
+/** 08 12 요청 records[] — P0-나머지부터 EXTERNAL·DECLINE도 입력한다 */
 export interface VisitRecordInput {
   itemId: number
   type: RecordType
   memo: string | null
+  /** P0-나머지. 외부면 필수(오늘 이전) */
+  externalDate?: string
+  /** P0-나머지. 외부일 때만, 정수 0~2,000,000 */
+  externalMileage?: number | null
+  /** P0-나머지. INSPECT일 때만 */
+  inspectResult?: InspectResult
 }
 
 /** 08 12 요청 vehicle — 차량의 연식이 비어 있을 때만 (D-58) */
@@ -87,7 +113,7 @@ export interface VisitVehicleInput {
   modelYear: number
 }
 
-/** 08 12 요청 (P0-핵심). mileage·vehicle은 조건부 필수(D-58) */
+/** 08 12 요청. mileage·vehicle은 요청에 교체·점검이 있을 때 조건부 필수(D-58). mechanicId(P0-나머지)는 #62가 더한다 */
 export interface VisitSaveRequest {
   visitDate: string
   mileage?: number | null

@@ -149,7 +149,22 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     expect(data.items[1]).toEqual({
       itemId: 2, code: 'AIR_CLEANER', name: '에어클리너',
       status: 'UNKNOWN', dueReason: null, baseRecord: null, nextDueDate: null, nextDueMileage: null,
+      lastDecline: null, lastCaution: null,
     })
+  })
+
+  it('10 꼬리표는 07 7.2 시드 기대 그대로: 11바0006 엔진오일 지난 방문 거절, 33아0008 타이어 지난 점검 주의 (F-CYC-02, 주의 메모는 시드에 없어 08 12 예시 문구)', () => {
+    const tagged = Object.keys(FIXTURES[0]).flatMap((id) =>
+      parse<ItemStatusResponse>(mockGetItemStatus(Number(id)))
+        .items.filter((i) => i.lastDecline || i.lastCaution)
+        .map((i) => ({ vehicleId: Number(id), itemId: i.itemId, lastDecline: i.lastDecline, lastCaution: i.lastCaution })),
+    )
+    expect(tagged).toEqual([
+      { vehicleId: 6, itemId: 1, lastDecline: { date: '2026-10-24', memo: null }, lastCaution: null },
+      { vehicleId: 8, itemId: 5, lastDecline: null, lastCaution: { date: '2026-09-24', memo: '앞 타이어 마모' } },
+    ])
+    // 꼬리표는 상태를 바꾸지 않는다: 11바0006 엔진오일은 기준(교체 D-8M) 그대로 도래, 33아0008 타이어는 임박
+    expect(parse<ItemStatusResponse>(mockGetItemStatus(8)).items[4]).toMatchObject({ status: 'SOON' })
   })
 
   it('10 시드 차량 전체에 미확인·여유·임박·도래가 골고루 있다 (07 7.2 기대)', () => {
@@ -182,6 +197,7 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
       status: 'DUE', dueReason: 'KM',
       baseRecord: { date: '2026-09-24', mileage: 45000, type: 'REPLACE' },
       nextDueDate: '2027-03-24', nextDueMileage: 55000,
+      lastDecline: null, lastCaution: null,
     })
     expect(data.items.slice(1)).toEqual(dateOnly.items.slice(1))
     // LIMIT: Mock은 km 판정을 하지 않는다 — 예시에 없는 값은 날짜 기준 그대로
@@ -197,15 +213,26 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
       visitDate: '2026-10-24',
       mileage: null,
       staffName: '김정비',
-      records: [{ recordId: 16, itemId: 1, itemName: '엔진오일', type: 'REPLACE', date: '2026-10-24', memo: null }],
+      // 08 11 예시 + P0-나머지 source·inspectResult (#29). version·edited·staff는 #34가 더한다
+      records: [
+        { recordId: 16, itemId: 1, itemName: '엔진오일', type: 'REPLACE', date: '2026-10-24', memo: null, source: 'SHOP', inspectResult: null },
+      ],
     })
     expect(data.items.map((v) => v.visitDate)).toEqual(['2026-10-24', '2026-08-24', '2023-12-14'])
   })
 
-  it('11 시드처럼 기록 담당은 모두 김정비(mech_a), 메모는 비어 있다 (P0-핵심 시드)', () => {
+  it('11 시드처럼 기록 담당은 모두 김정비(mech_a), 메모는 33아0008의 점검 주의 하나만 (07 7.2, 메모 문구는 08 12 예시)', () => {
     const all = Object.keys(FIXTURES[1]).flatMap((id) => parse<VisitListResponse>(mockGetVisits(Number(id))).items)
     expect(new Set(all.map((v) => v.staffName))).toEqual(new Set(['김정비']))
-    expect(all.flatMap((v) => v.records).every((r) => r.memo === null)).toBe(true)
+    const records = all.flatMap((v) => v.records)
+    expect(records.filter((r) => r.memo !== null).map((r) => r.recordId)).toEqual([11])
+  })
+
+  it('11 출처는 외부만 고객 진술, 점검 결과는 점검 기록에만 (08 0.4, 07 3.7)', () => {
+    const records = Object.keys(FIXTURES[1]).flatMap((id) => parse<VisitListResponse>(mockGetVisits(Number(id))).items.flatMap((v) => v.records))
+    expect(records.every((r) => (r.type === 'EXTERNAL') === (r.source === 'CUSTOMER_STATEMENT'))).toBe(true)
+    expect(records.every((r) => r.inspectResult === null || r.type === 'INSPECT')).toBe(true)
+    expect(records.find((r) => r.recordId === 11)).toMatchObject({ type: 'INSPECT', inspectResult: 'CAUTION', memo: '앞 타이어 마모' })
   })
 
   it('11 기록이 없는 차량은 items [] (90마0005)', () => {
@@ -245,9 +272,37 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     expect(error.fieldErrors.map((f) => f.field)).toEqual(['visitDate', 'records'])
   })
 
-  it('12 P0-핵심: 외부·거절은 400 (P0-나머지)', () => {
-    const error = parseError(mockSaveVisit(4, { ...SAVE, records: [{ itemId: 3, type: 'EXTERNAL', memo: null }] }))
-    expect(error.fieldErrors).toEqual([{ field: 'records[0].type', reason: '아직 사용할 수 없는 입력입니다.' }])
+  it('12 P0-나머지: 08 12 P0-나머지 예시(외부·거절·점검 결과)를 받는다. 담당 지정(mechanicId)은 #62 전까지 400', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
+    const remaining: VisitSaveRequest = {
+      visitDate: '2026-11-24',
+      mileage: 55000,
+      records: [
+        { itemId: 1, type: 'REPLACE', memo: null },
+        { itemId: 4, type: 'DECLINE', memo: '다음 방문 때 하기로 함' },
+        { itemId: 3, type: 'EXTERNAL', externalDate: '2026-10-01', externalMileage: null, memo: '다른 곳에서 교체했다고 함' },
+        { itemId: 5, type: 'INSPECT', inspectResult: 'CAUTION', memo: '앞 타이어 마모' },
+      ],
+    }
+    expect(parse<VisitSaveResponse>(mockSaveVisit(4, remaining)).savedCount).toBe(4)
+    const withMechanic = { ...remaining, mechanicId: 2 } as VisitSaveRequest
+    expect(parseError(mockSaveVisit(4, withMechanic)).fieldErrors).toEqual([{ field: 'mechanicId', reason: '아직 사용할 수 없는 입력입니다.' }])
+  })
+
+  it('12 외부 정비일: 없으면 필수, 미래 불가 / 외부 주행거리 범위 (F-MNT-02, 08 12)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
+    const external = (over: Partial<VisitSaveRequest['records'][number]>): VisitSaveRequest => ({
+      visitDate: '2026-11-24',
+      records: [{ itemId: 3, type: 'EXTERNAL', memo: null, ...over }],
+    })
+    expect(parseError(mockSaveVisit(4, external({}))).fieldErrors).toEqual([{ field: 'records[0].externalDate', reason: '필수 입력입니다.' }])
+    expect(parseError(mockSaveVisit(4, external({ externalDate: '2026-11-25' }))).fieldErrors[0].field).toBe('records[0].externalDate')
+    expect(parseError(mockSaveVisit(4, external({ externalDate: '2026-10-01', externalMileage: 2_000_001 }))).fieldErrors[0].field).toBe(
+      'records[0].externalMileage',
+    )
+    expect(parse<VisitSaveResponse>(mockSaveVisit(4, external({ externalDate: '2026-11-24', externalMileage: 0 }))).savedCount).toBe(1)
   })
 
   it('12 방문일 미래 · 같은 항목 중복 · 쓰지 않는 항목은 400', () => {
@@ -267,6 +322,20 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     const error = parseError(mockSaveVisit(11, { ...SAVE, mileage: null }))
     expect(error.fieldErrors.map((f) => f.field)).toEqual(['vehicle.modelYear', 'mileage'])
     expect(parse<VisitSaveResponse>(mockSaveVisit(11, { ...SAVE, vehicle: { modelYear: 2020 } })).savedCount).toBe(2)
+  })
+
+  it('12 D-58은 교체·점검이 있을 때만: 거절·외부만이면 66카0011도 연식·주행거리 없이 저장 (08 12)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
+    const body: VisitSaveRequest = {
+      visitDate: '2026-11-24',
+      mileage: null,
+      records: [
+        { itemId: 1, type: 'DECLINE', memo: null },
+        { itemId: 3, type: 'EXTERNAL', externalDate: '2026-10-01', externalMileage: null, memo: null },
+      ],
+    }
+    expect(parse<VisitSaveResponse>(mockSaveVisit(11, body)).savedCount).toBe(2)
   })
 
   it('13 항목 6개는 08 예시 그대로', () => {
