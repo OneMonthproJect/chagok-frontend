@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { act } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PeriodNavigator from './PeriodNavigator.jsx'
 import DateNavigator from './DateNavigator.jsx'
@@ -119,6 +120,19 @@ describe('날짜 선택 팝오버', () => {
     click(trigger())
     click(outside)
     expect(picker()).toBeNull()
+    expect(onPick).not.toHaveBeenCalled()
+  })
+
+  it('초점이 팝오버 밖 요소로 나가면(Tab) 닫고, 팝오버 안에서 옮길 때는 둔다', () => {
+    const { onPick } = renderNav()
+    const outside = document.createElement('button')
+    document.body.appendChild(outside)
+    click(trigger())
+    act(() => document.querySelector('[aria-label="다음 달 보기"]').focus())
+    expect(picker()).not.toBeNull()
+    act(() => outside.focus())
+    expect(picker()).toBeNull()
+    expect(document.activeElement).toBe(outside) // 초점을 연 버튼으로 끌어오지 않는다
     expect(onPick).not.toHaveBeenCalled()
   })
 

@@ -7,6 +7,7 @@ import './DatePickerPopover.css'
 // 고를 수 있는 날짜에 제한이 없다(M-02 예약 등록 가능 기간과 별개). 날짜는 서울 날짜 문자열만 다룬다(08 0.1).
 // - 날짜를 누르면 onPick(날짜). [오늘]은 onPick(today). [취소]·Esc·바깥 누름은 onClose만(아무것도 바꾸지 않음).
 // - 키보드: 날짜에서 ←→(하루)·↑↓(한 주) 이동, 달을 넘으면 그 달을 보인다. Enter·Space로 고른다. 닫히면 초점은 연 버튼으로(쓰는 쪽).
+//   Tab으로 팝오버 밖 요소로 나가면 닫는다(열린 채 Esc를 못 듣는 상태를 남기지 않음).
 // - 캘린더 카드가 overflow: hidden이라 body에 띄우고 연 버튼 아래에 고정 위치로 둔다. 화면 밖으로 나가지 않게
 //   좌우를 맞추고, 아래 공간이 모자라면(화면 아래쪽의 날짜 목록 등) 위로 펼친다.
 // 사용: <DatePickerPopover value="2026-11-24" today="2026-11-27" anchorRef={buttonRef} onPick={…} onClose={…} />
@@ -62,7 +63,8 @@ export default function DatePickerPopover({ value, today, anchorRef, onPick, onC
   useEffect(() => {
     if (!moveFocusRef.current) return
     moveFocusRef.current = false
-    panelRef.current?.querySelector(`[data-date="${rovingDate}"]`)?.focus()
+    // 위치(top·left)가 정해지기 전에 초점이 걸려도 페이지가 스크롤로 튀지 않게
+    panelRef.current?.querySelector(`[data-date="${rovingDate}"]`)?.focus({ preventScroll: true })
   }, [rovingDate])
 
   // 바깥을 누르면 닫는다(연 버튼은 자기 클릭으로 닫으므로 제외)
@@ -77,6 +79,14 @@ export default function DatePickerPopover({ value, today, anchorRef, onPick, onC
 
   function moveView(months) {
     setView(shiftMonth(view, months))
+  }
+
+  /** Tab·Shift+Tab으로 초점이 팝오버·연 버튼 밖 요소로 가면 닫는다(초점은 그 요소에 둔다).
+   *  relatedTarget이 없으면(팝오버 안 빈 곳 클릭 등) 두고, 바깥 클릭은 mousedown 처리가 닫는다 */
+  function handleBlur(event) {
+    const next = event.relatedTarget
+    if (!next || panelRef.current?.contains(next) || anchorRef.current?.contains(next)) return
+    onClose(false)
   }
 
   function handleKeyDown(event) {
@@ -103,6 +113,7 @@ export default function DatePickerPopover({ value, today, anchorRef, onPick, onC
       aria-label="날짜 선택"
       style={position ? { top: position.top, left: position.left } : undefined}
       onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
     >
       <div className="date-picker__head">
         <button type="button" className="date-picker__month-btn" aria-label="이전 달 보기" onClick={() => moveView(-1)}>‹</button>

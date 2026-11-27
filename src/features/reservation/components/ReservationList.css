@@ -1,4 +1,4 @@
-/* 예약 목록·날짜 이동·상태 배지 — 디자인 v3.0 (p0-reservation-row·p0-date-nav·ReservationStatusBadge). --ck-* 는 #18 토큰, 기본값 포함 */
+/* 예약 목록·상태 배지 — 디자인 v3.0 (p0-reservation-row·ReservationStatusBadge). 날짜 이동은 PeriodNavigator.css(#83). --ck-* 는 #18 토큰, 기본값 포함 */
 .rsv-list {
   margin: 0;
   padding: 0;
