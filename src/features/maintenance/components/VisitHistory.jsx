@@ -19,7 +19,7 @@ import './visitHistory.css'
 // S-07 정비 이력: 방문 단위 최신순 + 더 보기 (09 S-07·5장, 08 11, 디자인 v3.0 S-07).
 // - 순서는 서버가 준 순서 그대로(visitDate 내림차순, 같으면 나중에 저장한 방문 먼저). 화면이 다시 정렬하지 않는다.
 // - 방문 한 줄: 방문일 · 주행거리 · 담당 정비사, 그 아래 기록(항목 · 구분 · 점검 결과 · 메모).
-//   고객 진술(08 11 source CUSTOMER_STATEMENT, source가 없으면 type EXTERNAL — isCustomerStatement)이면 "고객 진술" 꼬리표.
+//   고객 진술(08 11 source CUSTOMER_STATEMENT — isCustomerStatement)이면 "고객 진술" 꼬리표.
 //   점검 결과(양호·주의)는 값이 있을 때만(F-MNT-03).
 //   기록마다 자기 날짜가 있다(외부는 고객이 말한 날짜) — 방문일과 다르면 기록 옆에 보인다.
 // - 이력이 없으면 "정비 이력이 없습니다." + "방문 기록"(09 5장). 버튼은 화면이 onRecordVisit을 넘길 때만 그린다(연결 안 된 버튼 금지, 09 0장).

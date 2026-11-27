@@ -226,7 +226,7 @@ describe('S-02 예약 상세 패널', () => {
     expect(rows[1].textContent).toContain('임박')
   })
 
-  it('최근 이력 (#29): 점검 결과는 값이 있을 때만, 외부(source CUSTOMER_STATEMENT)는 "고객 진술", source가 없으면 type EXTERNAL로', async () => {
+  it('최근 이력 (#29): 점검 결과는 값이 있을 때만, 외부(source CUSTOMER_STATEMENT)는 "고객 진술"', async () => {
     const base = panelExample()
     handlers.panel = () =>
       ok({
