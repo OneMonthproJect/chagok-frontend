@@ -1,6 +1,7 @@
 // 개발용 Mock (CONVENTIONS 7장 「Mock」). 08 15~21·39~42의 사본이며 계약의 기준은 08이다.
 // 값은 07 7.1~7.3 시드(seed.json). 예약 날짜는 오늘(서울) 기준으로 계산하고, 바뀐 상태는 메모리에만 둔다(새로 고치면 처음으로).
 // 15 목록의 담당(assignee, P0-나머지)은 07 7.3 담당 계정(seed.json staff·assigneeStaffId, #30).
+// 16·19의 담당(P0-나머지, #37): 16 assigneeId 필수(R19)·X13·담당 중복(R15), 19 재배정(R24)·담당 중복(R18), 응답 assignee.
 // 패널(17)의 최근 방문·총 방문 수는 07 7.2 기록(seed.json visits, #26)으로 만든다(11 모양, 최신순 2회, 외부만 있는 방문은 세지 않음 POL-45).
 // LIMIT: 점검 주기(itemStatuses)는 단순화 — 항목 상태 모두 미확인. 상태 판정은 서버(cycle)의 일이라 Mock에서 계산하지 않는다. 실제 값은 백엔드 연결로 확인한다.
 // 39 방문 접수가 채운 차량 연식·주행거리, 40 정정·41 이력도 메모리에만 둔다(#33).
@@ -42,13 +43,16 @@ interface MockReservation {
 }
 
 const MAX_DAYS = 42
-/** LIMIT: Mock은 로그인 계정을 모른다. 담당 없이 등록하면(P0-핵심 16) 사장(owner_a)으로 둔다. 실제는 서버가 토큰 계정으로 채운다 */
-const DEFAULT_ASSIGNEE_ID = 1
+/**
+ * LIMIT: Mock은 토큰의 역할을 모른다. 로그인 Mock(auth/mocks/me.json)과 같이 사장(owner_a)으로 보고 재배정 마감(R24)을 판정한다.
+ * 정비사의 당일 재배정 거부(R24 b)는 Mock에서 재현하지 않는다 — 실서버로 확인한다.
+ */
+const MOCK_LOGIN_ROLE: 'OWNER' | 'MECHANIC' = 'OWNER'
 let store: MockReservation[] | null = null
 let nextId = 100
 /** 39가 채운 차량 값 (vehicleId → 값). seed.json은 바꾸지 않는다 */
 let vehicleFills = new Map<number, { modelYear?: number; latestMileage?: number }>()
-/** 40 정정 이력 (reservationId → 오래된 것부터). LIMIT: 19 재배정(ASSIGNEE) 이력은 mockUpdate를 고치는 #37이 더한다 — 그 전까지 Mock 41에는 나오지 않는다 */
+/** 40 정정·19 재배정 이력 (reservationId → 오래된 것부터, 08 41) */
 let revisions = new Map<number, ReservationRevision[]>()
 
 function reservations(): MockReservation[] {
@@ -124,10 +128,16 @@ function toListItem(r: MockReservation): ReservationListItem {
   }
 }
 
-function invalidReservedAt(value: string): MockResponse | null {
+// 16·19 입력 검증 순서 (08 16·19): 30분 단위 → 항목 → assigneeId(X13) → 날짜. 담당 400 문구(assigneeId·reassignReason·같은 담당)는 백엔드 ReservationService와 같게 둔다.
+// LIMIT: 항목(X11) 검증과 30분 단위·날짜 문구는 #37 이전 Mock 그대로(백엔드 문구와 다름) — 계약 점검 기록, 08 모양에는 영향 없음
+function invalidSlot(value: string): MockResponse | null {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:(00|30):00$/.test(value)) {
     return fail(400, 'INVALID_INPUT', '예약 시각은 30분 단위로 입력해 주세요.', 'reservedAt')
   }
+  return null
+}
+
+function pastDate(value: string): MockResponse | null {
   if (value.slice(0, 10) < todaySeoul()) {
     return fail(400, 'RESERVATION_PAST_DATE', '오늘 이후 날짜만 예약할 수 있습니다.')
   }
@@ -141,6 +151,26 @@ function periodErrorField(from: string, to: string): 'from' | 'to' | null {
   if (from > to) return 'from'
   return addDays(from, MAX_DAYS - 1) < to ? 'to' : null
 }
+
+/** X13: 없음·그 정비소의 사장·정비사가 아님 → 400 assigneeId (R19·R20) */
+function invalidAssignee(assigneeId: unknown): MockResponse | null {
+  if (assigneeId === undefined || assigneeId === null) return fail(400, 'INVALID_INPUT', '필수 입력입니다.', 'assigneeId')
+  if (typeof assigneeId !== 'number' || !assigneeOf(assigneeId)) return fail(400, 'INVALID_INPUT', '그 정비소의 사장·정비사를 선택해 주세요.', 'assigneeId')
+  return null
+}
+
+const SLOT_CONFLICT_MESSAGE = '이 정비사는 해당 시각에 이미 예약이 있습니다. 다른 시각이나 다른 담당을 선택해 주세요.'
+
+/** 담당 중복 (R15·R18·R22): 같은 담당 + 같은 시작 시각의 유효 예약(자기 자신 제외). 취소·완료·노쇼는 막지 않는다(R17) */
+function slotConflict(assigneeStaffId: number, reservedAt: string, self?: MockReservation): MockResponse | null {
+  const other = reservations().find((x) => x !== self && x.assigneeStaffId === assigneeStaffId && x.reservedAt === reservedAt && isActive(x))
+  return other ? fail(409, 'MECHANIC_SLOT_CONFLICT', SLOT_CONFLICT_MESSAGE, undefined, { reservationId: other.reservationId }) : null
+}
+
+/** 16·19 응답 (P0-나머지: assignee 포함) */
+const savedOf = (r: MockReservation) => ({
+  reservationId: r.reservationId, status: r.status, reservedAt: r.reservedAt, vehicleId: r.vehicleId, version: r.version, assignee: assigneeOf(r.assigneeStaffId),
+})
 
 /** 08 15 */
 export function mockGetReservations(query: ReservationPeriodQuery): MockResponse {
@@ -175,15 +205,17 @@ export function mockGetReservationSummary(query: ReservationSummaryQuery): MockR
   return ok({ from, to, items: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)) })
 }
 
-/** 08 16 (P0-핵심: 담당은 서버가 채움) */
+/** 08 16 (P0-나머지): 소유(404) → 30분 단위 → assigneeId(400) → 날짜(400) → 같은 차량 유효 예약(409) → 담당 중복(409) */
 export function mockCreateReservation(body: ReservationCreateRequest): MockResponse {
   if (!vehicleOf(body.vehicleId)) return notFound()
-  const invalid = invalidReservedAt(body.reservedAt ?? '')
+  const invalid = invalidSlot(body.reservedAt ?? '') ?? invalidAssignee(body.assigneeId) ?? pastDate(body.reservedAt)
   if (invalid) return invalid
   const existing = reservations().find((r) => r.vehicleId === body.vehicleId && isActive(r))
   if (existing) {
     return fail(409, 'RESERVATION_ACTIVE_EXISTS', '이 차량에는 이미 유효한 예약이 있습니다.', undefined, { reservationId: existing.reservationId })
   }
+  const conflict = slotConflict(body.assigneeId, body.reservedAt)
+  if (conflict) return conflict
   const created: MockReservation = {
     reservationId: nextId++,
     reservedAt: body.reservedAt,
@@ -193,10 +225,10 @@ export function mockCreateReservation(body: ReservationCreateRequest): MockRespo
     itemIds: body.purpose?.itemIds ?? [],
     other: body.purpose?.other ?? false,
     memo: body.purpose?.memo ?? null,
-    assigneeStaffId: body.assigneeId ?? DEFAULT_ASSIGNEE_ID,
+    assigneeStaffId: body.assigneeId,
   }
   reservations().push(created)
-  return ok({ reservationId: created.reservationId, status: created.status, reservedAt: created.reservedAt, vehicleId: created.vehicleId, version: 0 })
+  return ok(savedOf(created))
 }
 
 /** 오늘에서 months 개월 + days 일 (달 끝은 그 달 마지막 날로) */
@@ -246,7 +278,7 @@ export function mockGetPanel(reservationId: number): MockResponse {
       needsAction: needsAction(r),
       version: r.version,
       purpose: { items: r.itemIds.map((id) => ({ itemId: id, name: itemOf(id)?.name ?? '' })), other: r.other, memo: r.memo },
-      assignee: assigneeOf(r.assigneeStaffId),
+      assignee: assigneeOf(r.assigneeStaffId), // P0-나머지 (패널 담당 표시 #33, M-02 변경 모드의 지금 담당 #37)
     },
     customer: { customerId: customer.customerId, name: customer.name, phone: customer.phone, consent: customer.consent },
     vehicle: { vehicleId: vehicle.vehicleId, plateNumber: vehicle.plateNumber, model: vehicle.model, modelYear: vehicle.modelYear, latestMileage: vehicle.latestMileage },
@@ -327,7 +359,11 @@ export function mockNoShow(reservationId: number, body: ReservationStatusChangeR
   return ok({ reservationId: r.reservationId, status: r.status, vehicleId: r.vehicleId, version: r.version })
 }
 
-/** 08 19 (보낸 필드만, RESERVED만) */
+/**
+ * 08 19 (보낸 필드만, RESERVED만): 형식 → 소유 → 상태 → version → 30분 단위 → assigneeId(X13) → 날짜 → 재배정 마감(R24)
+ * → 같은 차량 유효 예약(reservedAt을 보낼 때만) → 담당 중복(R18, 새 담당·새 시각). 하나라도 어긋나면 아무것도 바꾸지 않는다.
+ * 지금 담당과 같은 assigneeId는 재배정이 아니다(마감·이력 없음). 그것만 보냈으면 바꿀 것이 없어 400(assigneeId).
+ */
 export function mockUpdate(reservationId: number, body: ReservationUpdateRequest): MockResponse {
   const hasChange = body?.reservedAt !== undefined || body?.purpose !== undefined || body?.assigneeId !== undefined
   const invalid = invalidVersion(body?.version)
@@ -338,14 +374,41 @@ export function mockUpdate(reservationId: number, body: ReservationUpdateRequest
   if (r.status !== 'RESERVED') return fail(409, 'INVALID_STATUS_TRANSITION', STATUS_TRANSITION_MESSAGE)
   const versionError = checkVersion(body.version, r)
   if (versionError) return versionError
+  const inputError =
+    (body.reservedAt !== undefined ? invalidSlot(body.reservedAt) : null) ??
+    (body.assigneeId !== undefined ? invalidAssignee(body.assigneeId) : null) ??
+    (body.reservedAt !== undefined ? pastDate(body.reservedAt) : null)
+  if (inputError) return inputError
+  const reassign = body.assigneeId !== undefined && body.assigneeId !== r.assigneeStaffId
+  if (body.assigneeId !== undefined && !reassign && body.reservedAt === undefined && body.purpose === undefined) {
+    return fail(400, 'INVALID_INPUT', '바뀐 항목이 없습니다. 지금 담당과 같습니다.', 'assigneeId')
+  }
+  const reason = body.reassignReason?.trim() ? body.reassignReason.trim() : null
+  if (reassign) {
+    const before = r.reservedAt.slice(0, 10) // 마감 기준은 변경 전 예약 날짜
+    const today = todaySeoul()
+    if (before < today || (before === today && MOCK_LOGIN_ROLE !== 'OWNER')) {
+      return fail(409, 'ASSIGNEE_CHANGE_CLOSED', '지금은 담당 정비사를 바꿀 수 없습니다.')
+    }
+    if (before === today && reason === null) return fail(400, 'INVALID_INPUT', '당일 재배정은 사유를 입력해 주세요.', 'reassignReason')
+  }
   if (body.reservedAt !== undefined) {
-    const invalid = invalidReservedAt(body.reservedAt)
-    if (invalid) return invalid
     const other = reservations().find((x) => x !== r && x.vehicleId === r.vehicleId && isActive(x))
     if (other) {
       return fail(409, 'RESERVATION_ACTIVE_EXISTS', '이 차량에는 이미 유효한 예약이 있습니다.', undefined, { reservationId: other.reservationId })
     }
-    r.reservedAt = body.reservedAt
+  }
+  const conflict = slotConflict(reassign ? body.assigneeId! : r.assigneeStaffId, body.reservedAt ?? r.reservedAt, r)
+  if (conflict) return conflict
+  if (body.reservedAt !== undefined) r.reservedAt = body.reservedAt
+  if (reassign) {
+    // 08 19: 재배정은 reservation_revision(kind ASSIGNEE)에 이전·새 담당·사유·수정자를 남긴다(조회 41). 같은 담당은 이력 없음
+    const person = (staffId: number) => ({ staffId, name: assigneeOf(staffId)?.name ?? '' })
+    addRevision(r.reservationId, {
+      kind: 'ASSIGNEE', changedAt: nowSeoul(), changedBy: MOCK_OWNER, reason,
+      changes: [{ field: 'assignee', before: person(r.assigneeStaffId), after: person(body.assigneeId!) }],
+    })
+    r.assigneeStaffId = body.assigneeId!
   }
   if (body.purpose) {
     if (body.purpose.itemIds !== undefined) r.itemIds = body.purpose.itemIds
@@ -353,7 +416,7 @@ export function mockUpdate(reservationId: number, body: ReservationUpdateRequest
     if (body.purpose.memo !== undefined && body.purpose.memo !== null) r.memo = body.purpose.memo === '' ? null : body.purpose.memo
   }
   r.version += 1
-  return ok({ reservationId: r.reservationId, status: r.status, reservedAt: r.reservedAt, vehicleId: r.vehicleId, version: r.version })
+  return ok(savedOf(r))
 }
 
 /** 08 39 — 형식 → 소유 → 상태(RESERVED만) → version → 차량 연식·주행거리(비어 있으면 필수, D-58) 순. 응답은 18과 같은 4필드(08 7.1 39) */

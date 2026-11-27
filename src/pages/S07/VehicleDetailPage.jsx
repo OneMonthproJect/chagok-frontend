@@ -22,6 +22,7 @@ import { ITEM_STATUS_NOTE, RECORD_VISIT_LABEL, itemStatusTableRows } from '@/fea
 import { useItemStatus } from '@/features/maintenance/useItemStatus'
 import { useVisitHistory } from '@/features/maintenance/useVisitHistory'
 import ReservationFormModal from '@/features/reservation/components/ReservationFormModal.jsx'
+import { useMe } from '@/features/auth/useMe'
 import { useServiceItems } from '@/pages/S02/useServiceItems'
 import './VehicleDetailPage.css'
 
@@ -116,14 +117,16 @@ export default function VehicleDetailPage() {
   )
 }
 
-/** M-02 (차량을 채워 염). 예약 목적 항목(08 13)은 M-02를 열 때만 부른다 */
+/** M-02 (차량을 채워 염). 예약 목적 항목(08 13)·로그인 계정(08 03, 담당 기본값 #37)은 M-02를 열 때만 부른다 */
 function ReserveModal({ vehicle, onClose, onOpenExisting }) {
   const items = useServiceItems()
+  const { me } = useMe()
   return (
     <ReservationFormModal
       mode="create"
       initialVehicle={{ vehicleId: vehicle.vehicleId, plateNumber: vehicle.plateNumber, customerName: vehicle.customer.name }}
       items={items}
+      login={me}
       onSaved={onClose}
       onClose={onClose}
       onOpenExisting={onOpenExisting}

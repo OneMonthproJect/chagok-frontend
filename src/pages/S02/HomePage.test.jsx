@@ -94,6 +94,8 @@ beforeEach(() => {
     if (url === '/api/reservations/4/complete' && init.method === 'POST') return Promise.resolve(handlers.complete(init))
     if (url === '/api/reservations/4/cancel' && init.method === 'POST') return Promise.resolve(handlers.cancel(init))
     if (url === '/api/reservations/4/no-show' && init.method === 'POST') return Promise.resolve(handlers.noShow(init))
+    if (url === '/api/me') return Promise.resolve(ok({ staffId: 2, name: '김정비', role: 'MECHANIC', shopId: 1, shopName: '차곡카센터' }))
+    if (url === '/api/staff/assignees') return Promise.resolve(ok({ items: [{ staffId: 1, name: '박사장', role: 'OWNER', colorIndex: 0 }, { staffId: 2, name: '김정비', role: 'MECHANIC', colorIndex: 1 }] }))
     return Promise.resolve(fail(404, 'NOT_FOUND', '찾을 수 없습니다.'))
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -368,14 +370,48 @@ describe('S-02 예약 등록·변경 (M-02)', () => {
   }
   const patchCalls = () => calls((url, init) => url === '/api/reservations/4' && init?.method === 'PATCH')
 
-  it('[+ 예약 등록]은 M-02를 연다 (담당 정비사 칸 없음, P0-핵심)', async () => {
+  it('[+ 예약 등록]은 M-02를 연다 (담당 기본값 = 로그인 계정, #37)', async () => {
     renderHome('/')
     await settle()
     click(button('+ 예약 등록'))
     await settle()
     const dialog = document.querySelector('[role="dialog"]')
     expect(dialog.textContent).toContain('예약 등록')
-    expect(dialog.textContent).not.toContain('담당')
+    expect(dialog.querySelector('select[id$="-assignee"]').value).toBe('2')
+  })
+
+  it('패널 [변경] → 지금 담당(17 assignee)으로 열고, 재배정은 { version, assigneeId }. 409 담당 중복이면 [겹친 예약 보기]로 그 예약 패널 (#37)', async () => {
+    const day = tomorrow()
+    handlers.panel = () => ok(panelExample({
+      reservation: { reservedAt: `${day}T15:00:00`, needsAction: false, version: 2, assignee: { staffId: 2, name: '김정비', colorIndex: 1 } },
+    }))
+    const base = fetchMock.getMockImplementation()
+    fetchMock.mockImplementation((url, init) =>
+      url === '/api/reservations/4' && init?.method === 'PATCH'
+        ? Promise.resolve(jsonResponse(409, {
+          success: false, data: null,
+          error: { code: 'MECHANIC_SLOT_CONFLICT', message: '이 정비사는 해당 시각에 이미 예약이 있습니다. 다른 시각이나 다른 담당을 선택해 주세요.', fieldErrors: [], details: { reservationId: 7 } },
+        }))
+        : base(url, init))
+
+    renderHome(`/?date=${day}&reservation=4`)
+    await settle()
+    click(button('변경', panel()))
+    await settle()
+    const dialog = document.querySelector('[role="dialog"]')
+    const select = dialog.querySelector('select[id$="-assignee"]')
+    expect(select.value).toBe('2')
+    act(() => {
+      select.value = '1'
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    click(button('저장', dialog))
+    await settle()
+    expect(JSON.parse(patchCalls()[0][1].body)).toEqual({ version: 2, assigneeId: 1 })
+    click(button('겹친 예약 보기', dialog))
+    await settle()
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
+    expect(new URLSearchParams(location.search).get('reservation')).toBe('7')
   })
 
   it('패널 [변경] → 차량 고정 변경 모드, 시각만 바꾸면 version + reservedAt만 PATCH, 저장 뒤 패널 다시 조회', async () => {

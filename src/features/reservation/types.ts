@@ -1,5 +1,5 @@
 // 08 15~21·39~42 (예약). 필드 이름·타입·nullable은 08 표·JSON 예시와 글자까지 같게 둔다 (features/reservation 첫 이슈 #24).
-// P0-나머지 필드(assignee, assigneeId, reassignReason, IN_PROGRESS)는 08에 맞춰 선택(optional)으로 둔다.
+// P0-나머지 필드(assignee, reassignReason, IN_PROGRESS 등)는 08에 맞춰 선택(optional)으로 둔다. 16 assigneeId는 P0-나머지 필수(#37).
 
 /** 08 0.4 예약 상태. IN_PROGRESS·NO_SHOW는 P0-나머지부터 */
 export type ReservationStatus = 'RESERVED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED' | 'NO_SHOW'
@@ -69,7 +69,7 @@ export interface ReservationCreateRequest {
   vehicleId: number
   reservedAt: string
   purpose?: ReservationPurposeRequest
-  assigneeId?: number // P0-나머지 필수, P0-핵심은 보내지 않음 (D-51)
+  assigneeId: number // P0-나머지 필수(R19, X13). 백엔드 develop이 P0-나머지 규칙이라 항상 보낸다 (D-51, #37)
 }
 
 export interface ReservationSaved {

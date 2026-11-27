@@ -39,6 +39,8 @@ beforeEach(() => {
   fetchMock = vi.fn((url) => {
     if (url === '/api/targets') return Promise.resolve(handlers.targets())
     if (url === '/api/items') return Promise.resolve(ok([]))
+    if (url === '/api/me') return Promise.resolve(ok({ staffId: 2, name: '김정비', role: 'MECHANIC', shopId: 1, shopName: '차곡카센터' }))
+    if (url === '/api/staff/assignees') return Promise.resolve(ok({ items: [{ staffId: 1, name: '박사장', role: 'OWNER', colorIndex: 0 }, { staffId: 2, name: '김정비', role: 'MECHANIC', colorIndex: 1 }] }))
     return Promise.resolve(fail(404, 'NOT_FOUND', '찾을 수 없습니다.'))
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -88,7 +90,7 @@ describe('S-04 재점검 대상', () => {
     expect(location.search).toBe('?date=2026-11-26&reservation=3')
   })
 
-  it('[예약 등록] → M-02가 차량을 채워 열린다(차량 검색 없음, 담당 칸 없음)', async () => {
+  it('[예약 등록] → M-02가 차량을 채워 열린다(차량 검색 없음, 담당 기본값 = 로그인 계정 #37)', async () => {
     renderPage()
     await settle()
     click(button('예약 등록', rows()[1]))
@@ -98,7 +100,7 @@ describe('S-04 재점검 대상', () => {
     expect(dialog.querySelector('.rsv-form__vehicle').textContent).toContain('12가0001')
     expect(dialog.querySelector('.rsv-form__vehicle').textContent).toContain('김민수')
     expect(dialog.querySelector('input[type="search"]')).toBeNull()
-    expect(dialog.textContent).not.toContain('담당')
+    expect(dialog.querySelector('select[id$="-assignee"]').value).toBe('2')
   })
 
   it('펼치면 대상 항목의 다음 정비일·기준 기록일', async () => {

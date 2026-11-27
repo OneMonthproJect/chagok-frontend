@@ -100,7 +100,7 @@ describe('mocks 39·40·41 (08 모양, 백엔드와 같은 확인 순서)', () =
 
   it('39: 차량 연식·주행거리가 비어 있으면 필수(400 fieldErrors), 채운 값은 패널(17)에 보인다', () => {
     // 66카0011(연식·주행거리 없음)에 예약을 만든다
-    const created = data<{ reservationId: number }>(mockCreateReservation({ vehicleId: 11, reservedAt: `${addDays(todaySeoul(), 1)}T10:00:00` }))
+    const created = data<{ reservationId: number }>(mockCreateReservation({ vehicleId: 11, reservedAt: `${addDays(todaySeoul(), 1)}T10:00:00`, assigneeId: 1 }))
     const missing = mockStart(created.reservationId, { version: 0 })
     expect(missing.status).toBe(400)
     expect((missing.body as { error: { fieldErrors: { field: string }[] } }).error.fieldErrors.map((f) => f.field)).toEqual(['modelYear', 'mileage'])

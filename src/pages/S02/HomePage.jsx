@@ -77,7 +77,7 @@ export default function HomePage() {
   const panelOpen = reservationId !== undefined
   const openedFromList = location.state?.[PANEL_FROM_LIST] === true
   const items = useServiceItems()
-  const { me } = useMe()
+  const { me } = useMe() // 정정 상태 선택(#33)·M-02 담당 기본값·재배정 가능 구간(#37) — 08 03 staffId·role. 한 번만 부른다
   const [createOpen, setCreateOpen] = useState(false)
   const [registerQuery, setRegisterQuery] = useState(null) // M-01을 열 때의 검색어 (null = 닫힘)
   const pickVehicleRef = useRef(null) // M-02 안의 차량 선택 함수 (M-01로 새로 등록한 차량을 채울 때)
@@ -240,8 +240,8 @@ export default function HomePage() {
         {panelOpen && (
           <HomeReservationPanel
             reservationId={reservationId}
-            role={me?.role ?? null}
             items={items}
+            login={me}
             onClose={closePanel}
             onConflict={reload}
             onStatusChanged={reload}
@@ -254,6 +254,7 @@ export default function HomePage() {
               navigate(`${PATHS.VISIT_NEW}?${params}`)
             }}
             onOpenVehicle={(vehicleId) => navigate(vehiclePath(vehicleId))}
+            onOpenReservation={openReservation}
           />
         )}
       </div>
@@ -263,6 +264,7 @@ export default function HomePage() {
           mode="create"
           initialDate={date}
           items={items}
+          login={me}
           vehiclePicker={renderVehiclePicker}
           onSaved={handleCreated}
           onClose={() => setCreateOpen(false)}
@@ -288,9 +290,11 @@ export default function HomePage() {
 
 /**
  * 패널이 열렸을 때만 17을 부른다. 409 뒤에는 목록도 다시 불러 같은 상태를 보인다(목록·패널이 어긋나지 않게).
- * [변경] → M-02 변경 모드: 패널이 읽은 예약(version 포함)으로 열고, 저장되면 패널·목록을 다시 불러온다.
+ * [변경] → M-02 변경 모드: 패널이 읽은 예약(version·담당 포함)으로 열고, 저장되면 패널·목록을 다시 불러온다.
+ * M-02의 409(같은 차량 유효 예약·담당 중복)에서 [기존/겹친 예약 보기] → 그 예약의 패널로 바꾼다(#37).
  */
-function HomeReservationPanel({ reservationId, role, items, onClose, onConflict, onStatusChanged, onCompleted, onEdited, onOpenVehicle }) {
+function HomeReservationPanel({ reservationId, items, login, onClose, onConflict, onStatusChanged, onCompleted, onEdited, onOpenVehicle, onOpenReservation }) {
+  const role = login?.role ?? null // 정정 대화상자의 상태 선택(#33)
   const panel = useReservationPanel(reservationId)
   const [editTarget, setEditTarget] = useState(null)
 
@@ -329,6 +333,7 @@ function HomeReservationPanel({ reservationId, role, items, onClose, onConflict,
       reservedAt: data.reservation.reservedAt,
       purpose: data.reservation.purpose,
       vehicle: { vehicleId: data.vehicle.vehicleId, plateNumber: data.vehicle.plateNumber, customerName: data.customer.name },
+      assignee: data.reservation.assignee ?? null,
     })
   }
 
@@ -350,12 +355,17 @@ function HomeReservationPanel({ reservationId, role, items, onClose, onConflict,
           mode="edit"
           target={editTarget}
           items={items}
+          login={login}
           onSaved={(saved) => {
             setEditTarget(null)
             panel.reload()
             onEdited(saved)
           }}
           onClose={() => setEditTarget(null)}
+          onOpenExisting={(id) => {
+            setEditTarget(null)
+            onOpenReservation(id)
+          }}
         />
       )}
     </>

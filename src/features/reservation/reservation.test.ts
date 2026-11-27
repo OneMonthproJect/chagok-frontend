@@ -99,12 +99,12 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
   })
 
   it('16: 같은 차량 유효 예약이 있으면 409와 기존 예약 번호, 30분 단위가 아니면 400', () => {
-    const dup = mockCreateReservation({ vehicleId: 2, reservedAt: `${addDays(today, 3)}T10:00:00` })
+    const dup = mockCreateReservation({ vehicleId: 2, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1 })
     expect(dup.status).toBe(409)
     expect((dup.body as { error: { details: unknown } }).error.details).toEqual({ reservationId: 3 })
-    expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:10:00` }).status).toBe(400)
-    expect(mockCreateReservation({ vehicleId: 99, reservedAt: `${addDays(today, 3)}T10:00:00` }).status).toBe(404)
-    expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:00:00` }).status).toBe(200)
+    expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:10:00`, assigneeId: 1 }).status).toBe(400)
+    expect(mockCreateReservation({ vehicleId: 99, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1 }).status).toBe(404)
+    expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1 }).status).toBe(200)
   })
 
   it('18·19: version이 다르면 409, 완료 뒤 변경은 409 상태 전이', () => {
