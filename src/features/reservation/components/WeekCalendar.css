@@ -1,47 +1,12 @@
-/* 홈 주 캘린더 (F-RSV-05, #36). 머리·이동 버튼은 MonthCalendar.css와 같은 모양. --ck-* 는 #18 토큰, 기본값 포함 */
+/* 홈 주 캘린더 (F-RSV-05, #36). 이동 바(이전·주 표시·다음·오늘로)는 PeriodNavigator.css(#83). --ck-* 는 #18 토큰, 기본값 포함 */
 .wcal { display: flex; flex-direction: column; gap: 12px; }
 
 .wcal__head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
 }
-.wcal__title {
-  margin: 0;
-  font-size: var(--ck-fs-card-title, 18px);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.wcal__nav {
-  height: 40px;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  border: 1px solid #e2e4e8;
-  border-radius: 9px;
-  background: var(--ck-surface, #fff);
-}
-.wcal__nav button {
-  min-width: 36px;
-  height: 100%;
-  border: 0;
-  background: transparent;
-  color: var(--ck-text-3, #5f646d);
-  font: inherit;
-  font-size: 16px;
-  cursor: pointer;
-}
-.wcal__nav button:hover { background: var(--ck-surface-muted, #f5f6f8); }
-.wcal__nav button:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: -3px; }
-.wcal__nav .wcal__today {
-  padding: 0 10px;
-  border-left: 1px solid #e2e4e8;
-  font-size: var(--ck-fs-caption, 12px);
-  font-weight: 700;
-}
-.wcal__today:disabled { cursor: default; opacity: 0.45; }
 
 .wcal__status { margin: 0; color: var(--ck-text-3, #5f646d); font-size: var(--ck-fs-small, 14px); }
 
