@@ -1,6 +1,6 @@
 // 08 10~13 정비 기록·항목 — 필드 이름·타입·nullable은 08 표·JSON 예시와 글자까지 같게 둔다.
 // P0-나머지 중 #29(F-MNT-02·03·F-CYC-02): 10 lastDecline·lastCaution, 11 records[]의 source·inspectResult,
-// 12 records[]의 externalDate·externalMileage·inspectResult. 11의 version·edited·staff는 #34, 12의 mechanicId는 #62가 더한다.
+// 12 records[]의 externalDate·externalMileage·inspectResult. #62(F-MNT-01): 12의 mechanicId. 11의 version·edited·staff는 #34.
 
 /** 08 0.4 점검 주기 상태. 서버 값 그대로 보인다(프론트에서 다시 계산하지 않음) */
 export type ItemStatus = 'UNKNOWN' | 'AHEAD' | 'SOON' | 'DUE'
@@ -113,11 +113,13 @@ export interface VisitVehicleInput {
   modelYear: number
 }
 
-/** 08 12 요청. mileage·vehicle은 요청에 교체·점검이 있을 때 조건부 필수(D-58). mechanicId(P0-나머지)는 #62가 더한다 */
+/** 08 12 요청. mileage·vehicle은 요청에 교체·점검이 있을 때 조건부 필수(D-58). mechanicId는 P0-나머지(#62) */
 export interface VisitSaveRequest {
   visitDate: string
   mileage?: number | null
   vehicle?: VisitVehicleInput
+  /** P0-나머지. 담당 정비사 id(그 정비소의 사장·정비사, X13). 보내지 않으면 서버가 저장한 계정으로 둔다 */
+  mechanicId?: number
   records: VisitRecordInput[]
 }
 

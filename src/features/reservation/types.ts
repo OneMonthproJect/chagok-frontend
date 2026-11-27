@@ -11,6 +11,23 @@ export interface Assignee {
   colorIndex: number
 }
 
+// ---- 36 GET /api/staff/assignees (P0-나머지, 08 7.1 36 JSON 예시) ----
+// 그 정비소의 사장·정비사(비활성 제외는 P1 V3부터). staffId 오름차순, 직원이 없으면 빈 배열. 쿼리 없음.
+// S-08 담당 선택(#62)과 M-02 담당 선택(#37)이 같이 쓴다.
+
+/** 08 36 items[] */
+export interface AssigneeCandidate {
+  staffId: number
+  name: string
+  role: 'OWNER' | 'MECHANIC'
+  colorIndex: number
+}
+
+/** 08 36 응답 data */
+export interface AssigneeListResponse {
+  items: AssigneeCandidate[]
+}
+
 // ---- 15 GET /api/reservations?from=&to= ----
 
 export interface ReservationPeriodQuery {

@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "data": {
+    "items": [
+      { "staffId": 1, "name": "박사장", "role": "OWNER", "colorIndex": 0 },
+      { "staffId": 2, "name": "김정비", "role": "MECHANIC", "colorIndex": 1 }
+    ]
+  },
+  "error": null
+}

@@ -3,6 +3,7 @@
 
 import { MOCK_ENABLED, request } from '@/shared/api/client'
 import type {
+  AssigneeListResponse,
   ReservationCompleteRequest,
   ReservationCompleted,
   ReservationCreateRequest,
@@ -40,6 +41,13 @@ export function createReservation(body: ReservationCreateRequest): Promise<Reser
 export function getReservationPanel(reservationId: number): Promise<ReservationPanel> {
   return request<ReservationPanel>('GET', `/api/reservations/${reservationId}/panel`, {
     mock: MOCK_ENABLED ? () => mocks().then((m) => m.mockGetPanel(reservationId)) : undefined,
+  })
+}
+
+/** 08 36 (P0-나머지). 담당 후보 = 그 정비소의 사장·정비사. S-08(#62)·M-02(#37)가 같이 쓴다 */
+export function getAssignees(): Promise<AssigneeListResponse> {
+  return request<AssigneeListResponse>('GET', '/api/staff/assignees', {
+    mock: MOCK_ENABLED ? () => import('./mocks/assignees').then((m) => m.mockGetAssignees()) : undefined,
   })
 }
 

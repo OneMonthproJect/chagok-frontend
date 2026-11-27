@@ -272,7 +272,7 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     expect(error.fieldErrors.map((f) => f.field)).toEqual(['visitDate', 'records'])
   })
 
-  it('12 P0-나머지: 08 12 P0-나머지 예시(외부·거절·점검 결과)를 받는다. 담당 지정(mechanicId)은 #62 전까지 400', () => {
+  it('12 P0-나머지: 08 12 P0-나머지 예시(외부·거절·점검 결과·담당 지정)를 받는다', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
     const remaining: VisitSaveRequest = {
@@ -286,8 +286,7 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
       ],
     }
     expect(parse<VisitSaveResponse>(mockSaveVisit(4, remaining)).savedCount).toBe(4)
-    const withMechanic = { ...remaining, mechanicId: 2 } as VisitSaveRequest
-    expect(parseError(mockSaveVisit(4, withMechanic)).fieldErrors).toEqual([{ field: 'mechanicId', reason: '아직 사용할 수 없는 입력입니다.' }])
+    expect(parse<VisitSaveResponse>(mockSaveVisit(4, { ...remaining, mechanicId: 2 })).savedCount).toBe(4) // #62
   })
 
   it('12 외부 정비일: 없으면 필수, 미래 불가 / 외부 주행거리 범위 (F-MNT-02, 08 12)', () => {

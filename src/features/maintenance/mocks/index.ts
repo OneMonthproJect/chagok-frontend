@@ -47,7 +47,6 @@ const M = {
   REQUIRED: '필수 입력입니다.',
   RECORDS_EMPTY: '기록할 항목을 1개 이상 넣어 주세요.',
   MEMO_MAX: '200자 이하로 입력해 주세요.',
-  NOT_OPEN: '아직 사용할 수 없는 입력입니다.',
   VISIT_DATE_FUTURE: '오늘 이전 날짜만 입력할 수 있습니다.',
   DUPLICATE_ITEM: '같은 항목을 두 번 넣을 수 없습니다.',
   ITEM_NOT_USABLE: '사용할 수 없는 항목입니다.',
@@ -56,7 +55,11 @@ const M = {
   QUERY_MILEAGE_RANGE: '0 이상 2,000,000 이하의 정수여야 합니다.',
   TYPE_MISMATCH: '형식이 올바르지 않습니다.',
   MILEAGE_RANGE: '0 이상 2,000,000 이하로 입력해 주세요.',
+  MECHANIC_NOT_IN_SHOP: '담당 정비사를 확인해 주세요.', // chagok-backend MaintenanceService.resolveMechanic (#102)
 } as const
+
+/** 07 7.1 A 정비소의 사장·정비사 id (08 36 예시와 같음). B 정비소 최사장(3)·없는 id는 X13 400 */
+const SHOP_STAFF_IDS = new Set([1, 2])
 
 function ok(data: unknown): MockResponse {
   return { status: 200, body: { success: true, data, error: null } }
@@ -113,16 +116,15 @@ export function mockGetVisits(vehicleId: number, params: VisitListParams = {}): 
   })
 }
 
-/** 08 12 요청에 아직 열지 않은 mechanicId(#62)가 섞여 왔는지 보기 위한 느슨한 모양 */
+/** 08 12 요청을 형식 검사 전에 느슨하게 읽기 위한 모양 (빠진 필드·null이 올 수 있음) */
 type LooseVisitSave = Partial<VisitSaveRequest> & {
-  mechanicId?: unknown
   records?: Array<Partial<VisitSaveRequest['records'][number]>>
 }
 
 /**
- * 08 12 — 검사 순서는 P0-핵심 서버와 같다: 형식(필수·길이) → 차량 소속(404, X5) → 아직 열지 않은 입력 → 방문일·외부 정비일 →
- * 항목 중복 → 쓰는 항목(X11) → 차량이 비어 있을 때 필수(D-58, 교체·점검이 있을 때만) → 연식·주행거리 범위.
- * P0-나머지(#29): 외부·거절·점검 결과를 받는다. mechanicId(담당 지정)는 #62가 열 때까지 400 그대로.
+ * 08 12 — 검사 순서는 서버(chagok-backend#32·#102)와 같다: 형식(필수·길이) → 차량 소속(404, X5) → 방문일·외부 정비일 →
+ * 항목 중복 → 쓰는 항목(X11) → 담당 정비사(X13, #62) → 차량이 비어 있을 때 필수(D-58, 교체·점검이 있을 때만) → 연식·주행거리 범위.
+ * P0-나머지: 외부·거절·점검 결과(#29)와 담당 지정 mechanicId(#62)를 받는다.
  * LIMIT: 외부 주행거리 범위 문구는 공용 MILEAGE_RANGE를 써서 서버(chagok-backend#32, "0 ~ 2,000,000 사이로 입력해 주세요.")와 글자가 다르다(화면은 서버 문구를 그대로 보임).
  *   구분과 맞지 않는 값(점검이 아닌데 inspectResult 등 — 서버는 400)은 화면이 보내지 않으므로 흉내 내지 않는다.
  */
@@ -149,10 +151,7 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
   // 2. 차량 소속
   if (!isOwnedVehicle(vehicleId)) return notFound()
 
-  // 3. 아직 열지 않은 입력 (담당 지정, #62)
-  if (request.mechanicId != null) return invalid([{ field: 'mechanicId', reason: M.NOT_OPEN }])
-
-  // 4. 방문일: 오늘 이전·오늘. 외부 정비일: 외부면 필수, 미래 불가 (F-MNT-02)
+  // 3. 방문일: 오늘 이전·오늘. 외부 정비일: 외부면 필수, 미래 불가 (F-MNT-02)
   const today = todaySeoul()
   if ((request.visitDate as string) > today) return invalid([{ field: 'visitDate', reason: M.VISIT_DATE_FUTURE }])
   const external: FieldError[] = []
@@ -167,7 +166,7 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
   })
   if (external.length > 0) return invalid(external)
 
-  // 5. 같은 항목 중복
+  // 4. 같은 항목 중복
   const seen = new Set<number>()
   const duplicates: FieldError[] = []
   records.forEach((r, i) => {
@@ -176,9 +175,14 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
   })
   if (duplicates.length > 0) return invalid(duplicates)
 
-  // 6. 그 정비소의 쓰는 항목 (없음·남의 것·쓰지 않음 모두 같은 응답, X11)
+  // 5. 그 정비소의 쓰는 항목 (없음·남의 것·쓰지 않음 모두 같은 응답, X11)
   if (records.some((r) => !ACTIVE_ITEM_IDS.has(r.itemId as number))) {
     return invalid([{ field: 'records[].itemId', reason: M.ITEM_NOT_USABLE }])
+  }
+
+  // 6. 담당 정비사 (P0-나머지, X13): 없음·남의 정비소 직원 모두 같은 400. 보내지 않으면 저장한 계정(서버)
+  if (request.mechanicId != null && !SHOP_STAFF_IDS.has(request.mechanicId)) {
+    return invalid([{ field: 'mechanicId', reason: M.MECHANIC_NOT_IN_SHOP }])
   }
 
   // 7. 차량에 비어 있는 연식·주행거리 (D-58) — 요청에 교체·점검이 있을 때만 (08 12)

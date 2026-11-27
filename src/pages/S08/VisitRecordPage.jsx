@@ -6,6 +6,8 @@ import { todaySeoul } from '@/shared/lib/date'
 import Button from '@/shared/ui/Button.jsx'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
+import { ROLE_LABEL } from '@/features/auth/api'
+import { useMe } from '@/features/auth/useMe'
 import VehicleCustomerHeader from '@/features/customer/components/VehicleCustomerHeader.jsx'
 import VehiclePicker from '@/features/customer/components/VehiclePicker.jsx'
 import { GO_HOME_LABEL, NOT_FOUND_DESCRIPTION, NOT_FOUND_TITLE, parseVehicleId } from '@/features/customer/detailFlow'
@@ -13,8 +15,16 @@ import { LOAD_FAILED_MESSAGE, RELOAD_LABEL } from '@/features/customer/searchFlo
 import { useVehicleDetail } from '@/features/customer/useVehicleDetail'
 import { saveVisit } from '@/features/maintenance/api'
 import ItemRecordRows from '@/features/maintenance/components/ItemRecordRows.jsx'
+import MechanicSelect from '@/features/maintenance/components/MechanicSelect.jsx'
 import VisitInfoForm from '@/features/maintenance/components/VisitInfoForm.jsx'
 import VisitPreview from '@/features/maintenance/components/VisitPreview.jsx'
+import {
+  MECHANIC_MESSAGES,
+  defaultMechanic,
+  splitMechanicFieldErrors,
+  validateMechanic,
+  withMechanic,
+} from '@/features/maintenance/mechanicFlow'
 import { useServiceItems } from '@/features/maintenance/useServiceItems'
 import {
   VISIT_MESSAGES as M,
@@ -33,13 +43,19 @@ import {
   validateVisitRecordForm,
   vehicleMissing,
 } from '@/features/maintenance/visitRecordFlow'
+import { parseReservationId } from '@/features/reservation/panelFlow'
+import { useAssignees } from '@/features/reservation/useAssignees'
+import { useReservationPanel } from '@/features/reservation/useReservationPanel'
 import './VisitRecordPage.css'
 
 // S-08 방문·정비 기록 (09 S-08·5장, 04 F-MNT-01~03, 08 09·12·13, 05 POL-30·120~125, D-58, 디자인 v3.0 S-08-visit-record).
 // - 주소 `/visits/new?vehicleId=&reservationId=`. vehicleId가 있으면 09로 차량을 불러 채우고, 없으면 VehiclePicker로 검색해 고른다
 //   (고르면 주소에 vehicleId를 넣는다). customer(차량)와 maintenance(기록)는 이 화면에서만 합친다(CONVENTIONS 7장).
-// - reservationId는 받아만 둔다: 예약과 기록은 데이터로 잇지 않는다(08 12, 05 POL-95). 예약에서 왔으면 차량을 바꾸지 못하게만 한다.
-//   P0-나머지의 담당 정비사 기본값(예약의 담당)에서 쓴다.
+// - reservationId는 요청에 넣지 않는다: 예약과 기록은 데이터로 잇지 않는다(08 12, 05 POL-95). 예약에서 왔으면 차량을 바꾸지 못하게 하고,
+//   담당 정비사 기본값(그 예약의 담당)을 읽는 데만 쓴다(08 17 reservation.assignee).
+// - 담당 정비사(P0-나머지, #62, 09 S-08 5번·05 POL-59): 후보는 08 36, 기본값은 예약의 담당 → 로그인 계정(08 03).
+//   reservation(36·17)·auth(03)·maintenance(12)는 이 화면에서만 합친다(CONVENTIONS 7장). 기본값을 정하는 동안과
+//   후보 조회 실패 때는 저장을 막고(입력값은 그대로), 다시 불러오기는 사람이 누른다(POL-125). X13 400은 담당 칸 옆에.
 // - 방문일 기본 = 서울 기준 오늘(shared/lib/date). 문자열 그대로 보낸다.
 // - 저장(08 12)은 1개 이상 골랐을 때만 활성. 저장 중 비활성·두 번 눌러도 한 번(Button, POL-120). 성공하면 S-07로(replace).
 //   400은 칸 옆 + 위쪽 안내, 입력값 유지(POL-121). 그 밖의 실패는 위쪽 안내 + 사람이 누르는 "다시 시도"(자동 재전송 없음, POL-125).
@@ -49,8 +65,7 @@ import './VisitRecordPage.css'
 // - 저장 전 미리보기(08 10, F-VIS-01, #35)는 VisitPreview가 주행거리 칸을 따라 부른다. 실패해도 입력·저장을 막지 않는다.
 //   "지난 방문 거절"·"지난 점검 주의" 꼬리표(F-CYC-02)도 미리보기 줄에 서버 값 그대로 붙는다.
 // - 구분 거절·외부·점검 결과(F-MNT-02·03, #29)는 ItemRecordRows. 연식·주행거리 필수(D-58)는 교체·점검을 골랐을 때만(requiredVehicleInfo).
-// - 이번 이슈에 없는 것(09 0장 연결 안 된 버튼 금지): 담당 정비사(P0-나머지 #62).
-//   디자인의 이탈 확인 대화상자·저장 토스트·관련 예약 표시는 09에 없어 넣지 않았다.
+// - 넣지 않은 것: 디자인의 이탈 확인 대화상자·저장 토스트·관련 예약 표시는 09에 없어 넣지 않았다.
 
 const INFO_FIELDS = ['visitDate', 'mileage', 'modelYear']
 /** D-58 "비어 있음" 오류 (구분을 바꾸면 필수 여부가 달라져 지운다) */
@@ -67,20 +82,44 @@ export default function VisitRecordPage() {
   const hasVehicleParam = rawVehicleId !== null
   const vehicleId = hasVehicleParam ? parseVehicleId(rawVehicleId) : null
   const fromReservation = params.get(QUERY.RESERVATION_ID) !== null
+  const reservationId = fromReservation ? parseReservationId(params.get(QUERY.RESERVATION_ID)) : null
   const vehicle = useVehicleDetail(vehicleId)
   const items = useServiceItems()
+  const assignees = useAssignees()
+  const { me, error: meError } = useMe()
+  // 예약에서 왔을 때만 17을 부른다(reservationId가 null이면 부르지 않음). 담당 기본값을 읽는 데만 쓴다
+  const reservation = useReservationPanel(reservationId ?? null)
 
   const [today] = useState(() => todaySeoul())
   const [form, setForm] = useState(() => initialVisitRecordForm(today))
   const [errors, setErrors] = useState({})
   const [saveError, setSaveError] = useState(null)
+  /** 사람이 고른 담당. null이면 기본값을 쓴다 */
+  const [mechanicChoice, setMechanicChoice] = useState(null)
+  const [mechanicError, setMechanicError] = useState(null)
 
   const rows = items.data ? recordItems(items.data) : []
   const vehicleData = vehicle.status === 'ready' || vehicle.status === 'loading' ? vehicle.data : null
   const missing = vehicleData ? vehicleMissing(vehicleData) : { modelYear: false, latestMileage: false }
   const required = requiredVehicleInfo(form, rows, missing)
   const selected = selectedRows(form, rows).length
-  const canSave = vehicleData != null && vehicleData.vehicleId === vehicleId && rows.length > 0 && selected > 0
+
+  // 담당 기본값은 후보(36)·로그인 계정(03)·예약(17, 예약에서 왔을 때)을 모두 읽은 뒤에 정한다(실패도 읽은 것으로 본다)
+  const candidates = assignees.data ?? []
+  const defaultsSettled = (me != null || meError != null) && (!fromReservation || reservation.status !== 'loading')
+  const mechanicStatus =
+    assignees.status === 'error' ? 'error' : assignees.status === 'ready' && defaultsSettled ? 'ready' : 'loading'
+  const mechanicDefault = defaultMechanic({
+    candidateIds: candidates.map((c) => c.staffId),
+    fromReservation,
+    reservationAssigneeId: reservation.data?.reservation.assignee?.staffId ?? null,
+    loginStaffId: me?.staffId ?? null,
+  })
+  const mechanicId = mechanicStatus === 'ready' ? (mechanicChoice ?? mechanicDefault.mechanicId) : null
+  const mechanicOptions = candidates.map((c) => ({ staffId: c.staffId, label: `${c.name} (${ROLE_LABEL[c.role] ?? c.role})` }))
+
+  const canSave =
+    vehicleData != null && vehicleData.vehicleId === vehicleId && rows.length > 0 && selected > 0 && mechanicStatus === 'ready'
 
   function setVehicle(nextId) {
     setParams(
@@ -96,6 +135,8 @@ export default function VisitRecordPage() {
     setForm(initialVisitRecordForm(today))
     setErrors({})
     setSaveError(null)
+    // 담당은 차량과 관계없어 고른 값을 그대로 두고, 칸 오류만 지운다
+    setMechanicError(null)
   }
 
   function clearError(field) {
@@ -148,15 +189,20 @@ export default function VisitRecordPage() {
     if (!canSave) return
     setSaveError(null)
     const found = validateVisitRecordForm(form, rows, missing, today)
+    const mechanicMessage = validateMechanic(mechanicId)
     setErrors(found)
-    if (hasVisitErrors(found)) return
-    const body = toVisitSaveRequest(form, rows, missing)
+    setMechanicError(mechanicMessage ?? null)
+    if (hasVisitErrors(found) || mechanicMessage) return
+    const body = withMechanic(toVisitSaveRequest(form, rows, missing), mechanicId)
     try {
       await saveVisit(vehicleId, body)
       navigate(vehiclePath(vehicleId), { replace: true })
     } catch (error) {
       if (error?.code === 'INVALID_INPUT' && error.fieldErrors?.length > 0) {
-        setErrors(fieldErrorsToVisitForm(error.fieldErrors, body.records.map((record) => record.itemId)))
+        // mechanicId(X13: 없음·남의 것·비활성)는 담당 칸 옆, 나머지는 방문 정보·항목 칸으로
+        const { mechanic, rest } = splitMechanicFieldErrors(error.fieldErrors)
+        setErrors(fieldErrorsToVisitForm(rest, body.records.map((record) => record.itemId)))
+        setMechanicError(mechanic ?? null)
       } else {
         setSaveError(error)
       }
@@ -212,7 +258,7 @@ export default function VisitRecordPage() {
         </div>
       ) : (
         <>
-          {(hasVisitErrors(errors) || saveError) && (
+          {(hasVisitErrors(errors) || mechanicError || saveError) && (
             <ErrorNotice
               title={saveError ? M.SAVE_FAILED : M.CHECK_INPUT}
               error={saveError ?? undefined}
@@ -271,6 +317,36 @@ export default function VisitRecordPage() {
               ) : (
                 <ItemRecordRows items={rows} form={form} errors={errors} today={today} onChange={changeRow} />
               )}
+            </div>
+          </section>
+
+          <section className="s08__card s08__card--padded" aria-labelledby="s08-mechanic-title">
+            <h2 id="s08-mechanic-title" className="s08__section-title">
+              {MECHANIC_MESSAGES.TITLE}
+            </h2>
+            <div className="s08__section-body">
+              {mechanicStatus === 'ready' && mechanicChoice == null && mechanicDefault.reservationFallback && (
+                <ErrorNotice
+                  tone="info"
+                  title={
+                    mechanicDefault.mechanicId != null
+                      ? MECHANIC_MESSAGES.RESERVATION_FALLBACK
+                      : MECHANIC_MESSAGES.RESERVATION_FALLBACK_EMPTY
+                  }
+                />
+              )}
+              <MechanicSelect
+                status={mechanicStatus}
+                options={mechanicOptions}
+                value={mechanicId}
+                error={mechanicError ?? undefined}
+                loadError={assignees.error ?? undefined}
+                onChange={(staffId) => {
+                  setMechanicChoice(staffId)
+                  setMechanicError(null)
+                }}
+                onRetry={assignees.reload}
+              />
             </div>
           </section>
 
