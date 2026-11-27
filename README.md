@@ -8,11 +8,11 @@
 | 코드 구조 규칙 (프론트 7장) | `chagok-docs/CONVENTIONS.md` |
 | 브랜치·이슈·PR·릴리스 | `chagok-docs/CONTRIBUTING.md` |
 | 처음 보는 팀원 안내 | `chagok-docs/docs/etc/GUIDE_레포구조_협업규칙_AI스킬안내.md` |
-| 디자인 기준 (v3.0 화면·컴포넌트 구조·API 매핑, 참조용) | [`docs/design/README.md`](docs/design/README.md) — 주요 페이지 9 캡처·Mock 프로토타입. 정책 기준은 chagok-docs |
+| 디자인 기준 (v3.0 화면·컴포넌트 구조·API 매핑, 참조용) | [`design/README.md`](design/README.md) — 주요 페이지 9 캡처·Mock 프로토타입·변경 기록(`design/CHANGELOG.md`). 정책 기준은 chagok-docs |
 
 ## 지금 상태
 
-P0-핵심과 P0-나머지 화면이 들어간 상태입니다(2026-11-27, develop `9491f19`). M2 통합 검증(태그 `v0.5-m2-integration`, 2026-11-26)을 통과했고, P0-나머지 구현 이슈(chagok-docs 12 백로그 5장)는 모두 닫혔습니다. 화면은 S-01 로그인, S-02 홈(오늘 예약 목록 → 월·주 캘린더, 예약 상세 패널), S-04 재점검 대상, S-05 고객·차량 목록, S-06 고객 상세, S-07 차량 상세, S-08 방문·정비 기록과 모달 M-01·M-02·M-03입니다. P1 화면(S-09 설정, S-10 서비스 관리자, S-01 비밀번호 변경·약관 단계)은 아직 없습니다. 다음 마일스톤 순서는 `chagok-docs` README 「지금 단계」를 봅니다.
+P0-핵심과 P0-나머지 화면이 들어간 상태입니다(2026-11-28 확인, develop `6072eb0`). M2 통합 검증(태그 `v0.5-m2-integration`, 2026-11-26)을 통과했고, P0-나머지 구현 이슈(chagok-docs 12 백로그 5장)는 모두 닫혔습니다. 화면은 실제 백엔드 API에 연결돼 있고(V2 기준 P0 통합검증 2026-11-27 — 실서버·브라우저 확인, 결과는 chagok-docs TEST 7장), Mock은 개발 서버에서만 켜는 보조 수단입니다. main 반영은 릴리스 PR(#97)이 머지될 때입니다. 화면은 S-01 로그인, S-02 홈(오늘 예약 목록 → 월·주 캘린더, 예약 상세 패널), S-04 재점검 대상, S-05 고객·차량 목록, S-06 고객 상세, S-07 차량 상세, S-08 방문·정비 기록과 모달 M-01·M-02·M-03입니다. P1 화면(S-09 설정, S-10 서비스 관리자, S-01 비밀번호 변경·약관 단계)은 아직 없습니다. 다음 마일스톤 순서는 `chagok-docs` README 「지금 단계」를 봅니다.
 
 ```text
 src/
@@ -21,7 +21,7 @@ src/
 ├── shared/       ← features·pages를 import하지 않음
 │   ├── api/client.ts    유일한 fetch 위치. request() · ApiError · onUnauthorized · MOCK_ENABLED · 10초 시간 초과(05 POL-125)
 │   ├── ui/              StatusBadge · Button · Layout · Modal · FormField · EmptyState · ErrorNotice · ItemStatusList · theme.css
-│   └── lib/             tokenStore(토큰 저장 한 곳) · submitGuard(중복 제출 잠금) · date · noteTag · recordDisplay · submitEdit · useEditForm
+│   └── lib/             tokenStore(토큰 저장 한 곳) · submitGuard(중복 제출 잠금) · date · noteTag · phoneMask · recordDisplay · submitEdit · useEditForm
 ├── features/     auth · customer · home · maintenance · reservation · target — 도메인별 api.ts · types.ts(08 그대로) · components/ · mocks/(개발용)   ← 다른 feature를 import하지 않음
 └── pages/        S01 · S02 · S04 · S05 · S06 · S07 · S08 — 화면 조립, 09의 S-xx와 1:1
 ```
@@ -38,10 +38,10 @@ src/
 | `Layout` | `<Layout header={<AppHeader />}>…</Layout>` | 상단 영역 + 본문, 1024px 기준 여백만. 메뉴·머리 내용은 화면 이슈가 넘김 |
 | 로그인 가드 | `App.jsx`의 `<Route element={<RequireAuth />}>` 안에 로그인이 필요한 화면을 둔다 | 토큰이 없으면 `/login`. 로그인 화면은 `setToken()`으로 저장, 로그아웃은 `clearToken()`(POL-12) |
 
-### ⚠ 임시 디자인 (D-19 화면 상세 설계 2026-11-24 확정 전)
+### 디자인과 기술
 
-`src/shared/ui/theme.css`의 색(Soft Blue Garage × Monochrome Automotive: 네이비·파스텔 블루·연핑크·화이트·웜 아이보리)·여백·글꼴과 `Layout`의 배치는 **확정이 아닙니다.** D-19 뒤 바꿀 곳: `theme.css` 변수, `Layout`(메뉴 위치·머리 구성·좁은 화면 배치), `Button` 모양, `StatusBadge` 색(09 0장 💡 회색·파랑·주황·빨강). 동작(요청·오류·가드·중복 제출 방지)은 바뀌지 않습니다.
-
+- **디자인**: 최종 디자인 v3.0(`design/`)을 따릅니다. 토큰(색·여백·글꼴)은 `src/shared/ui/theme.css` 한 곳에만 두고(값의 출처 `design/references/COMPONENT_SPEC.md` 1장), 컴포넌트 CSS는 그 변수를 씁니다. 상태 색은 09 0장(미확인 회색·여유 파랑·임박 주황·도래 빨강)이고 글자를 함께 보입니다. 디자인 자료의 화면·프로토타입은 **기준**이고, 실제 구현 여부는 위 「지금 상태」가 기준입니다(P1 화면은 디자인만 있음).
+- **버전**(`package.json`): React 19.1 · React Router 7.18 · Vite 6.4 · TypeScript 5.8 · Vitest 5.1(jsdom) · ESLint 9. Node 22 LTS(CI와 같음).
 - **JS와 TS**: 화면 컴포넌트는 `.jsx`, API 타입·클라이언트는 `.ts`. `tsconfig.json`의 `allowJs`로 함께 쓰고, `npm run build`가 타입 검사(`tsc --noEmit`) 후 빌드합니다.
 - **DB는 직접 쓰지 않습니다.** 데이터는 모두 백엔드 REST API(08)로만 받습니다.
 
