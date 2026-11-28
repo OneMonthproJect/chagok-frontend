@@ -4,6 +4,7 @@ import DateNavigator from '@/features/reservation/components/DateNavigator.jsx'
 import MonthCalendar from '@/features/reservation/components/MonthCalendar.jsx'
 import ReservationList from '@/features/reservation/components/ReservationList.jsx'
 import ReservationPanel from '@/features/reservation/components/ReservationPanel.jsx'
+import ReservationListPanel from '@/features/reservation/components/ReservationListPanel.jsx'
 import ReservationFormModal from '@/features/reservation/components/ReservationFormModal.jsx'
 import WeekCalendar from '@/features/reservation/components/WeekCalendar.jsx'
 import { formatFullDate, isValidDate, todaySeoul, weekRange } from '@/features/reservation/dates'
@@ -20,6 +21,7 @@ import Button from '@/shared/ui/Button.jsx'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import { PATHS, QUERY, vehiclePath } from '@/app/paths'
+import MenuIcon from '@/app/menuIcons.jsx'
 import { appRoutes } from '@/app/routes'
 import { emptyDayMessage, listTitle } from './homeText'
 import { useServiceItems } from './useServiceItems'
@@ -44,14 +46,22 @@ import './HomePage.css'
 //   정정의 상태 선택은 사장만이라 03(useMe)의 역할을 패널에 넘긴다(features끼리 import하지 않고 여기서 조립).
 // - [예약 등록](머리·빈 날) → M-02 (#25). 차량은 customer의 VehiclePicker, 신규는 M-01(CustomerVehicleFormModal), 항목은 13 —
 //   여기서 조립한다(feature끼리 import 금지). 등록·변경되면 그 날짜 목록으로 옮겨 다시 불러온다.
-// - 요약 숫자(#28, 08 04): 오늘 예약·오늘 연락할 고객. 다른 날짜를 볼 때만 "목록 →"(오늘로), [보기 →]는 S-04 라우트가 있을 때만(→ /targets).
-//   예약이 바뀌면(등록·변경·취소·노쇼·409) 함께 다시 부른다.
+// - 요약 숫자(#28, 08 04): 오늘 예약·오늘 연락할 고객. [보기 →]는 S-04 라우트가 있을 때만(→ /targets).
+//   예약이 바뀌면(등록·변경·취소·노쇼·409) 함께 다시 부른다. 넓은 화면에서는 위에 붙어 있다(sticky, #110 5절).
+// - 우측 패널 전환(UI·UX 통합 개선 6절, #110): [오늘 예약] 카드 → ?list=today, 같은 자리 패널이 오늘 예약 목록(08 04 todayReservations,
+//   요약 숫자와 같은 응답 — 따로 부르지 않음). 목록·캘린더에서 예약을 누르면 ?reservation=으로 같은 패널이 예약 상세로 바뀐다(list는 지움).
+//   카드를 다시 누르면 목록으로 돌아온다. 닫기는 두 쿼리를 함께 지운다. 날짜·보기·선택은 그대로 둔다.
+//   월 보기 아래 날짜 목록은 고른 날짜의 목록(날짜 이동 포함)이라 그대로 둔다 — 오늘 목록 패널이 그 기능을 다 대신하지 않는다.
+// - 머리 가운데 정비소명(08 03 shopName, #110 4절). 영업 상태·영업시간은 00 범위에서 P2라 보이지 않는다.
 
 /** ?view= 값 (09 S-02 월/주 전환). 기본(주)은 URL에 넣지 않는다 */
 const VIEW_MONTH = 'month'
 
 /** ?mine= 값 ("내 담당만" 켬). 기본(전체)은 URL에 넣지 않는다 */
 const MINE_ON = '1'
+
+/** ?list= 값: 우측 패널을 오늘 예약 목록으로 (#110 6절) */
+const LIST_TODAY = 'today'
 
 /** 패널을 목록에서 열었는지(이때만 닫기 = 뒤로 가기). 주소로 바로 들어왔으면 쿼리만 지운다 */
 const PANEL_FROM_LIST = 'panelFromList'
@@ -81,8 +91,9 @@ export default function HomePage() {
   const weekPeriod = weekRange(date)
   const week = usePeriodReservations(weekPeriod.from, weekPeriod.to, !isMonth && (!mine || me !== null), mine ? me?.staffId : undefined)
   const summary = useHomeSummary()
-  const reservationId = parseReservationId(searchParams.get(QUERY.RESERVATION)) // undefined면 패널 닫힘
-  const panelOpen = reservationId !== undefined
+  const reservationId = parseReservationId(searchParams.get(QUERY.RESERVATION)) // undefined면 상세 아님
+  const todayListOpen = reservationId === undefined && searchParams.get(QUERY.LIST) === LIST_TODAY
+  const panelOpen = reservationId !== undefined || todayListOpen
   const openedFromList = location.state?.[PANEL_FROM_LIST] === true
   const items = useServiceItems()
   const [createOpen, setCreateOpen] = useState(false)
@@ -126,12 +137,25 @@ export default function HomePage() {
     setSearchParams(params, { replace: true, state: null })
   }
 
+  /** 같은 패널을 연다(이미 열려 있으면 내용만 바꿔 뒤로 가기 한 번에 닫히게) */
+  function showPanel(params) {
+    if (panelOpen) setSearchParams(params, { replace: true, state: location.state })
+    else setSearchParams(params, { state: { [PANEL_FROM_LIST]: true } })
+  }
+
   function openReservation(id) {
     const params = new URLSearchParams(searchParams)
     params.set(QUERY.RESERVATION, String(id))
-    // 패널이 이미 열려 있으면 바꾸기만 한다(뒤로 가기 한 번에 닫히도록)
-    if (panelOpen) setSearchParams(params, { replace: true, state: location.state })
-    else setSearchParams(params, { state: { [PANEL_FROM_LIST]: true } })
+    params.delete(QUERY.LIST) // 목록에서 골랐으면 같은 패널이 상세로 바뀐다
+    showPanel(params)
+  }
+
+  /** [오늘 예약] 카드: 우측 패널을 오늘 예약 목록으로 (#110 6절) */
+  function openTodayList() {
+    const params = new URLSearchParams(searchParams)
+    params.delete(QUERY.RESERVATION)
+    params.set(QUERY.LIST, LIST_TODAY)
+    showPanel(params)
   }
 
   function closePanel() {
@@ -141,6 +165,7 @@ export default function HomePage() {
     }
     const params = new URLSearchParams(searchParams)
     params.delete(QUERY.RESERVATION)
+    params.delete(QUERY.LIST)
     setSearchParams(params, { replace: true })
   }
 
@@ -179,6 +204,12 @@ export default function HomePage() {
           <h1>홈</h1>
           <p>{formatFullDate(today)}</p>
         </div>
+        {me && (
+          <div className="home-shop" aria-label="정비소">
+            <MenuIcon name="shop" size={18} />
+            <b>{me.shopName}</b>
+          </div>
+        )}
         <div className="page-actions">
           <Button onClick={() => setCreateOpen(true)}>+ 예약 등록</Button>
         </div>
@@ -187,7 +218,8 @@ export default function HomePage() {
       <SummaryCards
         state={summary.state}
         onReload={summary.reload}
-        onShowToday={date !== today ? () => changeDate(today) : undefined}
+        onOpenToday={openTodayList}
+        todayActive={todayListOpen}
         onShowTargets={hasTargetsPage() ? () => navigate(PATHS.TARGETS) : undefined}
       />
 
@@ -274,7 +306,20 @@ export default function HomePage() {
           )}
         </div>
 
-        {panelOpen && (
+        {todayListOpen && (
+          <ReservationListPanel
+            title="오늘 예약"
+            state={summary.state.kind === 'ok' ? { kind: 'ok', items: summary.state.data.todayReservations } : summary.state}
+            onClose={closePanel}
+            onRetry={summary.reload}
+            onSelect={openReservation}
+            emptyTitle={emptyDayMessage(today, today)}
+            emptyAction={{ label: '예약 등록', onClick: () => setCreateOpen(true) }}
+            failTitle="오늘 예약을 불러오지 못했습니다."
+          />
+        )}
+
+        {reservationId !== undefined && (
           <HomeReservationPanel
             reservationId={reservationId}
             items={items}

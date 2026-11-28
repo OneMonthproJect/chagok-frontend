@@ -3,6 +3,7 @@ import Modal from '@/shared/ui/Modal.jsx'
 import FormField from '@/shared/ui/FormField.jsx'
 import Button from '@/shared/ui/Button.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
+import ItemStatusList from '@/shared/ui/ItemStatusList.jsx'
 import LicensePlate from '@/shared/ui/LicensePlate.jsx'
 import { createReservation, getReservationPanel, updateReservation } from '../api'
 import {
@@ -27,6 +28,8 @@ import './ReservationFormModal.css'
 // - 변경 모드: 차량은 바꿀 수 없다. 읽어 온 version과 바뀐 칸만 보낸다(19). 바뀐 게 없으면 저장 버튼 비활성(R14).
 // - 409 RESERVATION_ACTIVE_EXISTS → 안내 + 기존 예약 보기(onOpenExisting), 409 CONCURRENT_MODIFICATION → 최신 예약을 다시 불러와 채움.
 // - 저장 중 버튼 잠금·두 번 눌러도 한 번(POL-120). 실패해도 입력값 유지, 자동 재전송 없음(POL-125).
+// - 점검 대상(#110 10절, S-04에서 열 때만): targetItems(ItemStatusList 줄 — 이름·상태·다음 정비일, 쓰는 화면이 만든 값)를 차량 아래에 보이고,
+//   그 항목들(targetItemIds)을 예약 목적에서 강조한다. 체크는 하지 않는다(예약 목적은 선택 입력, 09 M-02). 차량이 바뀌면 안내를 지운다.
 // 사용 (등록): <ReservationFormModal mode="create" initialDate="2026-11-26" items={items} login={login} vehiclePicker={render} onSaved={…} onClose={…} onOpenExisting={(id) => …} />
 //      (변경): <ReservationFormModal mode="edit" target={{ reservationId, version, reservedAt, purpose, vehicle, assignee }} items={items} login={login} onSaved={…} onClose={…} onOpenExisting={(id) => …} />
 
@@ -38,6 +41,8 @@ export default function ReservationFormModal({
   target = null,
   initialDate,
   initialVehicle = null,
+  targetItems = null,
+  targetItemIds = [],
   items = [],
   login = null,
   vehiclePicker,
@@ -169,6 +174,8 @@ export default function ReservationFormModal({
   }
 
   const vehicle = values.vehicle
+  // 점검 대상 안내는 처음 받은 차량일 때만(차량을 바꾸면 이전 차량 정보가 남지 않게)
+  const showTargets = !isEdit && targetItems?.length > 0 && vehicle != null && vehicle.vehicleId === initialVehicle?.vehicleId
   const footer = (
     <>
       <Button variant="secondary" onClick={onClose}>취소</Button>
@@ -233,6 +240,13 @@ export default function ReservationFormModal({
           {errors.vehicle && <p className="rsv-form__error" role="alert">⚠ {errors.vehicle}</p>}
         </section>
 
+        {showTargets && (
+          <section className="rsv-form__section rsv-form__targets" aria-labelledby={`${idPrefix}-targets-label`}>
+            <p className="rsv-form__label" id={`${idPrefix}-targets-label`}>점검 대상 항목</p>
+            <ItemStatusList variant="target" items={targetItems} />
+          </section>
+        )}
+
         <div className="rsv-form__when">
           <FormField id={`${idPrefix}-date`} label="날짜" required error={errors.date} hint={values.date ? formatDayLabel(values.date) : undefined}>
             <input type="date" min={today} value={values.date} onChange={(e) => update({ date: e.target.value, time: '' })} />
@@ -281,6 +295,7 @@ export default function ReservationFormModal({
           onChange={update}
           error={errors.purpose}
           memoError={errors.memo}
+          highlightIds={showTargets ? targetItemIds : []}
         />
       </form>
     </Modal>

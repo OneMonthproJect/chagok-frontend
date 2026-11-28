@@ -46,6 +46,7 @@ import {
 import { parseReservationId } from '@/features/reservation/panelFlow'
 import { useAssignees } from '@/features/reservation/useAssignees'
 import { useReservationPanel } from '@/features/reservation/useReservationPanel'
+import { VISIT_SAVED_STATE } from '@/features/maintenance/maintenanceFlow'
 import './VisitRecordPage.css'
 
 // S-08 방문·정비 기록 (09 S-08·5장, 04 F-MNT-01~03, 08 09·12·13, 05 POL-30·120~125, D-58, 디자인 v3.0 S-08-visit-record).
@@ -196,7 +197,8 @@ export default function VisitRecordPage() {
     const body = withMechanic(toVisitSaveRequest(form, rows, missing), mechanicId)
     try {
       await saveVisit(vehicleId, body)
-      navigate(vehiclePath(vehicleId), { replace: true })
+      // 성공 응답을 받았을 때만 S-07에 저장 완료 안내(#110 21절). 실패·응답 미확인(네트워크)은 아래 catch — 안내 없음
+      navigate(vehiclePath(vehicleId), { replace: true, state: { [VISIT_SAVED_STATE]: true } })
     } catch (error) {
       if (error?.code === 'INVALID_INPUT' && error.fieldErrors?.length > 0) {
         // mechanicId(X13: 없음·남의 것·비활성)는 담당 칸 옆, 나머지는 방문 정보·항목 칸으로

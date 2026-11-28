@@ -126,6 +126,13 @@
   cursor: pointer;
 }
 .purpose-chip.is-checked { border-color: var(--ck-brand); background: var(--ck-brand-tint); color: var(--ck-brand); font-weight: 600; }
+/* 점검 대상 강조 (#110 10절): 점선 테두리 + "점검 대상" 글자. 체크(실선·체크 표시)와 겹쳐도 구분된다 */
+.purpose-chip.is-target { border: 1px dashed var(--ck-select-border); background: var(--ck-brand-tint); }
+.purpose-chip.is-target.is-checked { border-style: solid; }
+.purpose-chip__target { color: var(--ck-select-border); font-size: var(--ck-fs-caption); font-weight: 700; }
+
+/* 점검 대상 항목 안내 (S-04에서 열 때만, #110 10절) */
+.rsv-form__targets { display: flex; flex-direction: column; gap: 8px; }
 .purpose-fields__memo { margin-top: 6px; color: var(--ck-text-2); font-size: var(--ck-fs-meta); font-weight: 700; }
 .purpose-fields textarea {
   box-sizing: border-box;

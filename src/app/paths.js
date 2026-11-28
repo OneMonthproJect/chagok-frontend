@@ -13,6 +13,7 @@ export const PATHS = {
 /** 쿼리 키 (FRONTEND_STRUCTURE 2장). 기본값이면 URL에서 뺀다 */
 export const QUERY = {
   RESERVATION: 'reservation',
+  LIST: 'list', // S-02 우측 패널의 목록 보기 (값 'today' = 오늘 예약, #110)
   DATE: 'date',
   VIEW: 'view',
   MINE: 'mine',

@@ -143,3 +143,30 @@
 .home-view-switch button + button { border-left: 1px solid #e2e4e8; }
 .home-view-switch button[aria-pressed='true'] { background: var(--ck-tab-active); color: var(--ck-text-inverse); }
 .home-view-switch button:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: -3px; }
+
+/* 머리 가운데 정비소명 (#110 4절): 카드·배경 없이 글자만. 좁으면 줄을 바꿔 겹치지 않는다 */
+.page-header { flex-wrap: wrap; }
+.home-shop {
+  min-width: 0;
+  margin: 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ck-text-3);
+}
+.home-shop b {
+  overflow: hidden;
+  color: var(--ck-text-1);
+  font-size: var(--ck-fs-body-lg);
+  font-weight: var(--ck-fw-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 넓은 화면: 요약 카드(sticky, 높이 92 + 위아래 8)가 위에 붙어 있으므로 우측 패널은 그 아래에 붙인다 (#110 5절) */
+@media (min-width: 1024px) {
+  .home-page .rsv-panel {
+    top: calc(108px + var(--ck-space-3));
+    max-height: calc(100vh - 108px - var(--ck-space-3) - var(--ck-space-4));
+  }
+}

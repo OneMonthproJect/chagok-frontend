@@ -209,6 +209,7 @@
   background: var(--ck-surface, #fff);
   text-align: center;
 }
+.not-found__mascot { display: block; width: 180px; height: auto; margin: 0 auto 12px; }
 .not-found h1 { margin: 0; font-size: var(--ck-fs-section, 20px); }
 .not-found p { margin: 8px 0 0; color: var(--ck-text-3, #5f646d); font-size: var(--ck-fs-body, 15px); }
 .not-found__link {

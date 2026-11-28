@@ -6,11 +6,12 @@ import './ErrorNotice.css'
 //   error에는 shared/api/client.ts가 던진 ApiError만 넘긴다(그 밖의 오류는 내부 문구가 그대로 보이므로 화면이 title·body로 바꿔 넘긴다).
 //   title이 없으면 error.message가 제목, title이 있으면 error.message가 아래 줄(body를 따로 주면 body).
 // 다시 시도는 사람이 버튼을 누를 때만 onRetry를 부른다 — 자동 재전송 없음(POL-125). onRetry가 없으면 버튼도 없다.
-// tone: error(기본) · warn(409 동시 수정 등) · info
+// tone: error(기본) · warn(409 동시 수정 등) · info · success(실제 성공 응답 뒤 짧은 완료 안내, #110 21절 — 성공이 확인되지 않으면 쓰지 않음)
 // 사용: <ErrorNotice title="불러오지 못했습니다." error={err} onRetry={reload} retryLabel="다시 불러오기" />
 //       <ErrorNotice error={saveError} onRetry={save} />
 
-const TONES = ['error', 'warn', 'info']
+const TONES = ['error', 'warn', 'info', 'success']
+const ICON = { error: '!', warn: '!', info: 'i', success: '✓' }
 
 export default function ErrorNotice({ error, title, body, tone = 'error', onRetry, retryLabel = '다시 시도' }) {
   const heading = title ?? error?.message
@@ -19,9 +20,9 @@ export default function ErrorNotice({ error, title, body, tone = 'error', onRetr
 
   const toneClass = TONES.includes(tone) ? tone : 'error'
   return (
-    <div className={`error-notice error-notice--${toneClass}`} role={toneClass === 'info' ? 'status' : 'alert'}>
+    <div className={`error-notice error-notice--${toneClass}`} role={toneClass === 'info' || toneClass === 'success' ? 'status' : 'alert'}>
       <span className="error-notice__icon" aria-hidden="true">
-        {toneClass === 'info' ? 'i' : '!'}
+        {ICON[toneClass]}
       </span>
       <div className="error-notice__text">
         {heading && <p className="error-notice__title">{heading}</p>}

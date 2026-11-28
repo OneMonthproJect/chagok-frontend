@@ -94,3 +94,9 @@
   .rsv-row__secondary { justify-content: flex-start; }
   .rsv-row__primary { grid-template-columns: 46px minmax(80px, max-content) 64px minmax(108px, 1fr); }
 }
+
+/* 우측 패널 안 목록 (#110 6절): 시각·번호판·고객명·연락처 / 목적·담당·상태를 두 줄로 */
+.rsv-list--panel .rsv-row { grid-template-columns: 1fr; gap: 8px; padding: 12px; }
+.rsv-list--panel .rsv-row__primary { grid-template-columns: 44px max-content minmax(0, 1fr); gap: 8px; }
+.rsv-list--panel .rsv-row__primary > span:last-child { grid-column: 2 / -1; }
+.rsv-list--panel .rsv-row__secondary { flex-wrap: wrap; justify-content: flex-start; }

@@ -96,6 +96,11 @@
   --ck-cal-holiday-name: #a83434;
   --ck-cal-holiday-bg: #fbe9e9;
 
+  /* 정비 이력 타임라인 (지시서 19절) */
+  --ck-timeline-line: #d9dee7;
+  --ck-timeline-dot: #a8b0ba;
+  --ck-timeline-latest: #152e8b;
+
   /* 글자 크기 · 굵기 · 행간 (업무 화면 최소 12px) */
   --ck-fs-caption: 12px;
   --ck-fs-meta: 13px;

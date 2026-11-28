@@ -202,6 +202,34 @@ describe('S-07 차량 상세', () => {
     expect(second.querySelector('.visit-record__mileage')).toBeNull() // 방문 주행거리와 같으면 다시 쓰지 않음
   })
 
+  it('정비 이력 타임라인(#110 19절): 맨 위 방문만 최신 점, 항목 이름 앞 아이콘(이름은 그대로)', async () => {
+    serve()
+    renderPage()
+    await settle()
+    expect(document.querySelector('.visit-history__list').classList.contains('visit-history__list--timeline')).toBe(true)
+    const [first, second] = visitItems()
+    expect(first.classList.contains('is-latest')).toBe(true)
+    expect(second.classList.contains('is-latest')).toBe(false)
+    const item = second.querySelector('.visit-record__item')
+    expect(item.querySelector('svg.item-icon').getAttribute('aria-hidden')).toBe('true')
+    expect(item.textContent).toBe('엔진오일')
+  })
+
+  it('S-08 저장 성공으로 왔을 때만 "정비 기록을 저장했습니다." (#110 21절), 화면 상태에서 표시를 지운다', async () => {
+    serve()
+    renderPage({ pathname: '/vehicles/4', state: { visitSaved: true } })
+    await settle()
+    const notice = document.querySelector('.error-notice--success')
+    expect(notice.textContent).toContain('정비 기록을 저장했습니다.')
+    expect(notice.getAttribute('role')).toBe('status')
+    cleanup()
+
+    serve()
+    renderPage('/vehicles/4')
+    await settle()
+    expect(document.querySelector('.error-notice--success')).toBeNull()
+  })
+
   it('꼬리표: 지난 방문 거절(날짜)·지난 점검 주의(날짜, 메모)를 항목 이름 옆에 서버 값 그대로, 상태는 바꾸지 않는다 (F-CYC-02)', async () => {
     const items = ITEM_STATUS.items.map((i) =>
       i.itemId === 1

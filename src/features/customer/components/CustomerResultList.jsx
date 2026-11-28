@@ -1,4 +1,5 @@
 import EmptyState from '@/shared/ui/EmptyState.jsx'
+import mascotClipboard from '@/shared/ui/assets/mascot-clipboard.png'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import { LOAD_FAILED_MESSAGE, RELOAD_LABEL, emptyState } from '../searchFlow'
 import CustomerRow from './CustomerRow.jsx'
@@ -39,6 +40,7 @@ export default function CustomerResultList({ search, onRegister, rowLink }) {
       <EmptyState
         title={empty.title}
         description={empty.description}
+        illustration={<img src={mascotClipboard} alt="" width="96" height="96" />}
         action={onRegister ? { label: empty.actionLabel, onClick: () => onRegister(query) } : undefined}
       />
     )

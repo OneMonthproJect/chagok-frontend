@@ -24,17 +24,20 @@ describe('SummaryCards', () => {
 
   it('콜백이 없으면 버튼도 없다 (연결 안 된 버튼 없음)', () => {
     render(<SummaryCards state={OK} onReload={() => {}} />)
-    expect(button('목록 →')).toBeUndefined()
+    expect(document.querySelector('.summary-card--button')).toBeNull()
     expect(button('보기 →')).toBeUndefined()
   })
 
-  it('콜백이 있으면 누를 때 알린다', () => {
-    const onShowToday = vi.fn()
+  it('콜백이 있으면 [오늘 예약] 카드 전체가 버튼이고 누를 때 알린다, 선택 표시는 todayActive (#110 6절)', () => {
+    const onOpenToday = vi.fn()
     const onShowTargets = vi.fn()
-    render(<SummaryCards state={OK} onReload={() => {}} onShowToday={onShowToday} onShowTargets={onShowTargets} />)
-    click(button('목록 →'))
+    render(<SummaryCards state={OK} onReload={() => {}} onOpenToday={onOpenToday} todayActive onShowTargets={onShowTargets} />)
+    const card = document.querySelector('.summary-card--button')
+    expect(card.getAttribute('aria-pressed')).toBe('true')
+    expect(card.getAttribute('aria-label')).toBe('오늘 예약 2건 — 목록 보기')
+    click(card)
     click(button('보기 →'))
-    expect(onShowToday).toHaveBeenCalledTimes(1)
+    expect(onOpenToday).toHaveBeenCalledTimes(1)
     expect(onShowTargets).toHaveBeenCalledTimes(1)
   })
 
