@@ -35,7 +35,7 @@ src/
 | Mock | `request('GET', path, { mock: MOCK_ENABLED ? () => import('./mocks').then((m) => m.detail(id)) : undefined })` | `features/<도메인>/api.ts`에서만. 개발 서버 + `VITE_USE_MOCK=true`일 때만 켜지고 운영 빌드에서는 빠진다. 응답은 08 0.2 모양 그대로(CONVENTIONS 7장 Mock) |
 | `StatusBadge` | `<StatusBadge status={item.status} />` | 서버가 준 `UNKNOWN`·`AHEAD`·`SOON`·`DUE`를 미확인·여유·임박·도래로. 계산하지 않음 |
 | `Button` | `<Button onClick={() => save(form)}>저장</Button>` | `onClick`이 Promise면 끝날 때까지 비활성 + "저장 중…", 두 번 눌러도 한 번(POL-120). 오류 표시는 화면이 |
-| `Layout` | `<Layout header={<AppHeader />}>…</Layout>` | 상단 영역 + 본문, 1024px 기준 여백만. 메뉴·머리 내용은 화면 이슈가 넘김 |
+| 공통 화면 틀 | `app/AppLayout` (메뉴·머리 + `<Outlet/>`) | 화면은 `pages/Sxx/route.jsx`만 만들면 이 틀 안에 들어간다(`app/routes.js`가 모음). 화면이 틀을 다시 만들지 않는다 |
 | 로그인 가드 | `App.jsx`의 `<Route element={<RequireAuth />}>` 안에 로그인이 필요한 화면을 둔다 | 토큰이 없으면 `/login`. 로그인 화면은 `setToken()`으로 저장, 로그아웃은 `clearToken()`(POL-12) |
 
 ### 디자인과 기술

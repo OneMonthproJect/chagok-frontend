@@ -181,29 +181,6 @@ body {
   }
 }
 
-/* Layout: 상단 영역 + 본문. ⚠ 임시 최소 구조 — 모양은 #17(AppLayout·AppMenu)에서 정한다 */
-.layout {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.layout__header {
-  background: var(--color-navy);
-  color: var(--color-white);
-  padding: 12px var(--gap);
-}
-.layout__main {
-  flex: 1;
-  padding: var(--gap);
-}
-@media (min-width: 1024px) {
-  .layout__header,
-  .layout__main {
-    padding-left: calc(var(--gap) * 2);
-    padding-right: calc(var(--gap) * 2);
-  }
-}
-
 /* Button: 높이 40/44/48, 저장 중 비활성 + 진행 표시 (05 POL-120). 화면당 primary 1개 */
 .button {
   display: inline-flex;
