@@ -1,3 +1,4 @@
+import { ItemLabel } from '@/shared/ui/ItemIcon.jsx'
 import {
   CUSTOMER_STATEMENT_LABEL,
   INSPECT_RESULT_LABELS,
@@ -22,7 +23,7 @@ export default function RecentVisits({ visits }) {
           <ul className="rsv-visits__records">
             {visit.records.map((record) => (
               <li key={record.recordId}>
-                <span className="rsv-visits__item">{record.itemName}</span>
+                <ItemLabel className="rsv-visits__item" name={record.itemName} />
                 <span className="rsv-visits__type">{recordTypeLabel(record.type)}</span>
                 {record.inspectResult && (
                   <span className={`rsv-visits__result rsv-visits__result--${record.inspectResult.toLowerCase()}`}>

@@ -18,10 +18,15 @@
   background: #fffaf0;
   color: #6b3d00;
 }
+.error-notice--success {
+  border-color: color-mix(in srgb, var(--ck-tone-ok-fg) 30%, transparent);
+  background: var(--ck-tone-ok-bg);
+  color: var(--ck-tone-ok-fg);
+}
 .error-notice--info {
-  border-color: #cfd3ff;
+  border-color: color-mix(in srgb, var(--ck-select-border) 35%, transparent);
   background: var(--ck-brand-tint);
-  color: #1a24b8;
+  color: var(--ck-brand);
 }
 
 .error-notice__icon {
@@ -41,6 +46,7 @@
 .error-notice--error .error-notice__icon { background: var(--ck-due-fg); }
 .error-notice--warn .error-notice__icon { background: var(--ck-soon-fg); }
 .error-notice--info .error-notice__icon { background: var(--ck-brand); }
+.error-notice--success .error-notice__icon { background: var(--ck-tone-ok-fg); }
 
 .error-notice__text {
   flex: 1;

@@ -28,22 +28,23 @@
   cursor: pointer;
   transition: border-color 0.14s, background-color 0.14s;
 }
-.rsv-row:hover { border-color: #c9cdf9; }
+.rsv-row:hover { border-color: var(--ck-select-border); }
 .rsv-row:focus-visible { outline: 2px solid var(--ck-brand-ring, rgba(31, 43, 255, 0.32)); outline-offset: 2px; }
 .rsv-row.is-selected {
-  border-color: var(--ck-brand, #1f2bff);
+  border-color: var(--ck-select-border);
   background: var(--ck-brand-tint, #f0f1ff);
 }
 .rsv-row__primary {
   display: grid;
-  grid-template-columns: 52px 90px 70px minmax(115px, 1fr);
+  grid-template-columns: 52px minmax(90px, max-content) 70px minmax(115px, 1fr);
   align-items: center;
   gap: 10px;
   font-size: var(--ck-fs-meta, 13px);
 }
 .rsv-row__primary strong,
 .rsv-row__primary b { color: #25282e; font-weight: 700; }
-.rsv-row__primary span { color: var(--ck-text-3, #5f646d); }
+.rsv-row__primary .license-plate { justify-self: start; }
+.rsv-row__primary span:not(.license-plate) { color: var(--ck-text-3, #5f646d); }
 .rsv-row__secondary {
   display: flex;
   justify-content: flex-end;
@@ -60,8 +61,8 @@
 .rsv-row__needs-action {
   padding: 4px 6px;
   border-radius: var(--ck-radius-pill, 999px);
-  background: #fff3dc;
-  color: #9a5800;
+  background: var(--ck-needs-action-bg);
+  color: var(--ck-needs-action-fg);
   font-size: var(--ck-fs-caption, 12px);
   font-style: normal;
   font-weight: 700;
@@ -80,16 +81,22 @@
   font-weight: 600;
   white-space: nowrap;
 }
-.rsv-status--RESERVED { border-color: #1f2bff4d; background: var(--ck-brand-tint, #f0f1ff); color: var(--ck-brand, #1f2bff); }
-.rsv-status--IN_PROGRESS { background: var(--ck-brand, #1f2bff); color: #fff; }
-.rsv-status--COMPLETED { border-color: #06764740; background: #ecfdf3; color: #067647; }
-.rsv-status--CANCELED { background: #f1f2f3; color: var(--ck-text-3, #5f646d); }
-.rsv-status--NO_SHOW { border-color: #b423184d; background: #feecec; color: #b42318; }
+.rsv-status--RESERVED { border-color: color-mix(in srgb, var(--ck-rsv-reserved-fg) 30%, transparent); background: var(--ck-rsv-reserved-bg); color: var(--ck-rsv-reserved-fg); }
+.rsv-status--IN_PROGRESS { background: var(--ck-rsv-progress-bg); color: var(--ck-rsv-progress-fg); }
+.rsv-status--COMPLETED { border-color: color-mix(in srgb, var(--ck-rsv-done-fg) 25%, transparent); background: var(--ck-rsv-done-bg); color: var(--ck-rsv-done-fg); }
+.rsv-status--CANCELED { background: var(--ck-rsv-canceled-bg); color: var(--ck-rsv-canceled-fg); }
+.rsv-status--NO_SHOW { border-color: color-mix(in srgb, var(--ck-rsv-noshow-fg) 30%, transparent); background: var(--ck-rsv-noshow-bg); color: var(--ck-rsv-noshow-fg); }
 
 /* 날짜 이동은 PeriodNavigator.css (#83, 주·월 캘린더와 같은 이동 바) */
 
 @media (max-width: 1023px) {
   .rsv-row { grid-template-columns: 1fr; gap: 8px; }
   .rsv-row__secondary { justify-content: flex-start; }
-  .rsv-row__primary { grid-template-columns: 46px 80px 64px minmax(108px, 1fr); }
+  .rsv-row__primary { grid-template-columns: 46px minmax(80px, max-content) 64px minmax(108px, 1fr); }
 }
+
+/* 우측 패널 안 목록 (#110 6절): 시각·번호판·고객명·연락처 / 목적·담당·상태를 두 줄로 */
+.rsv-list--panel .rsv-row { grid-template-columns: 1fr; gap: 8px; padding: 12px; }
+.rsv-list--panel .rsv-row__primary { grid-template-columns: 44px max-content minmax(0, 1fr); gap: 8px; }
+.rsv-list--panel .rsv-row__primary > span:last-child { grid-column: 2 / -1; }
+.rsv-list--panel .rsv-row__secondary { flex-wrap: wrap; justify-content: flex-start; }

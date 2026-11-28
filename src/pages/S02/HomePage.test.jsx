@@ -198,7 +198,9 @@ describe('S-02 예약 상세 패널', () => {
     expect(text).toContain('97,000 km')
 
     const rows = Array.from(panel().querySelectorAll('.item-status-list__row'))
-    expect(rows.map((r) => r.querySelector('.item-status-list__name').firstChild.textContent)).toEqual(['엔진오일', '배터리'])
+    // 이름 칸에는 항목 아이콘(svg, #110)이 앞에 있어 글자 노드만 본다
+    const nameText = (r) => Array.from(r.querySelector('.item-status-list__name').childNodes).find((n) => n.nodeType === 3).textContent
+    expect(rows.map(nameText)).toEqual(['엔진오일', '배터리'])
     expect(rows[0].classList.contains('is-highlighted')).toBe(false)
     expect(rows[1].classList.contains('is-highlighted')).toBe(true)
     expect(rows[1].textContent).toContain('예약 목적')
@@ -654,7 +656,8 @@ describe('S-02 예약 취소·노쇼', () => {
   })
 })
 
-// 요약 숫자 (chagok-frontend#28, 08 04): 서버 숫자 그대로, 다른 날짜에서만 "목록 →", 04 실패해도 목록·패널은 그대로
+// 요약 숫자 (chagok-frontend#28, 08 04): 서버 숫자 그대로, 04 실패해도 목록·패널은 그대로
+// [오늘 예약] 카드 → 우측 패널 오늘 예약 목록(04 todayReservations) ↔ 예약 상세 (#110 6절)
 describe('S-02 요약 숫자', () => {
   const home = { date: '2026-11-23', todayReservationCount: 2, todayContactCount: 5, todayReservations: [] }
   const withHome = (respond) => {
@@ -669,16 +672,51 @@ describe('S-02 요약 숫자', () => {
     const cards = document.querySelector('.summary-cards').textContent
     expect(cards).toContain('2건')
     expect(cards).toContain('5명')
-    expect(button('목록 →')).toBeUndefined() // 오늘을 보고 있으면 오늘로 갈 버튼이 없다
+    expect(document.body.textContent).toContain('차곡카센터') // 머리 가운데 정비소명(08 03 shopName, #110 4절)
   })
 
-  it('다른 날짜를 보고 있으면 "목록 →"으로 오늘로 돌아온다', async () => {
+  const todayCard = () => document.querySelector('.summary-card--button')
+  const homeWithToday = { ...home, todayReservations: [{ ...LIST_ITEM, assignee: { staffId: 2, name: '김정비', colorIndex: 1 } }] }
+
+  it('[오늘 예약] 카드 → 같은 우측 패널이 오늘 예약 목록, 줄 → 상세, 카드 다시 → 목록, 닫기 (날짜·보기는 그대로)', async () => {
+    withHome(() => ok(homeWithToday))
+    renderHome('/?date=2026-01-05&view=month')
+    await settle()
+    expect(todayCard().getAttribute('aria-pressed')).toBe('false')
+    const homeCallsBefore = calls((url) => url === '/api/home').length
+
+    click(todayCard())
+    await settle()
+    expect(location.search).toBe('?date=2026-01-05&view=month&list=today')
+    expect(todayCard().getAttribute('aria-pressed')).toBe('true')
+    expect(panel().querySelector('#rsv-list-panel-title').textContent).toBe('오늘 예약')
+    expect(panel().textContent).toContain('55차0010')
+    expect(panel().textContent).toContain('김정비')
+    expect(calls((url) => url === '/api/home').length).toBe(homeCallsBefore) // 요약과 같은 응답을 쓴다(따로 부르지 않음)
+
+    click(panel().querySelector('.rsv-row'))
+    await settle()
+    expect(location.search).toBe('?date=2026-01-05&view=month&reservation=4')
+    expect(panel().querySelector('#rsv-panel-title').textContent).toContain('예약 상세')
+    expect(document.querySelectorAll('.rsv-panel')).toHaveLength(1) // 같은 자리 하나
+
+    click(todayCard())
+    await settle()
+    expect(location.search).toBe('?date=2026-01-05&view=month&list=today')
+    expect(panel().querySelector('#rsv-list-panel-title')).not.toBeNull()
+
+    click(document.querySelector('[aria-label="오늘 예약 닫기"]'))
+    await settle()
+    expect(location.search).toBe('?date=2026-01-05&view=month')
+    expect(panel()).toBeNull()
+  })
+
+  it('오늘 예약이 0건이면 패널에 09 5장 빈 문구 + [예약 등록]', async () => {
     withHome(() => ok(home))
-    renderHome('/?date=2026-01-05')
+    renderHome('/?list=today')
     await settle()
-    click(button('목록 →'))
-    await settle()
-    expect(location.search).toBe('')
+    expect(panel().textContent).toContain('오늘 예약이 없습니다.')
+    expect(button('예약 등록', panel())).toBeDefined()
   })
 
   it('04가 실패해도 목록은 그대로 보이고, 요약만 안내 + 다시 시도', async () => {

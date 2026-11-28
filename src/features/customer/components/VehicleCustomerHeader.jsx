@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import LicensePlate from '@/shared/ui/LicensePlate.jsx'
 import { MILEAGE_MISSING, MODEL_YEAR_MISSING, mileageText, modelYearText } from '../detailFlow'
 import './customerDetail.css'
 
@@ -14,7 +15,7 @@ export default function VehicleCustomerHeader({ vehicle, customerLink }) {
   const mileage = mileageText(latestMileage)
   return (
     <section className="vehicle-header" aria-label="차량·고객 정보">
-      <h2 className="vehicle-header__plate">{plateNumber}</h2>
+      <h2 className="vehicle-header__plate"><LicensePlate number={plateNumber} /></h2>
       <p className="vehicle-header__spec">
         {model} · {year ?? <span className="vehicle-card__missing">{MODEL_YEAR_MISSING}</span>} · 최근 주행거리{' '}
         {mileage ?? <span className="vehicle-card__missing">{MILEAGE_MISSING}</span>}

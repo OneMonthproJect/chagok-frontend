@@ -1,0 +1,11 @@
+/* 정비·점검 항목 아이콘 (#110 20절): 14~16px, 보조 글자색, 이름과 6px 간격 */
+.item-icon {
+  flex: none;
+  color: var(--ck-text-3);
+  vertical-align: -3px;
+}
+.item-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

@@ -3,6 +3,7 @@ import Button from '@/shared/ui/Button.jsx'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
 import ItemStatusList from '@/shared/ui/ItemStatusList.jsx'
+import LicensePlate from '@/shared/ui/LicensePlate.jsx'
 import {
   LOAD_FAILED_MESSAGE,
   NO_HISTORY_MESSAGE,
@@ -199,7 +200,7 @@ function PanelBody({ status, data, error, reload, onOpenVehicle }) {
 
       <section className="rsv-panel__section" aria-label="고객·차량">
         <p className="rsv-panel__vehicle">
-          <strong>{vehicle.plateNumber}</strong>
+          <LicensePlate number={vehicle.plateNumber} />
           <span>{vehicle.model}</span>
         </p>
         <p className="rsv-panel__meta">

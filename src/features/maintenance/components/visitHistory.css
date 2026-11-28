@@ -142,3 +142,34 @@
   outline: 2px solid var(--ck-brand);
   outline-offset: 2px;
 }
+
+/* 세로 타임라인 (#110 19절): 방문 왼쪽에 얇은 연결선 + 원형 점. 줄 안 정보 배치는 그대로, 왼쪽 여백만 점 자리만큼 늘린다.
+   선은 첫 방문 점에서 시작해 마지막 방문 점에서 끝난다(방문 하나면 선 없음). 맨 위 방문(가장 최근) 점은 네이비 */
+.visit-history__list--timeline .visit-item {
+  position: relative;
+  padding-left: calc(var(--ck-space-5) + 22px);
+}
+.visit-history__list--timeline .visit-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--ck-space-5) + 5px);
+  width: 1px;
+  background: var(--ck-timeline-line);
+}
+.visit-history__list--timeline .visit-item:first-child::before { top: calc(var(--ck-space-4) + 10px); }
+.visit-history__list--timeline .visit-item:last-child::before { bottom: calc(100% - var(--ck-space-4) - 10px); }
+.visit-history__list--timeline .visit-item::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--ck-space-4) + 5px);
+  left: calc(var(--ck-space-5) + 1px);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ck-timeline-dot);
+}
+.visit-history__list--timeline .visit-item.is-latest::after {
+  background: var(--ck-timeline-latest);
+}

@@ -1,5 +1,7 @@
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
+import { holidaysOn, uncoveredHolidayNotice } from '@/shared/lib/holidays'
 import { WEEKDAYS, formatDayLabel, formatMonthLabel, monthGrid, shiftMonth } from '../dates'
+import { dayToneClasses } from '../dayTone'
 import PeriodNavigator from './PeriodNavigator.jsx'
 import './MonthCalendar.css'
 
@@ -12,6 +14,9 @@ import './MonthCalendar.css'
 //   달 표시를 눌러 고른 날짜는 그 날짜를 onSelectDate로 알린다(그 달 + 그날 목록).
 // - 오늘은 서울 날짜(today, 화면이 todaySeoul()로 넘김). 칸은 날짜 문자열로만 정한다(08 0.1).
 // - state: useMonthSummary의 상태. 실패하면 안내 + 사람이 누르는 다시 시도(onReload), 달력 칸은 그대로 보인다.
+// - 요일·공휴일(#110 9절): 일요일 빨강·토요일 파랑, 공휴일은 요일과 관계없이 빨강 + 날짜 아래 공식 명칭(같은 날 여러 개면 모두).
+//   공휴일은 shared/lib/holidays(데이터 JSON) 조회만 한다. 데이터가 없는 연도는 칸을 평일처럼 두고 위에 안내 한 줄.
+//   공휴일이어도 날짜를 누르는 동작·예약은 그대로다(영업일과 무관).
 // 사용: <MonthCalendar date="2026-11-24" today="2026-11-24" state={summary.state} onSelectDate={...} onReload={summary.reload} />
 
 /** 상태별 작은 숫자 — 순서·글자는 09 S-02 월 보기 그대로 */
@@ -29,9 +34,10 @@ function visibleCounts(summary) {
   return COUNTS.filter(({ key }) => summary[key] > 0).map(({ key, label }) => ({ key, label, count: summary[key] }))
 }
 
-/** 화면 읽기용 이름: "11월 24일 (화), 오늘, 3건, 예약 2, 완료 1" */
-function dayLabel(date, today, summary, counts) {
+/** 화면 읽기용 이름: "11월 24일 (화), 오늘, 3건, 예약 2, 완료 1" (공휴일이면 이름을 날짜 뒤에) */
+function dayLabel(date, today, summary, counts, holidays) {
   const parts = [formatDayLabel(date)]
+  for (const h of holidays) parts.push(h.name)
   if (date === today) parts.push('오늘')
   if (summary && (summary.total > 0 || counts.length > 0)) parts.push(`${summary.total}건`)
   for (const c of counts) parts.push(`${c.label} ${c.count}`)
@@ -42,6 +48,7 @@ export default function MonthCalendar({ date, today, state, onSelectDate, onRelo
   const { month, days } = monthGrid(date)
   const todayMonth = today.slice(0, 7)
   const byDate = state.kind === 'ok' ? state.byDate : {}
+  const holidayNotice = uncoveredHolidayNotice([days[0], days[days.length - 1]])
 
   /** 그 달로 옮길 때 고를 날짜: 이번 달이면 오늘, 아니면 1일 */
   function moveMonth(months) {
@@ -68,6 +75,8 @@ export default function MonthCalendar({ date, today, state, onSelectDate, onRelo
         <ErrorNotice title="예약 건수를 불러오지 못했습니다." error={state.error} onRetry={onReload} />
       )}
 
+      {holidayNotice && <p className="mcal__holiday-notice">{holidayNotice}</p>}
+
       <div className="mcal__weekdays" aria-hidden="true">
         {WEEKDAYS.map((w) => <span key={w}>{w}</span>)}
       </div>
@@ -75,8 +84,9 @@ export default function MonthCalendar({ date, today, state, onSelectDate, onRelo
         {days.map((day) => {
           const summary = byDate[day]
           const counts = visibleCounts(summary)
+          const holidays = holidaysOn(day)
           const selected = day === date
-          const classes = ['mcal-day']
+          const classes = ['mcal-day', ...dayToneClasses(day, holidays)]
           if (day.slice(0, 7) !== month) classes.push('is-outside')
           if (day === today) classes.push('is-today')
           if (selected) classes.push('is-selected')
@@ -86,11 +96,14 @@ export default function MonthCalendar({ date, today, state, onSelectDate, onRelo
                 type="button"
                 className={classes.join(' ')}
                 aria-pressed={selected}
-                aria-label={dayLabel(day, today, summary, counts)}
+                aria-label={dayLabel(day, today, summary, counts, holidays)}
                 data-date={day}
                 onClick={() => onSelectDate(day)}
               >
                 <span className="mcal-day__num">{Number(day.slice(8, 10))}</span>
+                {holidays.map((h) => (
+                  <span key={h.name} className="mcal-day__holiday">{h.name}</span>
+                ))}
                 {summary && summary.total > 0 && <strong className="mcal-day__total">{summary.total}건</strong>}
                 {counts.length > 0 && (
                   <span className="mcal-day__counts">

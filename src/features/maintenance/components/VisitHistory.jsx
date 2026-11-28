@@ -1,6 +1,7 @@
 import Button from '@/shared/ui/Button.jsx'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
+import { ItemLabel } from '@/shared/ui/ItemIcon.jsx'
 import {
   CUSTOMER_STATEMENT_LABEL,
   INSPECT_RESULT_LABELS,
@@ -31,6 +32,8 @@ import './visitHistory.css'
 // - P0-나머지 기록 수정(#34, F-MNT-04): 화면이 recordActions를 넘길 때만 그린다(연결 안 된 버튼 금지).
 //   줄 오른쪽 "수정" — 쓸 수 없으면 비활성 모양 + 이유(툴팁·스크린리더 설명). 비활성이어도 초점은 받아 이유를 읽을 수 있게 aria-disabled로 둔다.
 //   "수정됨"(08 11 edited) 꼬리표는 누르면 수정 이력 패널(08 38).
+// - 세로 타임라인(#110 19절): 방문마다 왼쪽에 얇은 연결선과 점(CSS). 맨 위(서버 순서상 가장 최근) 방문 점만 강조(is-latest).
+//   정보·순서·더 보기·수정 동작은 그대로, 이력이 없으면 선을 그리지 않는다(빈 상태).
 // props: visits(08 11 items[] 이어 붙인 것), totalElements, hasMore, loadingMore, moreError, onLoadMore, onRecordVisit(선택),
 //        recordActions(선택): { permissionOf(record) → { enabled, reason }, onEdit(record, visit), onShowRevisions(record) }
 
@@ -39,7 +42,7 @@ function RecordLine({ record, visit, actions }) {
   const reasonId = `visit-record-${record.recordId}-edit-reason`
   return (
     <li className="visit-record">
-      <span className="visit-record__item">{record.itemName}</span>
+      <ItemLabel className="visit-record__item" name={record.itemName} />
       <span className={`visit-record__type visit-record__type--${record.type.toLowerCase()}`}>{RECORD_TYPE_LABELS[record.type]}</span>
       {record.inspectResult && (
         <span className={`visit-record__result visit-record__result--${record.inspectResult.toLowerCase()}`}>
@@ -111,9 +114,9 @@ export default function VisitHistory({
           action={onRecordVisit ? { label: RECORD_VISIT_LABEL, onClick: onRecordVisit } : undefined}
         />
       ) : (
-        <ol className="visit-history__list">
-          {visits.map((visit) => (
-            <li key={visit.visitKey} className="visit-item">
+        <ol className="visit-history__list visit-history__list--timeline">
+          {visits.map((visit, index) => (
+            <li key={visit.visitKey} className={`visit-item${index === 0 ? ' is-latest' : ''}`}>
               <div className="visit-item__head">
                 <strong className="visit-item__date">{dateText(visit.visitDate)}</strong>
                 <span className="visit-item__meta">{visitMetaText(visit)}</span>

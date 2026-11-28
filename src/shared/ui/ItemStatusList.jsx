@@ -1,4 +1,5 @@
 import StatusBadge from '@/shared/ui/StatusBadge.jsx'
+import ItemIcon from '@/shared/ui/ItemIcon.jsx'
 import './ItemStatusList.css'
 
 // 정비 항목별 점검 주기 상태 목록. variant로 모양만 바꾼다:
@@ -7,7 +8,7 @@ import './ItemStatusList.css'
 //   - 상태는 서버 값 그대로 StatusBadge로만 보인다. 프론트에서 다시 계산하지 않는다.
 //   - 순서는 받은 순서 그대로(서버의 sortOrder 순). highlighted 항목도 자리를 옮기지 않고 굵게만 보인다(D-63 B02).
 //   - API 타입을 모른다. 08 응답을 아래 모양으로 펼치는 일(날짜 형식 등)은 쓰는 화면이 한다.
-// items: [{ id, name, status, highlighted?, tag?(이름 옆 작은 꼬리표), details?: [{ label, value }] }]
+// items: [{ id, name, code?(08 0.4 항목 code, 아이콘용 — 없으면 이름으로 고름), status, highlighted?, tag?(이름 옆 작은 꼬리표), details?: [{ label, value }] }]
 //   table은 첫 항목의 details label로 열 머리를 만든다 — 모든 항목의 details는 같은 label·같은 순서로 넘긴다.
 // loading: 이전 결과를 흐리게 둔 채 새 결과를 기다린다(자리 이동 없음).
 // 사용: <ItemStatusList variant="summary" items={panel.itemStatuses.map(toRow)} />
@@ -22,6 +23,7 @@ function display(value) {
 function ItemName({ item }) {
   return (
     <span className="item-status-list__name">
+      <ItemIcon code={item.code} name={item.name} />
       {item.name}
       {item.tag && <span className="item-status-list__tag">{item.tag}</span>}
     </span>

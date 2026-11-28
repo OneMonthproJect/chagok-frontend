@@ -21,7 +21,8 @@
   font-weight: 600;
   text-align: center;
 }
-.mcal__weekdays span:first-child { color: #b42318; }
+.mcal__weekdays span:first-child { color: var(--ck-cal-sunday); }
+.mcal__weekdays span:last-child { color: var(--ck-cal-saturday); }
 
 .mcal__grid { margin: 0; padding: 0; list-style: none; }
 .mcal__grid > li { min-width: 0; }
@@ -44,12 +45,32 @@
   cursor: pointer;
   transition: border-color 0.14s, background-color 0.14s;
 }
-.mcal-day:hover { border-color: #c9cdf9; }
+.mcal-day:hover { border-color: var(--ck-select-border); }
 .mcal-day:focus-visible { outline: 2px solid var(--ck-brand-ring, rgba(31, 43, 255, 0.32)); outline-offset: 2px; }
 .mcal-day.is-outside { background: var(--ck-surface-muted, #f7f8fa); color: var(--ck-text-4, #8a8f98); }
-.mcal-day.is-selected { border-color: var(--ck-brand, #1f2bff); background: var(--ck-brand-tint, #f0f1ff); }
+.mcal-day.is-selected { border-color: var(--ck-select-border); background: var(--ck-brand-tint); }
 
 .mcal-day__num { font-size: var(--ck-fs-meta, 13px); font-weight: 600; }
+
+/* 요일·공휴일 (#110 9절). 공휴일은 요일과 관계없이 빨강(토요일보다 뒤에 두어 우선). 오늘 동그라미·선택 테두리는 그대로 */
+.mcal-day.is-sunday .mcal-day__num { color: var(--ck-cal-sunday); }
+.mcal-day.is-saturday .mcal-day__num { color: var(--ck-cal-saturday); }
+.mcal-day.is-holiday .mcal-day__num { color: var(--ck-cal-holiday); }
+.mcal-day.is-outside .mcal-day__num { opacity: 0.6; }
+.mcal-day__holiday {
+  max-width: 100%;
+  padding: 1px 5px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--ck-cal-holiday-bg);
+  color: var(--ck-cal-holiday-name);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mcal__holiday-notice { margin: 0; color: var(--ck-text-3); font-size: var(--ck-fs-caption, 12px); }
 .mcal-day.is-today .mcal-day__num {
   min-width: 22px;
   height: 22px;
@@ -66,10 +87,10 @@
 /* 상태별 작은 숫자: 글자를 항상 함께 보인다(색만으로 구분하지 않음) */
 .mcal-count { font-size: 11px; line-height: 1.35; white-space: nowrap; }
 .mcal-count--reserved { color: var(--ck-brand, #1f2bff); }
-.mcal-count--inProgress { color: #1520b8; font-weight: 700; }
-.mcal-count--completed { color: #067647; }
-.mcal-count--canceled { color: var(--ck-text-3, #5f646d); }
-.mcal-count--noShow { color: #b42318; }
+.mcal-count--inProgress { color: var(--ck-brand); font-weight: 700; }
+.mcal-count--completed { color: var(--ck-rsv-done-fg); }
+.mcal-count--canceled { color: var(--ck-rsv-canceled-fg); }
+.mcal-count--noShow { color: var(--ck-rsv-noshow-fg); }
 
 /* 좁은 화면: 칸을 낮추고 상태별 숫자는 줄을 바꿔 쌓는다 */
 @media (max-width: 599px) {

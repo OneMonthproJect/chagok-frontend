@@ -42,20 +42,10 @@
   font-size: var(--ck-fs-small);
   font-weight: 500;
 }
-.summary-card__link {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ck-brand);
-  font: inherit;
-  font-size: var(--ck-fs-meta);
-  font-weight: 700;
-  cursor: pointer;
-}
 .summary-card--brand {
   border-color: transparent;
-  background: var(--ck-brand);
-  color: #fff;
+  background: var(--ck-dark-card);
+  color: var(--ck-text-inverse);
 }
 .summary-card--brand p,
 .summary-card--brand strong span { color: #ffffffe6; }
@@ -64,15 +54,42 @@
   padding: 0 12px;
   border: 0;
   border-radius: var(--ck-radius-pill);
-  background: #fff;
-  color: var(--ck-brand);
+  background: var(--ck-accent);
+  color: var(--ck-text-inverse);
   font: inherit;
   font-size: var(--ck-fs-meta);
   font-weight: 700;
   cursor: pointer;
 }
-.summary-card__link:focus-visible,
+.summary-card__pill:hover { background: var(--ck-accent-hover); }
 .summary-card__pill:focus-visible { outline: 3px solid var(--ck-brand-ring); outline-offset: 2px; }
+
+/* [오늘 예약] 카드 버튼 (#110 6절): 모양·크기는 카드 그대로, Hover는 외곽선 색만(두께 그대로라 움직이지 않음), 패널이 목록이면 선택 표시 */
+.summary-card--button {
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s, background-color 0.14s;
+}
+.summary-card--button:hover { border-color: var(--ck-select-border); }
+.summary-card--button.is-active { border-color: var(--ck-select-border); background: var(--ck-brand-tint); }
+.summary-card--button:focus-visible { outline: 3px solid var(--ck-brand-ring); outline-offset: 2px; }
+.summary-card__arrow { flex: none; color: var(--ck-text-3); }
+.summary-card--button:hover .summary-card__arrow,
+.summary-card--button.is-active .summary-card__arrow { color: var(--ck-select-border); }
+
+/* 넓은 화면: 스크롤해도 요약이 위에 붙어 있다(#110 5절). 배경을 깔아 아래 내용이 비치지 않게 하고,
+   예약 상세 패널(sticky)은 HomePage.css에서 이 높이만큼 아래에 붙인다 */
+@media (min-width: 1024px) {
+  .summary-cards {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin: -8px 0 8px;
+    padding: 8px 0;
+    background: var(--ck-bg);
+  }
+}
 .summary-cards--error { display: block; }
 
 @media (max-width: 1023px) {

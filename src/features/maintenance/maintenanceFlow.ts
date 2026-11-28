@@ -26,6 +26,11 @@ export const NO_HISTORY_MESSAGE = '정비 이력이 없습니다.'
 /** S-07 머리 버튼·이력 없음 버튼 (09 S-07·5장) → S-08 */
 export const RECORD_VISIT_LABEL = '방문 기록'
 
+/** S-08 저장 성공 → S-07 이동 때 넘기는 화면 상태 키와 안내 (#110 21절).
+ *  12 응답이 성공일 때만 붙인다(실패·응답 미확인은 붙이지 않음). 저장 시각은 08 11에 없어 보이지 않는다(현재 시각으로 대신하지 않음) */
+export const VISIT_SAVED_STATE = 'visitSaved'
+export const VISIT_SAVED_MESSAGE = '정비 기록을 저장했습니다.'
+
 /** 점검 주기 영역 설명 (04 F-CYC-01 기준 기록, T12·T13) */
 export const ITEM_STATUS_NOTE = '마지막 교체·외부 기록이 기준입니다. 점검·거절 기록은 기준이 아닙니다.'
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PATHS, QUERY, customerPath } from '@/app/paths'
 import Button from '@/shared/ui/Button.jsx'
@@ -20,7 +20,9 @@ import { useVehicleDetail } from '@/features/customer/useVehicleDetail'
 import RecordEditModal from '@/features/maintenance/components/RecordEditModal.jsx'
 import RecordRevisionPanel from '@/features/maintenance/components/RecordRevisionPanel.jsx'
 import VisitHistory from '@/features/maintenance/components/VisitHistory.jsx'
-import { ITEM_STATUS_NOTE, RECORD_VISIT_LABEL, dateText, itemStatusTableRows } from '@/features/maintenance/maintenanceFlow'
+import {
+  ITEM_STATUS_NOTE, RECORD_VISIT_LABEL, VISIT_SAVED_MESSAGE, VISIT_SAVED_STATE, dateText, itemStatusTableRows,
+} from '@/features/maintenance/maintenanceFlow'
 import { editPermission, findRecord } from '@/features/maintenance/recordEditFlow'
 import { useItemStatus } from '@/features/maintenance/useItemStatus'
 import { useVisitHistory } from '@/features/maintenance/useVisitHistory'
@@ -66,6 +68,14 @@ export default function VehicleDetailPage() {
   const today = todaySeoul()
   const [recordEdit, setRecordEdit] = useState(null) // { record, visit } — M-03을 연 기록(11에서 읽은 값)
   const [revisionRecord, setRevisionRecord] = useState(null) // 수정 이력 패널을 연 기록
+  // S-08 저장 성공으로 왔으면 저장 완료 안내(#110 21절). 화면 상태에서 표시를 지워 새로 고치거나 뒤로 와도 다시 뜨지 않게 한다
+  const [savedNotice, setSavedNotice] = useState(location.state?.[VISIT_SAVED_STATE] === true)
+  useEffect(() => {
+    if (location.state?.[VISIT_SAVED_STATE] !== true) return
+    const rest = { ...location.state }
+    delete rest[VISIT_SAVED_STATE]
+    navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: Object.keys(rest).length > 0 ? rest : null })
+  }, [location, navigate])
   // 이 페이지는 /vehicles/:vehicleId가 바뀌어도 다시 마운트되지 않는다. 다른 차량으로 바뀌면 열려 있던 입력·모달·패널을 닫는다
   // (안 그러면 이전 차량의 기록이 새 차량 화면에서 수정 모달로 남는다)
   const [shownFor, setShownFor] = useState(vehicleId)
@@ -75,13 +85,17 @@ export default function VehicleDetailPage() {
     setEditing(false)
     setRecordEdit(null)
     setRevisionRecord(null)
+    setSavedNotice(false)
   }
   // 409 뒤 11을 다시 받으면 같은 기록의 최신 값·version으로 바꾼다. 다시 받는 중에는 연 때 값을 그대로 둔다(입력 유지).
   const latestEdit = recordEdit && history.status === 'ready' ? findRecord(history.visits, recordEdit.record.recordId) : null
   const editTarget = latestEdit ?? recordEdit
   const recordActions = {
     permissionOf: (record) => editPermission(record, me, today, meError != null),
-    onEdit: (record, visit) => setRecordEdit({ record, visit }),
+    onEdit: (record, visit) => {
+      setSavedNotice(false) // 다른 저장 작업을 시작하면 앞 저장 안내는 닫는다(리뷰 지적, #110)
+      setRecordEdit({ record, visit })
+    },
     onShowRevisions: (record) => setRevisionRecord(record),
   }
 
@@ -102,17 +116,18 @@ export default function VehicleDetailPage() {
         {loaded && (
           <div className="s07__actions">
             {!editing && (
-              <Button variant="secondary" onClick={() => setEditing(true)}>
+              <Button variant="secondary" onClick={() => { setSavedNotice(false); setEditing(true) }}>
                 {EDIT_LABEL}
               </Button>
             )}
-            <Button variant="secondary" onClick={() => setReserving(true)}>
+            <Button variant="secondary" onClick={() => { setSavedNotice(false); setReserving(true) }}>
               예약
             </Button>
             <Button onClick={recordVisit}>{RECORD_VISIT_LABEL}</Button>
           </div>
         )}
       </header>
+      {savedNotice && <ErrorNotice tone="success" title={VISIT_SAVED_MESSAGE} />}
       <VehicleDetailBody
         vehicle={vehicle}
         itemStatus={itemStatus}

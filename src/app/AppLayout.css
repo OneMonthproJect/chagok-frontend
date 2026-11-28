@@ -69,9 +69,9 @@
 }
 .sidebar-item:hover { background: var(--ck-surface-muted, #f5f6f8); color: var(--ck-text-1, #111318); }
 .sidebar-item.active {
-  background: var(--ck-brand, #1f2bff);
-  color: #fff;
-  box-shadow: var(--ck-shadow-brand, 0 10px 25px #1f2bff38);
+  background: var(--ck-sidebar-active);
+  color: var(--ck-text-inverse);
+  box-shadow: var(--ck-shadow-brand);
 }
 .sidebar-item--subtle { font-size: var(--ck-fs-small, 14px); font-weight: 500; }
 .sidebar-item svg { flex: none; }
@@ -100,8 +100,8 @@
   justify-content: center;
   align-items: center;
   border-radius: 50%;
-  background: #e9e4ff;
-  color: #5b3cc4;
+  background: var(--ck-brand-tint);
+  color: var(--ck-brand);
   font-size: var(--ck-fs-small, 14px);
   font-style: normal;
   font-weight: 700;
@@ -187,7 +187,7 @@
   font-weight: 600;
   text-decoration: none;
 }
-.top-tabs a.active { border-color: var(--ck-brand, #1f2bff); color: var(--ck-brand, #1f2bff); }
+.top-tabs a.active { border-color: var(--ck-tab-active); color: var(--ck-tab-active); }
 
 /* ---- 본문 ---- */
 .app-main {
@@ -209,6 +209,7 @@
   background: var(--ck-surface, #fff);
   text-align: center;
 }
+.not-found__mascot { display: block; width: 180px; height: auto; margin: 0 auto 12px; }
 .not-found h1 { margin: 0; font-size: var(--ck-fs-section, 20px); }
 .not-found p { margin: 8px 0 0; color: var(--ck-text-3, #5f646d); font-size: var(--ck-fs-body, 15px); }
 .not-found__link {

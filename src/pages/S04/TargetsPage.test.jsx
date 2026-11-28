@@ -98,7 +98,7 @@ describe('S-04 재점검 대상', () => {
     renderPage()
     await settle()
     expect(document.body.textContent).toContain('기준일 2026년 11월 24일 (화) · 대상 차량 2대')
-    expect(rows().map((r) => r.querySelector('.target-row__vehicle b').textContent)).toEqual(['34나0002', '12가0001'])
+    expect(rows().map((r) => r.querySelector('.target-row__vehicle .license-plate').textContent)).toEqual(['34나0002', '12가0001'])
     expect(rows()[0].textContent).toContain('010-0000-0002')
     expect(rows()[0].textContent).toContain('도래 1')
   })
@@ -123,6 +123,38 @@ describe('S-04 재점검 대상', () => {
     expect(dialog.querySelector('.rsv-form__vehicle').textContent).toContain('김민수')
     expect(dialog.querySelector('input[type="search"]')).toBeNull()
     expect(dialog.querySelector('select[id$="-assignee"]').value).toBe('2')
+  })
+
+  it('[예약 등록] → 점검 대상 항목(이름·상태·다음 정비일)을 차량 아래에 보이고 예약 목적에서 강조만 한다(체크 안 함, #110 10절)', async () => {
+    fetchMock.mockImplementation((url) => {
+      if (url === '/api/targets') return Promise.resolve(ok(EXAMPLE))
+      if (url === '/api/items') return Promise.resolve(ok([
+        { itemId: 1, code: 'ENGINE_OIL', name: '엔진오일', cycleMonths: 6, cycleKm: 10000, active: true, sortOrder: 1 },
+        { itemId: 6, code: 'BATTERY', name: '배터리', cycleMonths: 36, cycleKm: 60000, active: true, sortOrder: 6 },
+      ]))
+      if (url === '/api/me') return Promise.resolve(ok({ staffId: 2, name: '김정비', role: 'MECHANIC', shopId: 1, shopName: '차곡카센터' }))
+      if (url === '/api/staff/assignees') return Promise.resolve(ok({ items: [{ staffId: 2, name: '김정비', role: 'MECHANIC', colorIndex: 1 }] }))
+      return Promise.resolve(fail(404, 'NOT_FOUND', '찾을 수 없습니다.'))
+    })
+    renderPage()
+    await settle()
+    click(button('예약 등록', rows()[1]))
+    await settle()
+    const dialog = document.querySelector('[role="dialog"]')
+    const targets = dialog.querySelector('.rsv-form__targets')
+    expect(targets.textContent).toContain('점검 대상 항목')
+    expect(targets.textContent).toContain('엔진오일')
+    expect(targets.textContent).toContain('도래')
+    expect(targets.textContent).toContain('2026.11.17')
+    const chips = Array.from(dialog.querySelectorAll('.purpose-chip'))
+    const oil = chips.find((c) => c.textContent.includes('엔진오일'))
+    const battery = chips.find((c) => c.textContent.includes('배터리'))
+    expect(oil.classList.contains('is-target')).toBe(true)
+    expect(oil.textContent).toContain('점검 대상')
+    expect(oil.querySelector('input').checked).toBe(false) // 자동으로 체크하지 않는다
+    expect(battery.classList.contains('is-target')).toBe(false)
+    click(oil.querySelector('input'))
+    expect(oil.querySelector('input').checked).toBe(true) // 사람이 고른다
   })
 
   it('펼치면 대상 항목의 다음 정비일·기준 기록일', async () => {
