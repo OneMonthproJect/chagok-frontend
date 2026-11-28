@@ -15,7 +15,8 @@ Closes #
 
 ## 문서 PR (chagok-docs)
 - 문서 PR: OneMonthproJect/chagok-docs#
-- [ ] 문서 변경 없음 (명세와 같은 동작)
+- [ ] 변경 유형별 관련 문서를 확인했다 (CONTRIBUTING 7장 「변경 유형별 문서 확인」: 명세·README·design·트러블슈팅·TEST 등) — 고쳤으면 위에 문서 PR, 늦으면 후속 이슈 링크
+- [ ] 문서 변경 없음 — 관련 없음 (명세와 같은 동작)
 - [ ] `features/*/types.ts`가 08 JSON 예시와 같다 (다르면 08 문서 PR 또는 백엔드 이슈)
 - [ ] 새 화면이면 09 화면 ID와 `pages` 파일이 1:1
 
@@ -47,7 +48,8 @@ Closes #
 
 ## AI 사용
 - [ ] 없음
-- [ ] 있음 → chagok-docs `docs/etc/AI_USAGE`에 기록함 (사용한 스킬·에이전트: )
+- [ ] 있음 → 아래에 기록 한 줄 (docs `AI_USAGE`에는 하루 단위로 통합, CONTRIBUTING 5장 「AI 사용 기록」)
+  - `| 날짜 | 레포#이슈 | 스킬·에이전트 | 한 일 | 사람이 바꾼 것 |`
 - [ ] AI가 구현 전에 계획을 보고했고, 내가 확인한 뒤 구현했다 (`ai-rules.md` 작업 절차)
 - [ ] AI의 "완료" 보고를 실제 빌드·테스트 결과로 확인했다
 - [ ] 커밋·본문에 AI 공동 작성자 표기가 없다 (AI 이름을 넣은 Co-authored-by 트레일러, AI 메일 주소, AI 생성 안내 문구 — CONTRIBUTING 4장)
