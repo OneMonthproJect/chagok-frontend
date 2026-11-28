@@ -282,3 +282,11 @@ S-02 날짜 이동을 찾기 쉽고 누르기 쉽게 바꾼다. 날짜 계산·�
 
 - `index.html`: `meta description`, `theme-color #1f2bff`, 아이콘 `<link>` 3개, `og:*`·`twitter:card`
 - 알려진 한계: `og:image`는 상대 경로(`/og-image.png`). 배포 도메인이 정해지면 절대 URL로 바꾼다. 탭 제목은 모든 화면이 "차곡"
+
+## 폴더 이동 — `docs/design/` → `design/` (2026-11-28, chagok-frontend#109)
+
+디자인 내용은 바뀌지 않았다. 프론트 레포의 `docs/`가 공통 문서 원본(chagok-docs)과 헷갈려 디자인 자료를 루트 `design/`으로 옮겼다(`git mv`, 314개 파일 모두 rename, 내용 해시 같음).
+
+- 이 폴더 안의 상대 경로(`references/…`, `improved-v3.0/…`)는 그대로 유효하다.
+- 바꾼 참조: 레포 `README.md`, `src/shared/ui/theme.css`·`src/pages/S01/LoginPage.jsx` 주석.
+- 그대로 둔 것: 위 STEP 기록과 `references/DESIGN_VERIFICATION.md`의 `docs/design` 표기는 당시 경로를 적은 기록이다.
