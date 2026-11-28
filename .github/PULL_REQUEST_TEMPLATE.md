@@ -15,8 +15,7 @@ Closes #
 
 ## 문서 PR (chagok-docs)
 - 문서 PR: OneMonthproJect/chagok-docs#
-- [ ] 변경 유형별 관련 문서를 확인했다 (CONTRIBUTING 7장 「변경 유형별 문서 확인」: 명세·README·design·트러블슈팅·TEST 등) — 고쳤으면 위에 문서 PR, 늦으면 후속 이슈 링크
-- [ ] 문서 변경 없음 — 관련 없음 (명세와 같은 동작)
+- [ ] 문서 변경 없음 (명세와 같은 동작) — CONTRIBUTING 7장 「변경 유형별 문서 확인」을 봤고, 이 레포 안 문서(README·design 등)는 필요하면 이 PR에서 함께 고쳤다
 - [ ] `features/*/types.ts`가 08 JSON 예시와 같다 (다르면 08 문서 PR 또는 백엔드 이슈)
 - [ ] 새 화면이면 09 화면 ID와 `pages` 파일이 1:1
 
