@@ -131,9 +131,11 @@
 .customer-row--link {
   cursor: pointer;
 }
-.customer-row--link:hover th,
-.customer-row--link:hover td {
-  background: var(--ck-surface-muted);
+/* Hover: 칸마다 회색을 깔지 않고 줄 전체를 카드 하나로 — 외곽선 하나(차량 카드 Hover와 같은 색, #110 3절).
+   outline은 자리를 차지하지 않아 Hover로 줄이 움직이지 않는다. 안쪽 배경은 흰색 그대로 */
+.customer-row--link:hover {
+  outline: 1px solid var(--ck-brand);
+  outline-offset: -1px;
 }
 .customer-row__link {
   color: inherit;
@@ -174,18 +176,6 @@
 .customer-row__none {
   color: var(--ck-text-3);
   font-size: var(--ck-fs-meta);
-}
-.customer-plate {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 8px;
-  border: 1px solid var(--ck-border);
-  border-radius: var(--ck-radius-sm);
-  background: var(--ck-surface);
-  color: var(--ck-text-1);
-  font-size: var(--ck-fs-meta);
-  font-weight: var(--ck-fw-bold);
-  white-space: nowrap;
 }
 /* 동의는 글자로 구분한다(색만으로 구분하지 않음, 09 0장). 정비 주기 상태색(미확인·여유·임박·도래)은 쓰지 않는다 */
 .customer-consent {

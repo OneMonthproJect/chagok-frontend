@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import ItemStatusList from '@/shared/ui/ItemStatusList.jsx'
 import Button from '@/shared/ui/Button.jsx'
+import LicensePlate from '@/shared/ui/LicensePlate.jsx'
 import { activeReservationText, itemRows, statusCounts } from '../targetFlow'
 import './target.css'
 
@@ -22,7 +23,7 @@ export default function TargetRow({ target, onReserve, onOpenReservation }) {
           <span>{t.phone}</span>
         </div>
         <div className="target-row__vehicle">
-          <b>{t.plateNumber}</b>
+          <LicensePlate number={t.plateNumber} />
         </div>
         <div className="target-row__items">
           {statusCounts(t.targetItems).map((c) => (

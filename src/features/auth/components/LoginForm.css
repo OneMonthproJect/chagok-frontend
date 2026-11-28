@@ -56,7 +56,7 @@
   padding: 10px 12px;
   border-radius: var(--ck-radius-sm, 8px);
   background: var(--ck-brand-tint, #f0f1ff);
-  color: #1a24b8;
+  color: var(--ck-brand);
   font-size: var(--ck-fs-meta, 13px);
   font-weight: 600;
   text-align: center;
@@ -98,7 +98,7 @@
 .login-field input:focus {
   background: var(--ck-surface, #fff);
   border-color: var(--ck-brand, #1f2bff);
-  box-shadow: 0 0 0 3px #1f2bff12;
+  box-shadow: 0 0 0 3px var(--ck-brand-ring);
 }
 .login-field.is-error input {
   border-color: var(--ck-due-fg, #b42318);
@@ -160,9 +160,9 @@
   cursor: pointer;
   transition: background 0.14s;
 }
-.login-submit:hover { background: #1721df; }
-.login-submit:disabled { cursor: progress; background: #4a54ff; }
-.login-submit:focus-visible { outline: 3px solid #1f2bff52; outline-offset: 2px; }
+.login-submit:hover { background: var(--ck-brand-hover); }
+.login-submit:disabled { cursor: progress; background: var(--ck-brand); opacity: 0.85; }
+.login-submit:focus-visible { outline: 3px solid var(--ck-brand-ring); outline-offset: 2px; }
 .login-submit__spinner {
   width: 16px;
   height: 16px;

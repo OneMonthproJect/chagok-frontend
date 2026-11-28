@@ -1,16 +1,15 @@
-/* 담당 정비사 라벨 (F-RSV-05 담당 색, #30). 색은 colorIndex 0~7 순서: 보라·청록·분홍·갈색·연두·남색·올리브·자주 (💡 04) */
-/* 색 클래스 .assignee-color--c0~c7은 --assignee-color만 정한다 — 라벨과 주 캘린더 카드 색 띠(#36)가 같이 쓴다 */
+/* 담당 정비사 라벨 (F-RSV-05 담당 색, #30 → #110 8절 파스텔 6색). 색 값은 theme.css --ck-assignee-N-bg/fg 한 곳 */
+/* 색 클래스 .assignee-color--c0~c5는 --assignee-bg·--assignee-fg와 색 띠용 --assignee-color만 정한다 — 라벨과 주 캘린더 카드 색 띠(#36)가 같이 쓴다 */
 .assignee-label {
-  --assignee-color: #6d28d9;
   max-width: 100%;
   padding: 3px 8px 3px 6px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: 1px solid color-mix(in srgb, var(--assignee-color) 35%, transparent);
+  border: 1px solid transparent;
   border-radius: var(--ck-radius-pill, 999px);
-  background: color-mix(in srgb, var(--assignee-color) 8%, #fff);
-  color: #25282e;
+  background: var(--assignee-bg, var(--ck-tone-muted-bg));
+  color: var(--assignee-fg, var(--ck-text-1));
   font-size: var(--ck-fs-caption, 12px);
   font-weight: 600;
   white-space: nowrap;
@@ -20,13 +19,11 @@
   height: 8px;
   flex: none;
   border-radius: 999px;
-  background: var(--assignee-color);
+  background: var(--assignee-fg, var(--ck-text-3));
 }
-.assignee-color--c0 { --assignee-color: #6d28d9; } /* 보라 */
-.assignee-color--c1 { --assignee-color: #0f766e; } /* 청록 */
-.assignee-color--c2 { --assignee-color: #db2777; } /* 분홍 */
-.assignee-color--c3 { --assignee-color: #8a5a2b; } /* 갈색 */
-.assignee-color--c4 { --assignee-color: #65a30d; } /* 연두 */
-.assignee-color--c5 { --assignee-color: #1e3a8a; } /* 남색 */
-.assignee-color--c6 { --assignee-color: #6b7a1f; } /* 올리브 */
-.assignee-color--c7 { --assignee-color: #a21caf; } /* 자주 */
+.assignee-color--c0 { --assignee-bg: var(--ck-assignee-0-bg); --assignee-fg: var(--ck-assignee-0-fg); --assignee-color: var(--ck-assignee-0-fg); } /* 블루 */
+.assignee-color--c1 { --assignee-bg: var(--ck-assignee-1-bg); --assignee-fg: var(--ck-assignee-1-fg); --assignee-color: var(--ck-assignee-1-fg); } /* 민트 */
+.assignee-color--c2 { --assignee-bg: var(--ck-assignee-2-bg); --assignee-fg: var(--ck-assignee-2-fg); --assignee-color: var(--ck-assignee-2-fg); } /* 라벤더 */
+.assignee-color--c3 { --assignee-bg: var(--ck-assignee-3-bg); --assignee-fg: var(--ck-assignee-3-fg); --assignee-color: var(--ck-assignee-3-fg); } /* 피치 */
+.assignee-color--c4 { --assignee-bg: var(--ck-assignee-4-bg); --assignee-fg: var(--ck-assignee-4-fg); --assignee-color: var(--ck-assignee-4-fg); } /* 옐로우 */
+.assignee-color--c5 { --assignee-bg: var(--ck-assignee-5-bg); --assignee-fg: var(--ck-assignee-5-fg); --assignee-color: var(--ck-assignee-5-fg); } /* 그레이블루 */

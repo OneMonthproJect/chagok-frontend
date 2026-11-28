@@ -1,20 +1,36 @@
-// 메뉴 아이콘 (디자인 v3.0 사이드바·위쪽 탭의 선 아이콘). route.jsx 의 menu.icon 이름으로 고른다.
-const PATHS_BY_ICON = {
-  home: ['m3 10 9-7 9 7', 'M5 9v11h14V9M9 20v-6h6v6'],
-  targets: ['M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h11', 'M8.8 19a3 3 0 0 0 4.4 0M16 13l2 2 4-5'],
-  customers: ['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'],
-  logout: ['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4', 'm16 17 5-5-5-5M21 12H9'],
-  chevronRight: ['m9 18 6-6-6-6'],
-  chevronLeft: ['m15 18-6-6 6-6'],
+// 메뉴 아이콘 (사이드바·위쪽 탭의 선 아이콘). route.jsx 의 menu.icon 이름으로 고른다.
+// UI·UX 통합 개선 18절(#110): 메뉴 뜻이 보이는 Lucide 계열 모양으로 바꿨다(라이브러리는 설치하지 않고 경로만 둔다).
+//   home = LayoutDashboard · targets(재점검 대상) = ClipboardCheck · customers(고객·차량) = CarFront · logout = LogOut.
+//   크기·선 굵기(1.7)·색(currentColor — 기본 보조 글자색, 활성 메뉴는 흰색)은 이전과 같다.
+const SHAPES_BY_ICON = {
+  home: [
+    ['rect', { x: 3, y: 3, width: 7, height: 9, rx: 1 }],
+    ['rect', { x: 14, y: 3, width: 7, height: 5, rx: 1 }],
+    ['rect', { x: 14, y: 12, width: 7, height: 9, rx: 1 }],
+    ['rect', { x: 3, y: 16, width: 7, height: 5, rx: 1 }],
+  ],
+  targets: [
+    ['rect', { x: 8, y: 2, width: 8, height: 4, rx: 1 }],
+    ['path', { d: 'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2' }],
+    ['path', { d: 'm9 14 2 2 4-4' }],
+  ],
+  customers: [
+    ['path', { d: 'm21 8-2 2-1.5-3.7A2 2 0 0 0 15.65 5H8.4a2 2 0 0 0-1.9 1.26L5 10 3 8' }],
+    ['path', { d: 'M7 14h.01M17 14h.01' }],
+    ['rect', { x: 3, y: 10, width: 18, height: 8, rx: 2 }],
+    ['path', { d: 'M5 18v2M19 18v2' }],
+  ],
+  logout: [['path', { d: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4' }], ['path', { d: 'm16 17 5-5-5-5M21 12H9' }]],
+  chevronRight: [['path', { d: 'm9 18 6-6-6-6' }]],
+  chevronLeft: [['path', { d: 'm15 18-6-6 6-6' }]],
 }
 
 export default function MenuIcon({ name, size = 20 }) {
-  const paths = PATHS_BY_ICON[name]
-  if (!paths) return null
+  const shapes = SHAPES_BY_ICON[name]
+  if (!shapes) return null
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {paths.map((d) => <path key={d} d={d} />)}
-      {name === 'customers' && <circle cx="9" cy="7" r="4" />}
+      {shapes.map(([Tag, props], i) => <Tag key={i} {...props} />)}
     </svg>
   )
 }

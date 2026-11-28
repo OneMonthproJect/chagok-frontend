@@ -54,8 +54,8 @@
 }
 .summary-card--brand {
   border-color: transparent;
-  background: var(--ck-brand);
-  color: #fff;
+  background: var(--ck-dark-card);
+  color: var(--ck-text-inverse);
 }
 .summary-card--brand p,
 .summary-card--brand strong span { color: #ffffffe6; }
@@ -64,8 +64,8 @@
   padding: 0 12px;
   border: 0;
   border-radius: var(--ck-radius-pill);
-  background: #fff;
-  color: var(--ck-brand);
+  background: var(--ck-accent);
+  color: var(--ck-text-inverse);
   font: inherit;
   font-size: var(--ck-fs-meta);
   font-weight: 700;

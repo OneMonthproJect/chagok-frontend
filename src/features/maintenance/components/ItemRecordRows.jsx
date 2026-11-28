@@ -1,4 +1,5 @@
 import FormField from '@/shared/ui/FormField.jsx'
+import ItemIcon from '@/shared/ui/ItemIcon.jsx'
 import { INSPECT_RESULT_CHOICES, MEMO_MAX, RECORD_CHOICES, VISIT_MESSAGES, rowOf } from '../visitRecordFlow'
 import './visitRecord.css'
 
@@ -37,6 +38,7 @@ export default function ItemRecordRows({ items, form, errors = {}, today, onChan
           <li key={item.itemId} className={`item-record-row${row.choice !== 'NONE' ? ' item-record-row--selected' : ''}`}>
             <div className="item-record-row__main">
               <span id={nameId} className="item-record-row__name">
+                <ItemIcon code={item.code} name={item.name} />
                 {item.name}
               </span>
               <RadioGroup

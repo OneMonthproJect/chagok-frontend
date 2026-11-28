@@ -1,6 +1,9 @@
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
+import { holidaysOn, uncoveredHolidayNotice } from '@/shared/lib/holidays'
+import LicensePlate from '@/shared/ui/LicensePlate.jsx'
 import { WEEKDAYS, addDays, formatDayLabel, formatTime, formatWeekLabel, nowSeoul, weekRange, weekdayIndex } from '../dates'
 import { WEEK_SLOTS, hasItems, nowMarker, placeWeek } from '../weekCalendar'
+import { dayToneClasses } from '../dayTone'
 import AssigneeLabel, { assigneeColorClass } from './AssigneeLabel.jsx'
 import PeriodNavigator from './PeriodNavigator.jsx'
 import ReservationStatusBadge from './ReservationStatusBadge.jsx'
@@ -19,6 +22,7 @@ import './WeekCalendar.css'
 // - 빈 칸은 비워 둔다(문구 없음, 09 S-02 빈 상태). 불러오는 중에는 표를 그대로 두고 안내 한 줄.
 //   실패하면 안내 + 사람이 누르는 다시 시도(onReload, 05 POL-125 자동 재요청 없음).
 // - state: usePeriodReservations(주 from·to)의 상태.
+// - 요일·공휴일(#110 9절): 날짜 열에 일요일 빨강·토요일 파랑, 공휴일은 빨강 + 공식 명칭(월 보기와 같은 규칙, dayTone).
 // 사용: <WeekCalendar date="2026-11-24" today="2026-11-24" state={week.state} selectedId={4}
 //        onSelectDate={...} onSelectReservation={...} onReload={week.reload} />
 
@@ -39,7 +43,7 @@ function ReservationCard({ reservation, selected, onSelect }) {
         onClick={() => onSelect(r.reservationId)}
       >
         <span className="wcal-card__time">{formatTime(r.reservedAt)}</span>
-        <b className="wcal-card__plate">{r.plateNumber}</b>
+        <LicensePlate number={r.plateNumber} compact className="wcal-card__plate" />
         <span className="wcal-card__name">{r.customerName}</span>
         <AssigneeLabel assignee={r.assignee} />
         {r.status !== 'RESERVED' && <ReservationStatusBadge status={r.status} />}
@@ -72,6 +76,7 @@ export default function WeekCalendar({ date, today, state, selectedId = null, no
   const marker = nowMarker(now)
   const showBefore = hasItems(placement.before)
   const showAfter = hasItems(placement.after)
+  const holidayNotice = uncoveredHolidayNotice([from, to])
 
   /** 그 주로 옮길 때 고를 날짜: 그 주에 오늘이 있으면 오늘, 아니면 월요일 */
   function moveWeek(weeks) {
@@ -104,6 +109,7 @@ export default function WeekCalendar({ date, today, state, selectedId = null, no
         />
       </div>
 
+      {holidayNotice && <p className="wcal__holiday-notice">{holidayNotice}</p>}
       {state.kind === 'loading' && <p className="wcal__status" role="status">예약을 불러오는 중…</p>}
       {state.kind === 'error' && (
         <ErrorNotice title="예약을 불러오지 못했습니다." error={state.error} onRetry={onReload} />
@@ -122,20 +128,32 @@ export default function WeekCalendar({ date, today, state, selectedId = null, no
             </tr>
           </thead>
           <tbody>
-            {days.map((day) => (
+            {days.map((day) => {
+              const holidays = holidaysOn(day)
+              const dayClasses = ['wcal__day', ...dayToneClasses(day, holidays)]
+              if (day === today) dayClasses.push('is-today')
+              return (
               <tr key={day} className={day === today ? 'is-today' : undefined}>
-                <th scope="row" className={`wcal__day${day === today ? ' is-today' : ''}`} data-date={day}>
-                  <span className="visually-hidden">{formatDayLabel(day)}{day === today ? ', 오늘' : ''}</span>
+                <th scope="row" className={dayClasses.join(' ')} data-date={day}>
+                  <span className="visually-hidden">
+                    {formatDayLabel(day)}
+                    {holidays.map((h) => `, ${h.name}`).join('')}
+                    {day === today ? ', 오늘' : ''}
+                  </span>
                   <span aria-hidden="true">
                     <span className="wcal__weekday">{WEEKDAYS[weekdayIndex(day)]}</span>
                     <span className="wcal__date">{Number(day.slice(8, 10))}</span>
+                    {holidays.map((h) => (
+                      <span key={h.name} className="wcal__holiday">{h.name}</span>
+                    ))}
                   </span>
                 </th>
                 {showBefore && cell('before', placement.before, day)}
                 {WEEK_SLOTS.map((slot) => cell(slot, placement.slots[slot], day, slot))}
                 {showAfter && cell('after', placement.after, day)}
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </div>

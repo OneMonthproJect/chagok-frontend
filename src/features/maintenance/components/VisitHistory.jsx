@@ -1,6 +1,7 @@
 import Button from '@/shared/ui/Button.jsx'
 import EmptyState from '@/shared/ui/EmptyState.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
+import { ItemLabel } from '@/shared/ui/ItemIcon.jsx'
 import {
   CUSTOMER_STATEMENT_LABEL,
   INSPECT_RESULT_LABELS,
@@ -39,7 +40,7 @@ function RecordLine({ record, visit, actions }) {
   const reasonId = `visit-record-${record.recordId}-edit-reason`
   return (
     <li className="visit-record">
-      <span className="visit-record__item">{record.itemName}</span>
+      <ItemLabel className="visit-record__item" name={record.itemName} />
       <span className={`visit-record__type visit-record__type--${record.type.toLowerCase()}`}>{RECORD_TYPE_LABELS[record.type]}</span>
       {record.inspectResult && (
         <span className={`visit-record__result visit-record__result--${record.inspectResult.toLowerCase()}`}>

@@ -19,9 +19,9 @@
   color: #6b3d00;
 }
 .error-notice--info {
-  border-color: #cfd3ff;
+  border-color: color-mix(in srgb, var(--ck-select-border) 35%, transparent);
   background: var(--ck-brand-tint);
-  color: #1a24b8;
+  color: var(--ck-brand);
 }
 
 .error-notice__icon {

@@ -1,0 +1,23 @@
+/* 차량번호판 (UI·UX 통합 개선 2절, #110). 값은 theme.css 토큰만 쓴다 */
+.license-plate {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 5px 11px;
+  border: 1px solid var(--ck-plate-border);
+  border-radius: 4px;
+  background: var(--ck-surface);
+  color: var(--ck-text-1);
+  font-size: inherit;
+  font-weight: var(--ck-fw-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.license-plate--compact {
+  padding: 2px 6px;
+  font-size: var(--ck-fs-caption);
+  letter-spacing: 0.3px;
+}

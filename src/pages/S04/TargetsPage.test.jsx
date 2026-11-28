@@ -98,7 +98,7 @@ describe('S-04 재점검 대상', () => {
     renderPage()
     await settle()
     expect(document.body.textContent).toContain('기준일 2026년 11월 24일 (화) · 대상 차량 2대')
-    expect(rows().map((r) => r.querySelector('.target-row__vehicle b').textContent)).toEqual(['34나0002', '12가0001'])
+    expect(rows().map((r) => r.querySelector('.target-row__vehicle .license-plate').textContent)).toEqual(['34나0002', '12가0001'])
     expect(rows()[0].textContent).toContain('010-0000-0002')
     expect(rows()[0].textContent).toContain('도래 1')
   })

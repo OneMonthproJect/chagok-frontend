@@ -3,6 +3,7 @@ import Modal from '@/shared/ui/Modal.jsx'
 import FormField from '@/shared/ui/FormField.jsx'
 import Button from '@/shared/ui/Button.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
+import LicensePlate from '@/shared/ui/LicensePlate.jsx'
 import { createReservation, getReservationPanel, updateReservation } from '../api'
 import {
   ASSIGNEE_MESSAGES, canReassign, closedMessage, defaultCreateAssignee, needsReassignReason, reassignWindow,
@@ -221,7 +222,7 @@ export default function ReservationFormModal({
           <p className="rsv-form__label" id={`${idPrefix}-vehicle-label`}>차량{!isEdit && <span aria-hidden="true"> *</span>}</p>
           {vehicle && (
             <p className="rsv-form__vehicle" aria-labelledby={`${idPrefix}-vehicle-label`}>
-              <b>{vehicle.plateNumber}</b>
+              <LicensePlate number={vehicle.plateNumber} />
               {vehicle.customerName && <span>{vehicle.customerName}</span>}
             </p>
           )}

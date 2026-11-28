@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import StatusBadge from '@/shared/ui/StatusBadge.jsx'
+import LicensePlate from '@/shared/ui/LicensePlate.jsx'
 import { MILEAGE_MISSING, MODEL_YEAR_MISSING, mileageText, modelYearText } from '../detailFlow'
 import './customerDetail.css'
 
@@ -41,7 +42,7 @@ function VehicleCard({ vehicle }) {
   const mileage = mileageText(latestMileage)
   return (
     <article className="vehicle-card" aria-label={`${plateNumber} 차량`}>
-      <h3 className="vehicle-card__plate">{plateNumber}</h3>
+      <h3 className="vehicle-card__plate"><LicensePlate number={plateNumber} /></h3>
       <p className="vehicle-card__model">
         {model} · {year ?? <span className="vehicle-card__missing">{MODEL_YEAR_MISSING}</span>}
       </p>

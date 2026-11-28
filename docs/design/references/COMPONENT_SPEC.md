@@ -8,12 +8,16 @@
 
 | 그룹 | 토큰 | 값 | 비고 |
 |---|---|---|---|
-| 브랜드 | `--ck-brand` / `-hover` / `-tint` / `-ring` | #1F2BFF / #1621D9 / #F0F1FF / rgba(31,43,255,.32) | 원본 코발트 유지 |
-| 표면 | `--ck-bg` `--ck-surface` `--ck-surface-muted` `--ck-border` `--ck-border-soft` `--ck-ink` | #F2F3F6 #FFF #F5F6F8 #E4E6EA #EEEFF2 #111 | |
-| 글자 | `--ck-text-1`~`4`, `-disabled` | #111318 · #4D525A · #5F646D · #626770 · #9A9EA5 | 1~4는 흰 바탕 5.7:1 이상, disabled는 비활성 요소에만 |
-| 점검 주기 | `--ck-due-*` `--ck-soon-*` `--ck-ahead-*` `--ck-unknown-*` (bg·fg·dot) | 도래 #FEECEC/#B42318 · 임박 #FFF6E5/#9A5800 · 여유 #EFF6FF/#1D4ED8 · 미확인 #F1F2F3/#5F646D | frontend theme.css `--status-*`와 같은 계열(파랑=여유). 글자 대비 4.5:1 이상 |
-| 예약 상태 | `--ck-rsv-reserved/progress/done/canceled/noshow-*` | 예약 #F0F1FF/#1F2BFF · 진행중 #1F2BFF/#FFF · 방문 완료 #ECFDF3/#067647 · 취소 #F1F2F3/#5F646D · 노쇼 #FEECEC/#B42318 | 08 0.4 RESERVED·IN_PROGRESS·COMPLETED·CANCELED·NO_SHOW |
-| 담당 | `--ck-assignee-0~3` | #8B5CF6 · #EC4899 · #0D9488 · #92400E | API 36 `colorIndex` 순서. 상태 색과 다른 계열, 이름과 함께(09 0장) |
+| 브랜드 | `--ck-brand` / `-hover` / `-tint` / `-ring` | #152E8B / #122775 / #E6EFFF / rgba(24,63,184,.32) | 색 체계 v4(#110): 메인 포인트·주요 버튼. tint = 선택 상태 배경 |
+| 강조 역할 | `--ck-accent(-hover)` · `--ck-tab-active` · `--ck-sidebar-active` · `--ck-select-border` · `--ck-dark-card` | #2863EF(#2156D5) · #183FB8 · #152D75 · #183FB8 · #1F2C3F | 보조 강조 버튼 · 주/월 활성 탭 · 사이드바 활성 메뉴(흰 글자·아이콘) · 선택 테두리 · 오늘 연락할 고객 카드 |
+| 표면 | `--ck-bg` `--ck-surface` `--ck-surface-muted` `--ck-border` `--ck-border-soft` `--ck-ink` | #F2F3F5 #FFF #F4F5F7 #D9DEE7 #EEEFF2 #171C24 | surface-muted = 비활성 배경 |
+| 글자 | `--ck-text-1`~`4`, `-disabled` | #171C24 · #626B78 · #626B78 · #626B78 · #9A9EA5 | 기본 17:1, 보조 5.3:1. disabled는 비활성 요소에만 |
+| 번호판 | `--ck-plate-border` | #A8B0BA | `shared/ui/LicensePlate` (흰 바탕·1px·모서리 4px) |
+| 상태 보조 색 | `--ck-tone-ok/warn/danger/muted-bg·fg` | 완료·정상 #E3EFE8/#38644E · 처리 필요·임박 #F7ECD7/#896522 · 취소·노쇼·도래 #FBE9E9/#A83434 · 미확인·비활성 #ECEEF1/#69717D | 아래 점검 주기·예약 상태 토큰이 이 값을 가리킨다 |
+| 점검 주기 | `--ck-due-*` `--ck-soon-*` `--ck-ahead-*` `--ck-unknown-*` (bg·fg·dot) | 도래 #FBE9E9/#A83434 · 임박 #F7ECD7/#896522 · 여유 #EFF6FF/#1D4ED8(그대로) · 미확인 #ECEEF1/#69717D | 의미·글자 표기는 그대로(09 0장). 글자 대비 4.5:1 이상 |
+| 예약 상태 | `--ck-rsv-reserved/progress/done/canceled/noshow-*` · `--ck-needs-action-*` | 예약 #E6EFFF/#152E8B · 진행중 #152E8B/#FFF · 방문 완료 #E3EFE8/#38644E · 취소·노쇼 #FBE9E9/#A83434 · 처리 필요 #F7ECD7/#896522 | 08 0.4 RESERVED·IN_PROGRESS·COMPLETED·CANCELED·NO_SHOW |
+| 담당 | `--ck-assignee-0~5-bg/fg` | 블루 #DFEAF7/#345778 · 민트 #DFEEE6/#34634D · 라벤더 #EAE3F5/#624982 · 피치 #F5E3DB/#925B45 · 옐로우 #F5EED9/#806A35 · 그레이블루 #E3E8EF/#495B72 | API 36 `colorIndex`를 6으로 나눈 나머지. 이름 라벨에만 칠하고 항상 이름과 함께(09 0장) |
+| 캘린더 | `--ck-cal-sunday/saturday/holiday/holiday-name/holiday-bg` | #B83D3D · #386497 · #B83D3D · #A83434 · #FBE9E9 | 공휴일은 요일과 관계없이 빨강(토요일보다 우선). 데이터는 `shared/lib/holidays.kr.json` |
 | 글자 크기 | `--ck-fs-caption/meta/small/body/body-lg/card-title/section/page/number` | 12 · 13 · 14 · 15 · 16 · 18 · 20 · 26 · 32 px | 업무 화면 최소 12px |
 | 굵기 · 행간 | `--ck-fw-*` `--ck-lh-tight/body` | 400·500·600·700 / 1.25·1.5 | |
 | 간격 | `--ck-space-1~8` | 4 · 8 · 12 · 16 · 20 · 24 · 32 | 4px 단위 |

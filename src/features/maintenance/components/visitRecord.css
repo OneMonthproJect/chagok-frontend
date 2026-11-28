@@ -35,6 +35,9 @@
   gap: var(--ck-space-3);
 }
 .item-record-row__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px; /* 항목 아이콘(#110 20절) */
   font-size: var(--ck-fs-body);
   font-weight: var(--ck-fw-semibold);
   color: var(--ck-text-1);
