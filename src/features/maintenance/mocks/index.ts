@@ -8,13 +8,14 @@
 //     나머지 항목은 item-status.json의 같은 차량 값을 그대로 쓴다(복사본을 두지 않아 한 곳만 고친다, CONVENTIONS 11장).
 //   - visits.json: 차량 id → 08 11 items[] 전체(최신순). 차량 10의 첫 방문은 08 11 JSON 예시와 같다.
 //     P0-나머지 source·inspectResult를 더했다(외부만 CUSTOMER_STATEMENT, 점검 결과는 33아0008의 마지막 점검만 CAUTION).
+//     #34: 모든 기록에 version·edited·staff(방문의 담당과 같음). 기록 16(차량 10)만 수정 1회 뒤 모양(version 1·edited) — 38은 08 38 예시 첫 수정의 주행거리 보완만(메모는 07 시드대로 null).
 //   - items.json: 08 13 JSON 예시 그대로.
 // 로그인은 A 정비소 기준이고, A에 없는 차량 id(B 정비소 차량 12 포함, 07 7.4)는 404 NOT_FOUND(격리).
 // 응답 함수는 상태를 쌓지 않는다(저장해도 이력에 더하지 않음 — 프론트에 데이터를 쌓지 않음).
 // api.ts만 동적 import()로 부른다. 화면·pages는 import하지 않는다.
 
 import type { FieldError, MockResponse } from '@/shared/api/client'
-import type { ItemStatusItem, ItemStatusResponse, Visit, VisitListParams, VisitSaveRequest } from '../types'
+import type { ItemStatusItem, ItemStatusResponse, RecordUpdateRequest, Visit, VisitListParams, VisitSaveRequest } from '../types'
 import itemStatusPreviewFixture from './item-status-preview.json'
 import itemStatusFixture from './item-status.json'
 import itemsOk from './items.json'
@@ -125,8 +126,8 @@ type LooseVisitSave = Partial<VisitSaveRequest> & {
  * 08 12 — 검사 순서는 서버(chagok-backend#32·#102)와 같다: 형식(필수·길이) → 차량 소속(404, X5) → 방문일·외부 정비일 →
  * 항목 중복 → 쓰는 항목(X11) → 담당 정비사(X13, #62) → 차량이 비어 있을 때 필수(D-58, 교체·점검이 있을 때만) → 연식·주행거리 범위.
  * P0-나머지: 외부·거절·점검 결과(#29)와 담당 지정 mechanicId(#62)를 받는다.
- * LIMIT: 외부 주행거리 범위 문구는 공용 MILEAGE_RANGE를 써서 서버(chagok-backend#32, "0 ~ 2,000,000 사이로 입력해 주세요.")와 글자가 다르다(화면은 서버 문구를 그대로 보임).
- *   구분과 맞지 않는 값(점검이 아닌데 inspectResult 등 — 서버는 400)은 화면이 보내지 않으므로 흉내 내지 않는다.
+ * 구분과 맞지 않는 값은 서버와 같이 400이다(chagok-docs#176): externalDate·externalMileage는 외부일 때만, inspectResult는 점검일 때만 보낼 수 있고,
+ * inspectResult 값은 GOOD·CAUTION만 받는다. 틀린 필드는 모두 모아 알린다(`records[i].<필드>`).
  */
 export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockResponse {
   const request = (body ?? {}) as LooseVisitSave
@@ -156,12 +157,22 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
   if ((request.visitDate as string) > today) return invalid([{ field: 'visitDate', reason: M.VISIT_DATE_FUTURE }])
   const external: FieldError[] = []
   records.forEach((r, i) => {
-    if (r.type !== 'EXTERNAL') return
-    if (!r.externalDate) external.push({ field: `records[${i}].externalDate`, reason: M.REQUIRED })
-    else if (r.externalDate > today) external.push({ field: `records[${i}].externalDate`, reason: M.VISIT_DATE_FUTURE })
-    const km = r.externalMileage
-    if (km != null && (!Number.isInteger(km) || km < 0 || km > MAX_MILEAGE)) {
-      external.push({ field: `records[${i}].externalMileage`, reason: M.MILEAGE_RANGE })
+    if (r.type === 'EXTERNAL') {
+      if (!r.externalDate) external.push({ field: `records[${i}].externalDate`, reason: M.REQUIRED })
+      else if (r.externalDate > today) external.push({ field: `records[${i}].externalDate`, reason: M.VISIT_DATE_FUTURE })
+      const km = r.externalMileage
+      if (km != null && (!Number.isInteger(km) || km < 0 || km > MAX_MILEAGE)) {
+        external.push({ field: `records[${i}].externalMileage`, reason: '0 ~ 2,000,000 사이로 입력해 주세요.' })
+      }
+    } else {
+      if (r.externalDate != null) external.push({ field: `records[${i}].externalDate`, reason: '외부 기록일 때만 입력할 수 있습니다.' })
+      if (r.externalMileage != null) external.push({ field: `records[${i}].externalMileage`, reason: '외부 기록일 때만 입력할 수 있습니다.' })
+    }
+    if (r.inspectResult != null) {
+      if (r.type !== 'INSPECT') external.push({ field: `records[${i}].inspectResult`, reason: '점검일 때만 입력할 수 있습니다.' })
+      else if (r.inspectResult !== 'GOOD' && r.inspectResult !== 'CAUTION') {
+        external.push({ field: `records[${i}].inspectResult`, reason: 'GOOD 또는 CAUTION만 입력할 수 있습니다.' })
+      }
     }
   })
   if (external.length > 0) return invalid(external)
@@ -210,4 +221,105 @@ export function mockSaveVisit(vehicleId: number, body: VisitSaveRequest): MockRe
 /** 08 13 — 로그인한 정비소(A)의 항목만 */
 export function mockGetItems(): MockResponse {
   return { status: 200, body: itemsOk }
+}
+
+// ---- 37·38 정비 기록 수정·수정 이력 (P0-나머지 #34, 08 7.1 37·38) ----
+// 상태를 쌓지 않는다(위 원칙): 37은 검사만 하고 { recordId, vehicleId, version + 1 }을 돌려줄 뿐 visits.json을 바꾸지 않는다.
+// 문구는 chagok-backend#39(PR #115) MaintenanceService·ErrorCode와 같다.
+// LIMIT: Mock은 로그인 계정을 모른다 — 사장으로 보고(권한·기간 403 없음) 정비사 권한·3일 기간은 백엔드 연결로 확인한다.
+
+const EDIT_M = {
+  DATE_FUTURE: '오늘 이전 날짜만 입력할 수 있습니다.',
+  MILEAGE_RANGE: '0 ~ 2,000,000 사이로 입력해 주세요.',
+  INSPECT_RESULT_VALUE: 'GOOD 또는 CAUTION만 입력할 수 있습니다.',
+  INSPECT_ONLY: '점검일 때만 입력할 수 있습니다.',
+  UNCHANGED: '바뀐 항목이 없습니다.',
+  DUPLICATE_IN_VISIT: '같은 방문에 같은 항목을 두 번 넣을 수 없습니다.',
+  CONCURRENT: '다른 직원이 먼저 수정했습니다. 최신 내용을 다시 불러와 주세요.',
+} as const
+
+/**
+ * 08 37 요청 표 순서 (바뀐 것 없음 400의 fieldErrors 필드를 정한다). 사유(reason)는 바꾸는 필드가 아니라 세지 않는다
+ * — chagok-backend#39(PR #115) MaintenanceService와 같다. 08 문구는 미정(계약 점검 ❓, 2026-11-27).
+ */
+const EDIT_FIELD_ORDER = ['recordDate', 'mileage', 'type', 'itemId', 'inspectResult', 'memo', 'mechanicId'] as const
+
+function findOwnedRecord(recordId: number): { vehicleId: number; visit: Visit; record: Visit['records'][number] } | null {
+  for (const [vehicleId, visits] of Object.entries(VISITS)) {
+    for (const visit of visits) {
+      const record = visit.records.find((r) => r.recordId === recordId)
+      if (record) return { vehicleId: Number(vehicleId), visit, record }
+    }
+  }
+  return null
+}
+
+/** 08 37 — 서버가 확인하는 순서대로: 형식 → 소유(404) → version(409) → itemId·mechanicId → 구분·점검 결과 → 바뀐 것 없음 → 같은 방문 항목 중복 */
+export function mockUpdateRecord(recordId: number, body: RecordUpdateRequest): MockResponse {
+  // ① 형식
+  // version 누락은 그 필드 오류, 숫자가 아니면 본문을 읽지 못한 것과 같아 fieldErrors [] (08 0.2, 백엔드와 같음)
+  if (body?.version === undefined || body.version === null) return invalid([{ field: 'version', reason: M.REQUIRED }])
+  if (typeof body.version !== 'number' || !Number.isInteger(body.version)) return invalid([])
+  const format: FieldError[] = []
+  if (body.recordDate !== undefined && body.recordDate > todaySeoul()) format.push({ field: 'recordDate', reason: EDIT_M.DATE_FUTURE })
+  if (body.mileage !== undefined && (!Number.isInteger(body.mileage) || body.mileage < 0 || body.mileage > MAX_MILEAGE)) {
+    format.push({ field: 'mileage', reason: EDIT_M.MILEAGE_RANGE })
+  }
+  if (body.inspectResult !== undefined && body.inspectResult !== 'GOOD' && body.inspectResult !== 'CAUTION') {
+    format.push({ field: 'inspectResult', reason: EDIT_M.INSPECT_RESULT_VALUE })
+  }
+  if (body.memo !== undefined && body.memo.length > 200) format.push({ field: 'memo', reason: M.MEMO_MAX })
+  if (body.reason !== undefined && body.reason.length > 200) format.push({ field: 'reason', reason: M.MEMO_MAX })
+  if (format.length > 0) return invalid(format)
+  // ② 소유 (A 정비소 기록만, X14)
+  const found = findOwnedRecord(recordId)
+  if (!found) return notFound()
+  const { vehicleId, visit, record } = found
+  // ③ version
+  if (body.version !== record.version) return error(409, 'CONCURRENT_MODIFICATION', EDIT_M.CONCURRENT)
+  // ④ itemId·mechanicId (X11·X13)
+  if (body.itemId !== undefined && !ACTIVE_ITEM_IDS.has(body.itemId)) return invalid([{ field: 'itemId', reason: M.ITEM_NOT_USABLE }])
+  if (body.mechanicId !== undefined && !SHOP_STAFF_IDS.has(body.mechanicId)) {
+    return invalid([{ field: 'mechanicId', reason: M.MECHANIC_NOT_IN_SHOP }])
+  }
+  // ⑤ 구분·점검 결과 짝 (수정 뒤 값)
+  const type = body.type ?? record.type
+  if (body.inspectResult !== undefined && type !== 'INSPECT') return invalid([{ field: 'inspectResult', reason: EDIT_M.INSPECT_ONLY }])
+  // ⑥ 지금 값과 같은 필드를 뺀 뒤 바뀐 것이 있는지 (기록별 주행거리와 비교, 08 11 records[].mileage)
+  const changed =
+    (body.recordDate !== undefined && body.recordDate !== record.date) ||
+    (body.mileage !== undefined && body.mileage !== record.mileage) ||
+    (body.type !== undefined && body.type !== record.type) ||
+    (body.itemId !== undefined && body.itemId !== record.itemId) ||
+    (body.inspectResult !== undefined && body.inspectResult !== record.inspectResult) ||
+    (body.memo !== undefined && (body.memo.trim() || null) !== record.memo) || // 백엔드 blankToNull과 같게 앞뒤 공백을 자르고 비교
+    (body.mechanicId !== undefined && body.mechanicId !== record.staff.staffId)
+  if (!changed) {
+    const first = EDIT_FIELD_ORDER.find((field) => body[field] !== undefined) ?? 'recordDate'
+    return invalid([{ field: first, reason: EDIT_M.UNCHANGED }])
+  }
+  // ⑦ 같은 방문 항목 중복 (H7)
+  const itemId = body.itemId ?? record.itemId
+  if (visit.records.some((r) => r.recordId !== record.recordId && r.itemId === itemId)) {
+    return invalid([{ field: 'itemId', reason: EDIT_M.DUPLICATE_IN_VISIT }])
+  }
+  return ok({ recordId, vehicleId, version: record.version + 1 })
+}
+
+/** 08 38 — 기록 16은 수정 한 건(visits.json의 version 1·edited와 같음). 11 Mock은 07 7.2 시드 그대로라(주행거리·메모 null) 08 38 예시(null → 52000·"합성유 사용")
+ *  대신 수정 뒤 값이 지금 11 값과 맞는 메모 지우기로 둔다(계약 점검 ⚠️, 2026-11-27), 그 밖은 이력 없음. 남의 기록은 404(X14) */
+export function mockGetRecordRevisions(recordId: number): MockResponse {
+  if (!findOwnedRecord(recordId)) return notFound()
+  if (recordId !== 16) return ok({ items: [] })
+  return ok({
+    items: [
+      {
+        revisionNo: 1,
+        changedAt: '2026-11-25T10:05:00',
+        changedBy: { staffId: 1, name: '박사장' },
+        reason: '다른 차량 메모를 잘못 입력',
+        changes: [{ field: 'memo', before: '합성유 사용', after: null }],
+      },
+    ],
+  })
 }

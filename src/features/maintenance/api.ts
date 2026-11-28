@@ -1,4 +1,4 @@
-// features/maintenance의 API 호출 (08 10~13). 요청은 shared/api/client를 거친다(fetch 직접 호출 없음).
+// features/maintenance의 API 호출 (08 10~13, P0-나머지 37·38 #34). 요청은 shared/api/client를 거친다(fetch 직접 호출 없음).
 // 오류는 client가 ApiError로 던진다(05 POL-120~129). 자동으로 다시 보내지 않는다(POL-125).
 // Mock은 개발 서버에서 VITE_USE_MOCK=true일 때만, 동적 import()로 불러 운영 번들에 들어가지 않는다 (CONVENTIONS 7장 「Mock」).
 // 다른 화면(S-07·S-08·M-02 등)도 이 파일만 부른다 — maintenance의 첫 이슈(#22)가 10~13을 모두 만든다(STARTER 08).
@@ -6,6 +6,9 @@
 import { MOCK_ENABLED, request } from '@/shared/api/client'
 import type {
   ItemStatusResponse,
+  RecordRevisionListResponse,
+  RecordUpdateRequest,
+  RecordUpdateResponse,
   ServiceItem,
   VisitListParams,
   VisitListResponse,
@@ -55,5 +58,22 @@ export function saveVisit(vehicleId: number, body: VisitSaveRequest): Promise<Vi
 export function getItems(): Promise<ServiceItem[]> {
   return request<ServiceItem[]>('GET', '/api/items', {
     mock: MOCK_ENABLED ? () => import('./mocks').then((m) => m.mockGetItems()) : undefined,
+  })
+}
+
+const recordBase = (recordId: number) => `/api/records/${encodeURIComponent(recordId)}`
+
+/** 08 37 정비 기록 수정 (M-03, P0-나머지 #34). 보낸 필드만 바꾼다. 응답은 { recordId, vehicleId, version } — 화면은 11을 다시 조회 */
+export function updateRecord(recordId: number, body: RecordUpdateRequest): Promise<RecordUpdateResponse> {
+  return request<RecordUpdateResponse>('PATCH', recordBase(recordId), {
+    body,
+    mock: MOCK_ENABLED ? () => import('./mocks').then((m) => m.mockUpdateRecord(recordId, body)) : undefined,
+  })
+}
+
+/** 08 38 정비 기록 수정 이력 (S-07 수정 이력 패널, P0-나머지 #34). 오래된 것부터, 쪽 나누기 없음 */
+export function getRecordRevisions(recordId: number): Promise<RecordRevisionListResponse> {
+  return request<RecordRevisionListResponse>('GET', `${recordBase(recordId)}/revisions`, {
+    mock: MOCK_ENABLED ? () => import('./mocks').then((m) => m.mockGetRecordRevisions(recordId)) : undefined,
   })
 }

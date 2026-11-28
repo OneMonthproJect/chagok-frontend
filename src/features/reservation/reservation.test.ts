@@ -78,12 +78,15 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
     return parseResponse<ReservationPeriodResponse>(res.status, res.body)
   }
 
-  it('오늘 2건(10:00 78라0004 엔진오일, 14:30 22사0007 기타) — 07 7.5', () => {
+  it('오늘 3건(09:00 90마0005 진행중, 10:00 78라0004 엔진오일, 14:30 22사0007 기타) — 07 7.3·7.5, 목록 phone은 마스킹(08 0.5)', () => {
     const { items } = period(today)
     expect(items.map((i) => [i.reservedAt.slice(11, 16), i.plateNumber, i.purposeSummary])).toEqual([
+      ['09:00', '90마0005', '엔진오일'],
       ['10:00', '78라0004', '엔진오일'],
       ['14:30', '22사0007', '기타'],
     ])
+    expect(items.map((i) => i.status)).toEqual(['IN_PROGRESS', 'RESERVED', 'RESERVED'])
+    expect(items.every((i) => /^010-\*{4}-\d{4}$/.test(i.phone))).toBe(true)
   })
 
   it('어제 15:00 예약은 "처리 필요", 빈 날은 items: []', () => {
@@ -105,6 +108,29 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
     expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:10:00`, assigneeId: 1 }).status).toBe(400)
     expect(mockCreateReservation({ vehicleId: 99, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1 }).status).toBe(404)
     expect(mockCreateReservation({ vehicleId: 1, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1 }).status).toBe(200)
+  })
+
+  it('16 확인 순서(chagok-docs#198): 형식(필수 누락·메모 200자 초과) 400이 소유 404보다 먼저, 틀린 필드는 모두 모음', () => {
+    const err = (r: { body: unknown }) => (r.body as { error: { code: string; fieldErrors: { field: string }[] } }).error
+    const fields = (r: { body: unknown }) => err(r).fieldErrors.map((f) => f.field)
+    // 없는 차량(99)이라도 형식이 틀리면 400
+    const missing = mockCreateReservation({ vehicleId: 99 } as never)
+    expect(missing.status).toBe(400)
+    expect(err(missing).code).toBe('INVALID_INPUT')
+    expect(fields(missing)).toEqual(['reservedAt', 'assigneeId'])
+    // 타입이 틀린 값: 본문을 읽지 못한 400, fieldErrors 없음 (08 0.2)
+    const badType = mockCreateReservation({ vehicleId: 99, reservedAt: '내일 오전', assigneeId: 1 })
+    expect(badType.status).toBe(400)
+    expect(fields(badType)).toEqual([])
+    const longMemo = mockCreateReservation({
+      vehicleId: 99, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1, purpose: { itemIds: [], other: true, memo: 'a'.repeat(201) },
+    })
+    expect(longMemo.status).toBe(400)
+    expect(fields(longMemo)).toEqual(['purpose.memo'])
+    // 형식이 맞으면 소유 확인(404), 200자는 허용
+    expect(mockCreateReservation({
+      vehicleId: 99, reservedAt: `${addDays(today, 3)}T10:00:00`, assigneeId: 1, purpose: { itemIds: [], other: true, memo: 'a'.repeat(200) },
+    }).status).toBe(404)
   })
 
   it('18·19: version이 다르면 409, 완료 뒤 변경은 409 상태 전이', () => {
@@ -168,6 +194,14 @@ describe('mocks (07 7.3 시드, 08 모양)', () => {
     expect(seo.recentVisits.map((v) => v.records[0].type)).toEqual(['EXTERNAL', 'REPLACE'])
 
     expect(read(1).totalVisitCount).toBe(1) // 78라0004
+  })
+
+  it('17 recentVisits records: version·edited·staff (#34, 08 11과 같은 모양) — 11 Mock과 같은 기록은 같은 값', () => {
+    type Rec = { recordId: number; version: number; edited: boolean; staff: { staffId: number; name: string } }
+    const panel = parseResponse<{ recentVisits: { records: Rec[] }[] }>(mockGetPanel(4).status, mockGetPanel(4).body)
+    const records = panel.recentVisits.flatMap((v) => v.records)
+    expect(records.find((r) => r.recordId === 16)).toMatchObject({ version: 1, edited: true, staff: { staffId: 2, name: '김정비' } })
+    expect(records.filter((r) => r.recordId !== 16).every((r) => r.version === 0 && !r.edited)).toBe(true)
   })
 
   it('17 P0-나머지 (#29): 꼬리표는 07 7.2 시드대로(11바0006 거절·33아0008 주의), source는 외부만 고객 진술, 점검 결과는 점검에만', () => {

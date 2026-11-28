@@ -1,6 +1,7 @@
 // 08 10~13 정비 기록·항목 — 필드 이름·타입·nullable은 08 표·JSON 예시와 글자까지 같게 둔다.
 // P0-나머지 중 #29(F-MNT-02·03·F-CYC-02): 10 lastDecline·lastCaution, 11 records[]의 source·inspectResult,
-// 12 records[]의 externalDate·externalMileage·inspectResult. #62(F-MNT-01): 12의 mechanicId. 11의 version·edited·staff는 #34.
+// 12 records[]의 externalDate·externalMileage·inspectResult. #62(F-MNT-01): 12의 mechanicId.
+// #34(F-MNT-04): 11 records[]의 version·edited·staff, 37 정비 기록 수정, 38 수정 이력 (08 7.1 37·38 JSON 예시).
 
 /** 08 0.4 점검 주기 상태. 서버 값 그대로 보인다(프론트에서 다시 계산하지 않음) */
 export type ItemStatus = 'UNKNOWN' | 'AHEAD' | 'SOON' | 'DUE'
@@ -75,6 +76,20 @@ export interface VisitRecord {
   source: RecordSource
   /** P0-나머지. INSPECT일 때만 값이 있다 */
   inspectResult: InspectResult | null
+  /** P0-나머지 (#34, F-MNT-04). 수정 확인용 번호 — 12 저장 때 0, 37 수정마다 +1. 37 요청에 그대로 보낸다 */
+  version: number
+  /** P0-나머지 (#34). 수정 이력(38)이 한 건이라도 있으면 true */
+  edited: boolean
+  /** P0-나머지 (#34). 그 기록의 담당 정비사(현재 이름). 37로 담당을 바꾸면 바뀐다 */
+  staff: StaffRef
+  /** P0-나머지 (F-MNT-04, chagok-docs#174). 그 기록 행의 주행거리(37이 고치는 값). 외부 기록은 확인되지 않으면 null이며 null은 0이 아니라 "알 수 없음". 방문 `mileage`와 별개 */
+  mileage: number | null
+}
+
+/** 08 11 records[].staff · 38 changedBy·mechanic — `{ staffId, name }` (name은 그 계정의 현재 이름) */
+export interface StaffRef {
+  staffId: number
+  name: string
 }
 
 /** 08 11 items[] — 방문 한 번(같은 visitKey의 기록 묶음) */
@@ -139,4 +154,60 @@ export interface ServiceItem {
   cycleKm: number
   active: boolean
   sortOrder: number
+}
+
+// ---- 37 PATCH /api/records/{recordId} — 정비 기록 수정 (P0-나머지 #34, F-MNT-04, 08 7.1 37) ----
+// 기록 1행. 보낸 필드만 바꾼다. 차량은 바꿀 수 없고 삭제는 없다. version 필수(다르면 409 CONCURRENT_MODIFICATION).
+
+export interface RecordUpdateRequest {
+  /** 화면이 읽은 기록의 version (11 records[].version) */
+  version: number
+  /** 바꿀 방문일. 오늘 이전·오늘. 외부 기록이면 고객이 말한 정비일 */
+  recordDate?: string
+  /** 바꿀 주행거리. 정수 0~2,000,000 */
+  mileage?: number
+  type?: RecordType
+  itemId?: number
+  /** 수정 뒤 구분이 INSPECT일 때만 */
+  inspectResult?: InspectResult
+  /** ~200자. ""이면 메모를 비운다 */
+  memo?: string
+  /** 바꿀 담당 정비사 (그 정비소의 사장·정비사, X13) */
+  mechanicId?: number
+  /** 수정 사유 ~200자 (선택) */
+  reason?: string
+}
+
+/** 37 응답 data — 수정된 기록 전체는 싣지 않는다(화면은 11을 다시 조회) */
+export interface RecordUpdateResponse {
+  recordId: number
+  vehicleId: number
+  version: number
+}
+
+// ---- 38 GET /api/records/{recordId}/revisions — 정비 기록 수정 이력 (P0-나머지 #34, 08 7.1 38) ----
+// revisionNo 오름차순(오래된 것부터), 쪽 나누기 없음. 이력이 없으면 items: [].
+
+/** 38 changes[].field — 이 순서로 온다 */
+export type RecordRevisionField = 'recordDate' | 'mileage' | 'type' | 'item' | 'inspectResult' | 'memo' | 'mechanic'
+
+/** recordDate: date · mileage: number|null · type: RecordType · item: { itemId, name } · inspectResult: InspectResult|null · memo: string|null · mechanic: { staffId, name } */
+export type RecordRevisionValue = string | number | null | { itemId: number; name: string } | StaffRef
+
+export interface RecordRevisionChange {
+  field: RecordRevisionField
+  before: RecordRevisionValue
+  after: RecordRevisionValue
+}
+
+export interface RecordRevision {
+  revisionNo: number
+  changedAt: string // 오프셋 없는 일시 (08 0.1)
+  changedBy: StaffRef
+  reason: string | null
+  changes: RecordRevisionChange[]
+}
+
+export interface RecordRevisionListResponse {
+  items: RecordRevision[]
 }

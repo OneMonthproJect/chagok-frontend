@@ -4,6 +4,7 @@
 // 다른 feature의 Mock(예약)과 데이터를 나누지 않으므로, Mock으로 예약을 등록해도 이 목록의 "예약 있음"은 바뀌지 않는다.
 
 import type { MockResponse } from '@/shared/api/client'
+import { maskPhone } from '@/shared/lib/phoneMask'
 import type { Target } from '../types'
 import fixture from './targets.json'
 
@@ -23,7 +24,7 @@ export function mockGetTargets(): MockResponse {
   const items: Target[] = fixture.items.map((t) => ({
     customerId: t.customerId,
     customerName: t.customerName,
-    phone: t.phone,
+    phone: maskPhone(t.phone), // 14 목록은 마스킹(08 0.5, F-CUS-07)
     vehicleId: t.vehicleId,
     plateNumber: t.plateNumber,
     targetItems: t.targetItems.map((i) => {

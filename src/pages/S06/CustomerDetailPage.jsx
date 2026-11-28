@@ -31,8 +31,7 @@ import './CustomerDetailPage.css'
 // - 고객 수정(#32, 08 22): 고객 정보 카드의 [수정] → 카드 아래 인라인 입력. 저장하면 닫고 07을 다시 불러온다.
 //   409 동시 수정이면 07을 다시 불러 카드에 최신 값을 보이고 입력은 그대로 둔다(최신 version은 다시 부른 07 값을 쓴다, POL-124).
 //   S-05 M-01의 "기존 고객 수정"은 `state.openEdit`로 보내 이 입력을 연 채 시작한다.
-//   LIMIT: 다시 불러오기(07)마저 실패하면 화면 전체가 "불러오지 못했습니다."로 바뀌어 입력이 사라진다. 두 번 연속 실패하는 드문 경우라
-//   그대로 둔다 — 입력 보존 문제가 보고되면 실패 때 이전 data를 남기도록 useCustomerDetail을 바꾼다.
+//   다시 불러오기(07)가 실패해도 이전 data를 남겨 입력을 보존하고, 카드 위에 "불러오지 못했습니다." + [다시 불러오기]를 보인다.
 // - 이 화면에 아직 없는 것: 지표·비활성화·삭제(P1). 버튼을 미리 두지 않는다.
 
 export default function CustomerDetailPage() {
@@ -81,7 +80,7 @@ function CustomerDetailBody({ detail, vehicleLink, customerId, openAddVehicle, o
     )
   }
 
-  if (status === 'error') {
+  if (status === 'error' && !data) {
     return (
       <section className="s06__card s06__card--padded">
         <ErrorNotice title={LOAD_FAILED_MESSAGE} error={error} onRetry={reload} retryLabel={RELOAD_LABEL} />
@@ -101,6 +100,7 @@ function CustomerDetailBody({ detail, vehicleLink, customerId, openAddVehicle, o
   return (
     <div className={`s06__body${status === 'loading' ? ' s06__body--refreshing' : ''}`} aria-busy={status === 'loading'}>
       <section className="s06__card s06__card--padded">
+        {status === 'error' && <ErrorNotice title={LOAD_FAILED_MESSAGE} error={error} onRetry={reload} retryLabel={RELOAD_LABEL} />}
         <div className="s06__info-row">
           <CustomerInfoCard customer={data} />
           {!editing && (

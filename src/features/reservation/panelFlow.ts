@@ -85,7 +85,7 @@ export type ConfirmAction = 'cancel' | 'noShow'
 export const CONFIRM_TEXT: Record<ConfirmAction, { title: string; description: string; confirmLabel: string; done: string }> = {
   cancel: {
     title: '예약을 취소할까요?',
-    description: '취소한 예약은 정정으로만 되돌릴 수 있습니다.',
+    description: '취소한 예약은 예약 상태로 되돌릴 수 없습니다. 정정으로 노쇼·완료로만 바꿀 수 있습니다.',
     confirmLabel: '예약 취소',
     done: '예약을 취소했습니다.',
   },

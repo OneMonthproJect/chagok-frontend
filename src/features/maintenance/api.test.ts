@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, NETWORK_ERROR, parseResponse } from '@/shared/api/client'
-import { getItemStatus, getItems, getVisits, itemStatusQuery, saveVisit, visitListQuery } from './api'
-import { mockGetItemStatus, mockGetItems, mockGetVisits, mockSaveVisit, type ItemStatusPreviewFixture } from './mocks'
+import { getItemStatus, getItems, getRecordRevisions, getVisits, itemStatusQuery, saveVisit, updateRecord, visitListQuery } from './api'
+import { mockGetItemStatus, mockGetItems, mockGetRecordRevisions, mockGetVisits, mockSaveVisit, mockUpdateRecord, type ItemStatusPreviewFixture } from './mocks'
 import itemStatusPreviewFixture from './mocks/item-status-preview.json'
 import itemStatusFixture from './mocks/item-status.json'
 import itemsOk from './mocks/items.json'
 import visitsFixture from './mocks/visits.json'
-import type { ItemStatusResponse, ServiceItem, Visit, VisitListResponse, VisitSaveRequest, VisitSaveResponse } from './types'
+import type { ItemStatusResponse, RecordRevisionListResponse, RecordUpdateRequest, RecordUpdateResponse, ServiceItem, Visit, VisitListResponse, VisitSaveRequest, VisitSaveResponse } from './types'
 
 // 08 10~13: 실제 fetch 없이 확인한다 (fetch 대역, customer/api.test.ts와 같은 방식). Mock은 client의 같은 해석(parseResponse)을 거친다.
 
@@ -213,9 +213,13 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
       visitDate: '2026-10-24',
       mileage: null,
       staffName: '김정비',
-      // 08 11 예시 + P0-나머지 source·inspectResult (#29). version·edited·staff는 #34가 더한다
+      // 08 11 예시 + P0-나머지 source·inspectResult (#29) + version·edited·staff (#34, Mock은 기록 16을 1회 수정한 모양)
       records: [
-        { recordId: 16, itemId: 1, itemName: '엔진오일', type: 'REPLACE', date: '2026-10-24', memo: null, source: 'SHOP', inspectResult: null },
+        {
+          recordId: 16, itemId: 1, itemName: '엔진오일', type: 'REPLACE', date: '2026-10-24', memo: null, source: 'SHOP', inspectResult: null,
+          version: 1, edited: true, staff: { staffId: 2, name: '김정비' },
+          mileage: null,
+        },
       ],
     })
     expect(data.items.map((v) => v.visitDate)).toEqual(['2026-10-24', '2026-08-24', '2023-12-14'])
@@ -304,6 +308,28 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     expect(parse<VisitSaveResponse>(mockSaveVisit(4, external({ externalDate: '2026-11-24', externalMileage: 0 }))).savedCount).toBe(1)
   })
 
+  it('12 구분과 맞지 않는 값은 무시하지 않고 400 records[i].<필드> (chagok-docs#176, #106)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
+    const save = (record: Partial<VisitSaveRequest['records'][number]>): VisitSaveRequest => ({
+      visitDate: '2026-11-24',
+      mileage: 55000,
+      records: [{ itemId: 1, type: 'REPLACE', memo: null, ...record }],
+    })
+    // 교체인데 외부 값·점검 결과를 보냄 → 모두 모아 400
+    expect(parseError(mockSaveVisit(4, save({ externalDate: '2026-10-01', externalMileage: 1000, inspectResult: 'GOOD' }))).fieldErrors).toEqual([
+      { field: 'records[0].externalDate', reason: '외부 기록일 때만 입력할 수 있습니다.' },
+      { field: 'records[0].externalMileage', reason: '외부 기록일 때만 입력할 수 있습니다.' },
+      { field: 'records[0].inspectResult', reason: '점검일 때만 입력할 수 있습니다.' },
+    ])
+    // 점검 결과 값은 GOOD·CAUTION만
+    expect(parseError(mockSaveVisit(4, save({ type: 'INSPECT', inspectResult: 'BAD' as never }))).fieldErrors).toEqual([
+      { field: 'records[0].inspectResult', reason: 'GOOD 또는 CAUTION만 입력할 수 있습니다.' },
+    ])
+    // 맞는 구분이면 저장된다
+    expect(parse<VisitSaveResponse>(mockSaveVisit(4, save({ type: 'INSPECT', inspectResult: 'GOOD' }))).savedCount).toBe(1)
+  })
+
   it('12 방문일 미래 · 같은 항목 중복 · 쓰지 않는 항목은 400', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-11-24T03:00:00Z'))
@@ -341,5 +367,87 @@ describe('Mock (CONVENTIONS 7장, 07 7.2·7.4 시드)', () => {
     const items = parse<ServiceItem[]>(mockGetItems())
     expect(items).toHaveLength(6)
     expect(items[5]).toEqual({ itemId: 6, code: 'BATTERY', name: '배터리', cycleMonths: 36, cycleKm: 60000, active: true, sortOrder: 6 })
+  })
+})
+
+describe('37·38 정비 기록 수정·수정 이력 (P0-나머지 #34, 08 7.1 37·38)', () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => {}, removeItem: () => {} })
+    fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('37 PATCH /api/records/{id}, 본문 그대로(08 37 예시), 응답 { recordId, vehicleId, version }', async () => {
+    const body: RecordUpdateRequest = { version: 0, mileage: 52000, memo: '합성유 사용', reason: '입력 누락 보완' }
+    fetchMock.mockResolvedValue(jsonResponse(200, okBody({ recordId: 16, vehicleId: 4, version: 1 })))
+    expect(await updateRecord(16, body)).toEqual<RecordUpdateResponse>({ recordId: 16, vehicleId: 4, version: 1 })
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/records/16')
+    expect(init.method).toBe('PATCH')
+    expect(JSON.parse(init.body)).toEqual(body)
+  })
+
+  it('37 409·403은 ApiError 코드 그대로(화면이 나눠 처리), 자동 재전송 없음', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(403, { success: false, data: null, error: { code: 'EDIT_PERIOD_EXPIRED', message: '수정할 수 있는 기간이 지났습니다.', fieldErrors: [], details: null } }),
+    )
+    const error = await caught(updateRecord(16, { version: 0, memo: 'x' }))
+    expect(error.code).toBe('EDIT_PERIOD_EXPIRED')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('38 GET /api/records/{id}/revisions (08 38 예시 모양)', async () => {
+    const data: RecordRevisionListResponse = {
+      items: [
+        {
+          revisionNo: 1,
+          changedAt: '2026-11-25T10:05:00',
+          changedBy: { staffId: 1, name: '박사장' },
+          reason: '입력 누락 보완',
+          changes: [
+            { field: 'mileage', before: null, after: 52000 },
+            { field: 'memo', before: null, after: '합성유 사용' },
+          ],
+        },
+      ],
+    }
+    fetchMock.mockResolvedValue(jsonResponse(200, okBody(data)))
+    expect(await getRecordRevisions(16)).toEqual(data)
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/records/16/revisions')
+  })
+
+  describe('Mock 37 — 서버 확인 순서 (08 37)', () => {
+    it('형식(400) → 소유(404, X14) → version(409, H4)', () => {
+      expect(parseError(mockUpdateRecord(16, { memo: 'x' } as unknown as RecordUpdateRequest)).fieldErrors[0].field).toBe('version')
+      expect(parseError(mockUpdateRecord(16, { version: '0', memo: 'x' } as unknown as RecordUpdateRequest)).fieldErrors).toEqual([]) // 숫자 아님은 [] (08 0.2)
+      expect(parseError(mockUpdateRecord(16, { version: 1, recordDate: '2999-01-01' })).fieldErrors[0].field).toBe('recordDate')
+      expect(parseError(mockUpdateRecord(999, { version: 0, memo: 'x' })).code).toBe('NOT_FOUND')
+      expect(parseError(mockUpdateRecord(16, { version: 0, memo: 'x' })).code).toBe('CONCURRENT_MODIFICATION') // 기록 16은 version 1
+    })
+
+    it('itemId(X11)·mechanicId(X13) → 점검 결과 짝 → 바뀐 것 없음(H8) → 같은 방문 항목 중복(H7)', () => {
+      expect(parseError(mockUpdateRecord(16, { version: 1, itemId: 99 })).fieldErrors[0].field).toBe('itemId')
+      expect(parseError(mockUpdateRecord(16, { version: 1, mechanicId: 3 })).fieldErrors[0].field).toBe('mechanicId')
+      expect(parseError(mockUpdateRecord(16, { version: 1, inspectResult: 'GOOD' })).fieldErrors[0].field).toBe('inspectResult')
+      const unchanged = parseError(mockUpdateRecord(16, { version: 1, itemId: 1, memo: '' }))
+      expect(unchanged.fieldErrors[0]).toEqual({ field: 'itemId', reason: '바뀐 항목이 없습니다.' }) // 보낸 필드 중 표 순서로 첫째
+      expect(parseError(mockUpdateRecord(16, { version: 1, reason: '사유만' })).fieldErrors[0].field).toBe('recordDate') // 사유는 세지 않음(백엔드와 같음)
+      expect(parseError(mockUpdateRecord(14, { version: 0, itemId: 3 })).fieldErrors[0].field).toBe('itemId') // 14·15는 같은 방문
+    })
+
+    it('통과하면 { recordId, vehicleId, version + 1 }, 상태는 쌓지 않는다', () => {
+      expect(parse(mockUpdateRecord(16, { version: 1, type: 'INSPECT', inspectResult: 'CAUTION' }))).toEqual({ recordId: 16, vehicleId: 10, version: 2 })
+      expect(parse<VisitListResponse>(mockGetVisits(10)).items[0].records[0].version).toBe(1)
+    })
+  })
+
+  it('Mock 38: 기록 16만 이력 1건(visits.json edited와 같음), 다른 기록은 [], 남의 기록은 404', () => {
+    expect(parse<RecordRevisionListResponse>(mockGetRecordRevisions(16)).items.map((r) => r.revisionNo)).toEqual([1])
+    expect(parse<RecordRevisionListResponse>(mockGetRecordRevisions(1)).items).toEqual([])
+    expect(parseError(mockGetRecordRevisions(999)).code).toBe('NOT_FOUND')
+    const edited = Object.values(FIXTURES[1]).flat().flatMap((v) => v.records).filter((r) => r.edited)
+    expect(edited.map((r) => r.recordId)).toEqual([16])
   })
 })

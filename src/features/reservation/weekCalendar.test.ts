@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addDays, formatWeekLabel, todaySeoul, weekRange, weekdayIndex } from './dates'
 import { mockGetReservations, resetReservationMocks } from './mocks'
 import type { ReservationListItem } from './types'
-import { WEEK_SLOTS, hasItems, placeWeek } from './weekCalendar'
+import { WEEK_SLOTS, hasItems, nowMarker, placeWeek } from './weekCalendar'
 
 // S-02 주 캘린더 (04 F-RSV-05 「주 보기」, 09 S-02, D-63 B08, chagok-frontend#36):
 // 주 범위(월요일 시작, 달·해 넘김), 30분 칸 배치와 08:00 전·20:00 이후 영역 경계, 15 조회 기간
@@ -53,7 +53,7 @@ const item = (id: number, reservedAt: string, extra: Partial<ReservationListItem
   ...extra,
 })
 
-describe('placeWeek — 30분 칸, 08:00 전은 위·20:00 이후는 아래 (D-63 B08)', () => {
+describe('placeWeek — 30분 칸, 08:00 전은 맨 앞 열·20:00 이후는 맨 뒤 열 (D-63 B08)', () => {
   const { days } = weekRange('2026-11-24')
 
   it('시작 칸은 08:00 ~ 19:30, 24칸', () => {
@@ -105,8 +105,24 @@ describe('placeWeek — 30분 칸, 08:00 전은 위·20:00 이후는 아래 (D-6
   })
 })
 
+describe('nowMarker — 현재 시각선 (#83)', () => {
+  it.each([
+    ['2026-11-24T08:00:00', '08:00', 0],
+    ['2026-11-24T10:15:30', '10:00', 0.5],
+    ['2026-11-24T10:30:00', '10:30', 0],
+    ['2026-11-24T19:45:00', '19:30', 0.5],
+  ])('%s → %s 칸 안 %s', (now, slot, offset) => {
+    expect(nowMarker(now)).toEqual({ date: '2026-11-24', slot, offset })
+  })
+
+  it('08:00 전·20:00 이후에는 선을 그리지 않는다', () => {
+    expect(nowMarker('2026-11-24T07:59:59')).toBeNull()
+    expect(nowMarker('2026-11-24T20:00:00')).toBeNull()
+  })
+})
+
 describe('Mock 15 — 주 기간(7일) 조회', () => {
-  it('오늘이 속한 주를 부르면 07 7.3 시드의 오늘 예약 2건이 들어 있다', () => {
+  it('오늘이 속한 주를 부르면 07 7.3 시드의 오늘 예약 3건이 들어 있다', () => {
     resetReservationMocks()
     const today = todaySeoul()
     const { from, to } = weekRange(today)
@@ -114,7 +130,7 @@ describe('Mock 15 — 주 기간(7일) 조회', () => {
     expect(res.status).toBe(200)
     const data = (res.body as { data: { from: string; to: string; items: ReservationListItem[] } }).data
     expect([data.from, data.to]).toEqual([from, to])
-    expect(data.items.filter((r) => r.reservedAt.startsWith(today))).toHaveLength(2)
+    expect(data.items.filter((r) => r.reservedAt.startsWith(today))).toHaveLength(3)
     expect(data.items.every((r) => r.reservedAt.slice(0, 10) >= from && r.reservedAt.slice(0, 10) <= to)).toBe(true)
   })
 })
@@ -132,9 +148,9 @@ describe('Mock 15 — assigneeId (내 담당만)', () => {
 
   it('없으면 정비소 전체, 있으면 그 담당 예약만', () => {
     resetReservationMocks()
-    expect(ids(period).map((r) => r.reservationId)).toEqual([4, 1, 2, 3])
+    expect(ids(period).map((r) => r.reservationId)).toEqual([4, 5, 1, 2, 3])
     const mine = ids({ ...period, assigneeId: 2 })
-    expect(mine.map((r) => r.reservationId)).toEqual([1, 3])
+    expect(mine.map((r) => r.reservationId)).toEqual([5, 1, 3])
     expect(mine.every((r) => r.assignee?.staffId === 2)).toBe(true)
     expect(ids({ ...period, assigneeId: 1 }).map((r) => r.reservationId)).toEqual([4, 2])
   })

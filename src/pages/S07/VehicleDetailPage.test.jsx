@@ -90,9 +90,9 @@ const VISITS_PAGE = (items, over = {}) => ({ items, page: 0, size: 20, totalElem
 
 const HISTORY = [
   visit(9, '2026-10-24', [
-    { recordId: 9, itemId: 3, itemName: '에어컨필터', type: 'EXTERNAL', date: '2026-10-01', memo: '다른 곳에서 교체했다고 함', source: 'CUSTOMER_STATEMENT', inspectResult: null },
+    { recordId: 9, itemId: 3, itemName: '에어컨필터', type: 'EXTERNAL', date: '2026-10-01', memo: '다른 곳에서 교체했다고 함', source: 'CUSTOMER_STATEMENT', inspectResult: null, mileage: 41000 },
   ]),
-  visit(5, '2026-09-24', [{ recordId: 5, itemId: 1, itemName: '엔진오일', type: 'REPLACE', date: '2026-09-24', memo: null, source: 'SHOP', inspectResult: null }], 45000),
+  visit(5, '2026-09-24', [{ recordId: 5, itemId: 1, itemName: '엔진오일', type: 'REPLACE', date: '2026-09-24', memo: null, source: 'SHOP', inspectResult: null, mileage: 45000 }], 45000),
 ]
 
 function serve({ vehicle = ok(VEHICLE), itemStatus = ok(ITEM_STATUS), visits = ok(VISITS_PAGE(HISTORY)), id = 4 } = {}) {
@@ -134,7 +134,8 @@ describe('S-07 차량 상세', () => {
     expect(document.querySelector('[role="status"]')).not.toBeNull() // 불러오는 중
     await settle()
 
-    expect(calledPaths().sort()).toEqual(['/api/vehicles/4', '/api/vehicles/4/item-status', '/api/vehicles/4/visits'])
+    // 03은 정비 이력 [수정] 활성 판단용(#34, 로그인 계정)
+    expect(calledPaths().sort()).toEqual(['/api/me', '/api/vehicles/4', '/api/vehicles/4/item-status', '/api/vehicles/4/visits'])
     const header = document.querySelector('.vehicle-header')
     expect(header.querySelector('h2').textContent).toBe('78라0004')
     expect(header.textContent).toContain('K5 · 2020년식 · 최근 주행거리 45,000 km')
@@ -192,11 +193,13 @@ describe('S-07 차량 상세', () => {
     expect(first.querySelector('.visit-record__source').textContent).toBe('고객 진술')
     expect(first.querySelector('.visit-record__date').textContent).toBe('2026.10.01')
     expect(first.textContent).toContain('다른 곳에서 교체했다고 함')
+    expect(first.querySelector('.visit-record__mileage').textContent).toBe('41,000 km') // 기록 주행거리(고객이 말한 값)가 있고 방문(—)과 다르면 기록 옆에 (chagok-docs#174)
 
     expect(second.querySelector('.visit-item__meta').textContent).toBe('45,000 km · 김정비')
     expect(second.querySelector('.visit-record__type').textContent).toBe('교체')
     expect(second.querySelector('.visit-record__source')).toBeNull() // 우리 정비소 기록은 고객 진술이 아님
     expect(second.querySelector('.visit-record__date')).toBeNull() // 방문일과 같으면 다시 쓰지 않음
+    expect(second.querySelector('.visit-record__mileage')).toBeNull() // 방문 주행거리와 같으면 다시 쓰지 않음
   })
 
   it('꼬리표: 지난 방문 거절(날짜)·지난 점검 주의(날짜, 메모)를 항목 이름 옆에 서버 값 그대로, 상태는 바꾸지 않는다 (F-CYC-02)', async () => {
@@ -348,7 +351,7 @@ describe('S-07 차량 상세', () => {
   it('주소의 id가 양의 정수가 아니면 부르지 않고 찾을 수 없음', async () => {
     renderPage('/vehicles/abc')
     await settle()
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url !== '/api/me')).toEqual([]) // 03(로그인 계정, #34)만
     expect(document.body.textContent).toContain('찾을 수 없습니다.')
   })
 

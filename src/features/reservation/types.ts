@@ -126,6 +126,12 @@ export interface VisitRecord {
   source: 'SHOP' | 'CUSTOMER_STATEMENT'
   /** P0-나머지 (#29). 점검이고 결과를 남겼을 때만 */
   inspectResult: 'GOOD' | 'CAUTION' | null
+  /** P0-나머지 (#34, F-MNT-04). 11과 같은 모양 — 패널은 수정 버튼을 두지 않아 화면에서 쓰지 않는다(수정은 S-07) */
+  version: number
+  edited: boolean
+  staff: { staffId: number; name: string }
+  /** P0-나머지 (F-MNT-04). 11과 같은 모양 — 패널 화면에서는 쓰지 않는다 */
+  mileage: number | null
 }
 
 /** 08 10 items[].lastDecline·lastCaution (P0-나머지 #29, F-CYC-02) */
@@ -221,7 +227,7 @@ export interface ReservationStartRequest {
 
 /**
  * 39 응답: 18·20·21·40과 같은 { reservationId, status, vehicleId, version } (08 7.1 39, chagok-docs#155).
- * 백엔드 develop은 아직 reservedAt을 더 싣는다(문서에 맞춰 조정 예정, docs#155) — 화면은 성공 뒤 17을 다시 불러 이 응답의 필드를 쓰지 않는다.
+ * 백엔드는 문서대로 4필드만 싣는다(backend#111) — 화면은 성공 뒤 17을 다시 불러 이 응답의 필드를 쓰지 않는다.
  */
 export type ReservationStarted = ReservationStatusChanged
 

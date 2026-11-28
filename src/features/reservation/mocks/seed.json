@@ -42,7 +42,8 @@
     { "reservationId": 1, "dayOffset": 0, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 4, "itemIds": [1], "other": false, "memo": null, "assigneeStaffId": 2 },
     { "reservationId": 2, "dayOffset": 0, "time": "14:30:00", "status": "RESERVED", "version": 0, "vehicleId": 7, "itemIds": [], "other": true, "memo": "에어컨 냄새", "assigneeStaffId": 1 },
     { "reservationId": 3, "dayOffset": 2, "time": "10:00:00", "status": "RESERVED", "version": 0, "vehicleId": 2, "itemIds": [1], "other": false, "memo": null, "assigneeStaffId": 2 },
-    { "reservationId": 4, "dayOffset": -1, "time": "15:00:00", "status": "RESERVED", "version": 0, "vehicleId": 10, "itemIds": [6], "other": false, "memo": null, "assigneeStaffId": 1 }
+    { "reservationId": 4, "dayOffset": -1, "time": "15:00:00", "status": "RESERVED", "version": 0, "vehicleId": 10, "itemIds": [6], "other": false, "memo": null, "assigneeStaffId": 1 },
+    { "reservationId": 5, "dayOffset": 0, "time": "09:00:00", "status": "IN_PROGRESS", "version": 0, "vehicleId": 5, "itemIds": [1], "other": false, "memo": null, "assigneeStaffId": 2 }
   ],
   "_visitsComment": "07 7.2 기록 (패널 17의 recentVisits·totalVisitCount용). 날짜는 오늘 기준 monthOffset 개월 + dayOffset 일. visitKey·recordId는 chagok-backend db/seed와 08 17 예시와 같은 번호.",
   "visits": [

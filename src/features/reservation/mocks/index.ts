@@ -12,6 +12,7 @@
 // api.ts만 동적 import()로 부른다. 화면·pages는 import하지 않는다.
 
 import type { MockResponse } from '@/shared/api/client'
+import { maskPhone } from '@/shared/lib/phoneMask'
 import { addDays, nowSeoul, todaySeoul } from '../dates'
 import type {
   ReservationCompleteRequest,
@@ -125,7 +126,7 @@ function toListItem(r: MockReservation): ReservationListItem {
     plateNumber: vehicle.plateNumber,
     customerId: customer.customerId,
     customerName: customer.name,
-    phone: customer.phone,
+    phone: maskPhone(customer.phone), // 15 목록은 마스킹(08 0.5, F-CUS-07). 상세 17은 전체 번호
     purposeSummary: purposeSummary(r),
     assignee: assigneeOf(r.assigneeStaffId),
   }
@@ -209,8 +210,32 @@ export function mockGetReservationSummary(query: ReservationSummaryQuery): MockR
   return ok({ from, to, items: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)) })
 }
 
-/** 08 16 (P0-나머지): 소유(404) → 30분 단위 → assigneeId(400) → 날짜(400) → 같은 차량 유효 예약(409) → 담당 중복(409) */
+/**
+ * 08 16 형식 (chagok-docs#198): 필수 누락(vehicleId·reservedAt·assigneeId)·`purpose.memo` 200자 초과 → 400. 소유 확인보다 먼저.
+ * 백엔드 `ReservationCreateRequest`의 Bean Validation과 같게 틀린 필드를 모두 모은다. 없는 번호(0·음수)는 형식이 아니라 404다.
+ * 타입이 틀린 값(숫자가 아닌 id, 날짜·시각으로 읽을 수 없는 reservedAt)은 백엔드가 본문을 읽지 못해 400 + fieldErrors [](08 0.2)라 그대로 흉내 낸다.
+ */
+function invalidCreateFormat(body: ReservationCreateRequest): MockResponse | null {
+  const loose = body as unknown as Record<string, unknown>
+  const notNumber = (v: unknown) => v != null && typeof v !== 'number'
+  const notDateTime = (v: unknown) => v != null && (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(v))
+  if (notNumber(loose.vehicleId) || notNumber(loose.assigneeId) || notDateTime(loose.reservedAt)) {
+    return fail(400, 'INVALID_INPUT', '입력값을 확인해 주세요.')
+  }
+  const required = '필수 입력입니다.'
+  const fieldErrors: { field: string; reason: string }[] = []
+  if (body.vehicleId == null) fieldErrors.push({ field: 'vehicleId', reason: required })
+  if (body.reservedAt == null) fieldErrors.push({ field: 'reservedAt', reason: required })
+  if (body.assigneeId == null) fieldErrors.push({ field: 'assigneeId', reason: required })
+  if ((body.purpose?.memo?.length ?? 0) > 200) fieldErrors.push({ field: 'purpose.memo', reason: '200자 이하로 입력해 주세요.' })
+  if (fieldErrors.length === 0) return null
+  return { status: 400, body: { success: false, data: null, error: { code: 'INVALID_INPUT', message: '입력값을 확인해 주세요.', fieldErrors, details: null } } }
+}
+
+/** 08 16 (P0-나머지): 형식(400) → 소유(404) → 30분 단위 → assigneeId(400) → 날짜(400) → 같은 차량 유효 예약(409) → 담당 중복(409) */
 export function mockCreateReservation(body: ReservationCreateRequest): MockResponse {
+  const badFormat = invalidCreateFormat(body)
+  if (badFormat) return badFormat
   if (!vehicleOf(body.vehicleId)) return notFound()
   const invalid = invalidSlot(body.reservedAt ?? '') ?? invalidAssignee(body.assigneeId) ?? pastDate(body.reservedAt)
   if (invalid) return invalid
@@ -266,8 +291,22 @@ function visitsOf(vehicleId: number): RecentVisit[] {
         // P0-나머지 (#29): 외부만 고객 진술(07 3.7 CHECK), 점검 결과는 07 7.2 시드의 33아0008 마지막 점검만 CAUTION
         source: r.type === 'EXTERNAL' ? ('CUSTOMER_STATEMENT' as const) : ('SHOP' as const),
         inspectResult: 'inspectResult' in r ? (r.inspectResult as VisitRecord['inspectResult']) : null,
+        // P0-나머지 (#34): 수정 확인용 번호·수정 여부·담당(그 방문의 담당). 11 Mock(maintenance visits.json)과 같은 기록은 같은 값 —
+        // 기록 16만 1회 수정한 모양(version 1·edited), 나머지는 수정 전
+        ...(EDITED_RECORDS[r.recordId] ?? { version: 0, edited: false }),
+        staff: staffRefOf(v.staffName),
+        mileage: r.type === 'EXTERNAL' ? null : v.mileage, // 11 Mock(maintenance visits.json)과 같은 규칙: 외부는 null, 그 밖은 방문 주행거리
       })),
     }))
+}
+
+/** 11 Mock에서 수정 이력이 있는 기록 (maintenance mocks/visits.json과 같게 둔다 — feature끼리 import하지 않아 값을 옮겨 적음) */
+const EDITED_RECORDS: Record<number, { version: number; edited: boolean }> = { 16: { version: 1, edited: true } }
+
+/** 시드 방문의 담당 이름 → { staffId, name } (07 7.1 A 정비소 계정, seed.json staff) */
+function staffRefOf(name: string): { staffId: number; name: string } {
+  const staff = seed.staff.find((s) => s.name === name)
+  return { staffId: staff?.staffId ?? 0, name }
 }
 
 /**
@@ -440,7 +479,7 @@ export function mockUpdate(reservationId: number, body: ReservationUpdateRequest
   return ok(savedOf(r))
 }
 
-/** 08 39 — 형식 → 소유 → 상태(RESERVED만) → version → 차량 연식·주행거리(비어 있으면 필수, D-58) 순. 응답은 18과 같은 4필드(08 7.1 39) */
+/** 08 39 — 형식 → 소유 → 상태(RESERVED만) → version → 차량 연식·주행거리(비어 있으면 필수, D-58) → 보낸 값의 범위 순. 응답은 18과 같은 4필드(08 7.1 39) */
 export function mockStart(reservationId: number, body: ReservationStartRequest): MockResponse {
   const invalid = invalidVersion(body?.version)
   if (invalid) return invalid
@@ -455,6 +494,18 @@ export function mockStart(reservationId: number, body: ReservationStartRequest):
   if (vehicle.latestMileage == null && body.mileage == null) fieldErrors.push({ field: 'mileage', reason: '차량의 주행거리가 비어 있어 입력해 주세요.' })
   if (fieldErrors.length > 0) {
     return { status: 400, body: { success: false, data: null, error: { code: 'INVALID_INPUT', message: '입력값을 확인해 주세요.', fieldErrors, details: null } } }
+  }
+  // 보낸 값의 범위 (08 39): 연식 1980 ~ 현재 연도 + 1, 주행거리 0 ~ 2,000,000
+  const maxYear = Number(todaySeoul().slice(0, 4)) + 1
+  const rangeErrors = []
+  if (body.modelYear != null && (!Number.isInteger(body.modelYear) || body.modelYear < 1980 || body.modelYear > maxYear)) {
+    rangeErrors.push({ field: 'modelYear', reason: `1980년부터 ${maxYear}년까지 입력할 수 있습니다.` })
+  }
+  if (body.mileage != null && (!Number.isInteger(body.mileage) || body.mileage < 0 || body.mileage > 2_000_000)) {
+    rangeErrors.push({ field: 'mileage', reason: '0 이상 2,000,000 이하로 입력해 주세요.' })
+  }
+  if (rangeErrors.length > 0) {
+    return { status: 400, body: { success: false, data: null, error: { code: 'INVALID_INPUT', message: '입력값을 확인해 주세요.', fieldErrors: rangeErrors, details: null } } }
   }
   const fill = { ...vehicleFills.get(r.vehicleId) }
   if (vehicle.modelYear == null && body.modelYear != null) fill.modelYear = body.modelYear

@@ -253,3 +253,25 @@ S-02 날짜 이동을 찾기 쉽고 누르기 쉽게 바꾼다. 날짜 계산·�
 | 날짜 선택 | 없음(한 칸씩만 이동) | 기간 표시를 누르면 월 달력 팝오버(`DatePickerPopover`). 고르면 `?date=`만 바뀜, [오늘]·[취소]·Esc·바깥 누름, ←→↑↓ 키보드. 조회용이라 날짜 제한 없음(M-02 등록 가능 기간과 별개) |
 | 팝오버 층 | — | body에 고정 위치, 아래 공간이 모자라면 위로 펼침. `--ck-shadow-pop` + `--ck-border`(떠 있는 층 최소 효과, #82) |
 | 유지 | 폼의 날짜 입력(`input[type=date]`, COMPONENT_SPEC 2장 DatePicker), 월/주 전환 버튼 위치 | — |
+
+## 구현 후 개선 — 파비콘·홈 화면 아이콘·공유 썸네일 (2026-11-27, chagok-frontend#93)
+
+은정 님이 전달한 마스코트 이미지(1254×1254, 검은 배경)를 원본 그대로(A안) 줄여 쓴다. 파랑 타일(C안)·투명 배경(B안)과 16·32·48·180px 비교 뒤 A안으로 정했다. 프로토타입 `favicon.svg`(파랑 둥근 사각형 + 얼굴)는 참고만 하고 쓰지 않는다.
+
+| 파일(`public/`) | 크기 | 내용 |
+|---|---|---|
+| `favicon.ico` | 16·32·48 | 원본 축소. 16px에서는 "CHA" 글자·헤드폰은 뭉개지고 눈(❙ ‹)과 얼굴 윤곽이 보인다 |
+| `favicon-32x32.png` | 32 | 원본 축소 |
+| `apple-touch-icon.png` | 180 | 원본 축소(투명 없음) |
+| `og-image.png` | 1200×630 | `--ck-bg`(#F2F3F6) 바탕 왼쪽에 배경을 뺀 마스코트, 오른쪽에 로그인 화면 문구("SMART GARAGE CRM"·"차곡 쌓이는 기록, 놓치지 않는 고객 관리."·"정비 기록부터 다음 방문까지"). 글자는 맑은 고딕 굵게(이미지에 그려 넣음) |
+
+- `index.html`: `meta description`, `theme-color #1f2bff`, 아이콘 `<link>` 3개, `og:*`·`twitter:card`
+- 알려진 한계: `og:image`는 상대 경로(`/og-image.png`). 배포 도메인이 정해지면 절대 URL로 바꾼다. 탭 제목은 모든 화면이 "차곡"
+
+## 폴더 이동 — `docs/design/` → `design/` (2026-11-28, chagok-frontend#109)
+
+디자인 내용은 바뀌지 않았다. 프론트 레포의 `docs/`가 공통 문서 원본(chagok-docs)과 헷갈려 디자인 자료를 루트 `design/`으로 옮겼다(`git mv`, 314개 파일 모두 rename, 내용 해시 같음).
+
+- 이 폴더 안의 상대 경로(`references/…`, `improved-v3.0/…`)는 그대로 유효하다.
+- 바꾼 참조: 레포 `README.md`, `src/shared/ui/theme.css`·`src/pages/S01/LoginPage.jsx` 주석.
+- 그대로 둔 것: 위 STEP 기록과 `references/DESIGN_VERIFICATION.md`의 `docs/design` 표기는 당시 경로를 적은 기록이다.

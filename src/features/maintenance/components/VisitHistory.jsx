@@ -11,23 +11,32 @@ import {
   SHOW_MORE_LABEL,
   dateText,
   isCustomerStatement,
+  kmText,
   visitCountText,
   visitMetaText,
 } from '../maintenanceFlow'
+import { RECORD_EDIT_TEXT } from '../recordEditFlow'
 import './visitHistory.css'
 
 // S-07 정비 이력: 방문 단위 최신순 + 더 보기 (09 S-07·5장, 08 11, 디자인 v3.0 S-07).
 // - 순서는 서버가 준 순서 그대로(visitDate 내림차순, 같으면 나중에 저장한 방문 먼저). 화면이 다시 정렬하지 않는다.
 // - 방문 한 줄: 방문일 · 주행거리 · 담당 정비사, 그 아래 기록(항목 · 구분 · 점검 결과 · 메모).
-//   고객 진술(08 11 source CUSTOMER_STATEMENT, source가 없으면 type EXTERNAL — isCustomerStatement)이면 "고객 진술" 꼬리표.
+//   고객 진술(08 11 source CUSTOMER_STATEMENT — isCustomerStatement)이면 "고객 진술" 꼬리표.
 //   점검 결과(양호·주의)는 값이 있을 때만(F-MNT-03).
 //   기록마다 자기 날짜가 있다(외부는 고객이 말한 날짜) — 방문일과 다르면 기록 옆에 보인다.
+//   기록마다 자기 주행거리(11 records[].mileage)도 있다 — 값이 있고 방문 주행거리와 다르면 기록 옆에 보인다(chagok-docs#174, 09 S-07).
 // - 이력이 없으면 "정비 이력이 없습니다." + "방문 기록"(09 5장). 버튼은 화면이 onRecordVisit을 넘길 때만 그린다(연결 안 된 버튼 금지, 09 0장).
 // - 더 보기는 사람이 누를 때만 다음 쪽을 받는다. 실패하면 받은 이력은 그대로 두고 그 자리에서 다시 누르게 한다(POL-125).
-// - 수정 버튼·"수정됨"(P0-나머지 #34)은 그 이슈가 더한다. 출처 "우리 정비소"(SHOP)는 따로 보이지 않는다(09 S-07은 외부만 표시).
-// props: visits(08 11 items[] 이어 붙인 것), totalElements, hasMore, loadingMore, moreError, onLoadMore, onRecordVisit(선택)
+// - 출처 "우리 정비소"(SHOP)는 따로 보이지 않는다(09 S-07은 외부만 표시).
+// - P0-나머지 기록 수정(#34, F-MNT-04): 화면이 recordActions를 넘길 때만 그린다(연결 안 된 버튼 금지).
+//   줄 오른쪽 "수정" — 쓸 수 없으면 비활성 모양 + 이유(툴팁·스크린리더 설명). 비활성이어도 초점은 받아 이유를 읽을 수 있게 aria-disabled로 둔다.
+//   "수정됨"(08 11 edited) 꼬리표는 누르면 수정 이력 패널(08 38).
+// props: visits(08 11 items[] 이어 붙인 것), totalElements, hasMore, loadingMore, moreError, onLoadMore, onRecordVisit(선택),
+//        recordActions(선택): { permissionOf(record) → { enabled, reason }, onEdit(record, visit), onShowRevisions(record) }
 
-function RecordLine({ record, visitDate }) {
+function RecordLine({ record, visit, actions }) {
+  const permission = actions ? actions.permissionOf(record) : null
+  const reasonId = `visit-record-${record.recordId}-edit-reason`
   return (
     <li className="visit-record">
       <span className="visit-record__item">{record.itemName}</span>
@@ -38,8 +47,41 @@ function RecordLine({ record, visitDate }) {
         </span>
       )}
       {isCustomerStatement(record) && <span className="visit-record__source">{CUSTOMER_STATEMENT_LABEL}</span>}
-      {record.date !== visitDate && <span className="visit-record__date">{dateText(record.date)}</span>}
+      {record.date !== visit.visitDate && <span className="visit-record__date">{dateText(record.date)}</span>}
+      {record.mileage != null && record.mileage !== visit.mileage && <span className="visit-record__mileage">{kmText(record.mileage)}</span>}
+      {record.edited && actions && (
+        <button
+          type="button"
+          className="visit-record__edited"
+          aria-label={`${record.itemName} ${RECORD_EDIT_TEXT.EDITED} — 수정 이력 보기`}
+          onClick={() => actions.onShowRevisions(record)}
+        >
+          {RECORD_EDIT_TEXT.EDITED}
+        </button>
+      )}
       {record.memo && <span className="visit-record__memo">{record.memo}</span>}
+      {permission && (
+        <span className="visit-record__actions">
+          <button
+            type="button"
+            className="visit-record__edit"
+            aria-label={`${record.itemName} 기록 ${RECORD_EDIT_TEXT.EDIT}`}
+            aria-disabled={permission.enabled ? undefined : 'true'}
+            aria-describedby={permission.enabled ? undefined : reasonId}
+            title={permission.reason ?? undefined}
+            onClick={() => {
+              if (permission.enabled) actions.onEdit(record, visit)
+            }}
+          >
+            {RECORD_EDIT_TEXT.EDIT}
+          </button>
+          {!permission.enabled && (
+            <span id={reasonId} className="visually-hidden">
+              {permission.reason}
+            </span>
+          )}
+        </span>
+      )}
     </li>
   )
 }
@@ -52,6 +94,7 @@ export default function VisitHistory({
   moreError = null,
   onLoadMore,
   onRecordVisit,
+  recordActions,
 }) {
   return (
     <section className="visit-history" aria-labelledby="visit-history-title">
@@ -77,7 +120,7 @@ export default function VisitHistory({
               </div>
               <ul className="visit-item__records">
                 {visit.records.map((record) => (
-                  <RecordLine key={record.recordId} record={record} visitDate={visit.visitDate} />
+                  <RecordLine key={record.recordId} record={record} visit={visit} actions={recordActions} />
                 ))}
               </ul>
             </li>

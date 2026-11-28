@@ -1,17 +1,25 @@
 {
-  "_comment": "08 04 JSON 예시 + 07 7.5 기대값(오늘 예약 2건·오늘 연락할 고객 5명). 날짜는 index.ts가 오늘(서울)로 바꾼다. 실제 개인정보 없음.",
-  "todayReservationCount": 2,
+  "_comment": "08 04 JSON 예시(P0-나머지 모양) + 07 7.5 기대값(오늘 예약 3건(진행중 1건 포함)·오늘 연락할 고객 5명). 날짜는 index.ts가 오늘(서울)로 바꾼다. phone은 목록이라 마스킹(08 0.5). 실제 개인정보 없음.",
+  "todayReservationCount": 3,
   "todayContactCount": 5,
   "todayReservations": [
     {
+      "reservationId": 5, "time": "09:00:00", "status": "IN_PROGRESS", "needsAction": false, "version": 0,
+      "vehicleId": 5, "plateNumber": "90마0005", "customerId": 5, "customerName": "정우성", "phone": "010-****-0005",
+      "purposeSummary": "엔진오일",
+      "assignee": { "staffId": 2, "name": "김정비", "colorIndex": 1 }
+    },
+    {
       "reservationId": 1, "time": "10:00:00", "status": "RESERVED", "needsAction": false, "version": 0,
-      "vehicleId": 4, "plateNumber": "78라0004", "customerId": 4, "customerName": "최지은", "phone": "010-0000-0004",
-      "purposeSummary": "엔진오일"
+      "vehicleId": 4, "plateNumber": "78라0004", "customerId": 4, "customerName": "최지은", "phone": "010-****-0004",
+      "purposeSummary": "엔진오일",
+      "assignee": { "staffId": 2, "name": "김정비", "colorIndex": 1 }
     },
     {
       "reservationId": 2, "time": "14:30:00", "status": "RESERVED", "needsAction": false, "version": 0,
-      "vehicleId": 7, "plateNumber": "22사0007", "customerId": 7, "customerName": "서민준", "phone": "010-0000-0007",
-      "purposeSummary": "기타"
+      "vehicleId": 7, "plateNumber": "22사0007", "customerId": 7, "customerName": "서민준", "phone": "010-****-0007",
+      "purposeSummary": "기타",
+      "assignee": { "staffId": 1, "name": "박사장", "colorIndex": 0 }
     }
   ]
 }
