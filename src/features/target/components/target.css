@@ -24,7 +24,8 @@
 .target-row__customer,
 .target-row__vehicle { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .target-row__customer b,
-.target-row__vehicle b { color: var(--ck-text-1); font-size: var(--ck-fs-body); font-weight: 700; }
+.target-row__vehicle { align-items: flex-start; }
+.target-row__vehicle .license-plate { font-size: var(--ck-fs-body); }
 .target-row__customer span { color: var(--ck-text-3); font-size: var(--ck-fs-small); }
 
 .target-row__items { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }

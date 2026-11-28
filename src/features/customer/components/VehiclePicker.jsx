@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Button from '@/shared/ui/Button.jsx'
 import ErrorNotice from '@/shared/ui/ErrorNotice.jsx'
+import LicensePlate from '@/shared/ui/LicensePlate.jsx'
 import { useCustomerSearch } from '../useCustomerSearch'
 import { LOAD_FAILED_MESSAGE, NO_RESULTS_MESSAGE, RELOAD_LABEL, vehicleOptions } from '../searchFlow'
 import CustomerSearchBox from './CustomerSearchBox.jsx'
@@ -40,7 +41,7 @@ export default function VehiclePicker({ value = null, onChange, onRegister, labe
                 onClick={() => onChange(option)}
               >
                 <span className="vehicle-picker__text">
-                  <b>{option.plateNumber}</b>
+                  <LicensePlate number={option.plateNumber} compact />
                   <small>
                     {option.customerName} · {option.phone}
                   </small>

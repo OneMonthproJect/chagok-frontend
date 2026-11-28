@@ -7,59 +7,98 @@
  * 글꼴 Pretendard는 index.html에서 v1.3.9로 고정해 불러온다. 못 불러오면 아래 font-family의 시스템 글꼴로 보인다.
  */
 :root {
-  /* 브랜드 */
-  --ck-brand: #1f2bff;
-  --ck-brand-hover: #1621d9;
-  --ck-brand-tint: #f0f1ff;
-  --ck-brand-ring: rgba(31, 43, 255, 0.32);
+  /* 색 체계 v4 (UI·UX 통합 개선, chagok-frontend#110): 네이비·블루·화이트·쿨그레이. 값은 지시서 1장 최종 HEX 그대로.
+     역할마다 토큰을 따로 둔다(모든 파랑을 한 색으로 합치지 않음). 마스코트 이미지에는 어떤 색 처리도 하지 않는다. */
+
+  /* 브랜드: 메인 포인트·주요 버튼 */
+  --ck-brand: #152e8b;
+  --ck-brand-hover: #122775;
+  --ck-brand-tint: #e6efff; /* 선택 상태 배경 */
+  --ck-brand-ring: rgba(24, 63, 184, 0.32);
+  /* 보조 강조 버튼(오늘 연락할 고객 [보기] 등) */
+  --ck-accent: #2863ef;
+  --ck-accent-hover: #2156d5;
+  /* 활성 탭(주·월 보기 등) · 사이드바 활성 메뉴 · 선택 테두리 · 다크 네이비 강조 카드 */
+  --ck-tab-active: #183fb8;
+  --ck-sidebar-active: #152d75;
+  --ck-select-border: #183fb8;
+  --ck-dark-card: #1f2c3f;
 
   /* 표면 */
-  --ck-bg: #f2f3f6;
+  --ck-bg: #f2f3f5;
   --ck-surface: #ffffff;
-  --ck-surface-muted: #f5f6f8;
-  --ck-border: #e4e6ea;
+  --ck-surface-muted: #f4f5f7; /* 비활성 배경 */
+  --ck-border: #d9dee7;
   --ck-border-soft: #eeeff2;
-  --ck-ink: #111111;
+  --ck-ink: #171c24;
 
-  /* 글자 (흰 바탕 대비: 1 ≈ 18:1, 2 ≈ 6:1, 3 ≈ 5.7:1). disabled는 비활성 요소에만 */
-  --ck-text-1: #111318;
-  --ck-text-2: #4d525a;
-  --ck-text-3: #5f646d;
-  --ck-text-4: #626770;
+  /* 글자 (흰 바탕 대비: 1 ≈ 17:1, 보조 #626b78 ≈ 5.3:1). disabled는 비활성 요소에만 */
+  --ck-text-1: #171c24;
+  --ck-text-2: #626b78;
+  --ck-text-3: #626b78;
+  --ck-text-4: #626b78;
   --ck-text-disabled: #9a9ea5;
   --ck-text-inverse: #ffffff;
 
-  /* 점검 주기 상태 (08 0.4 DUE·SOON·AHEAD·UNKNOWN). 글자색은 각 바탕 위 4.5:1 이상 */
-  --ck-due-bg: #feecec;
-  --ck-due-fg: #b42318;
+  /* 차량번호판 (shared/ui/LicensePlate) */
+  --ck-plate-border: #a8b0ba;
+
+  /* 상태별 보조 색 (지시서 1.2) — 의미는 그대로, 글자를 항상 함께 보인다 */
+  --ck-tone-ok-bg: #e3efe8;
+  --ck-tone-ok-fg: #38644e;
+  --ck-tone-warn-bg: #f7ecd7;
+  --ck-tone-warn-fg: #896522;
+  --ck-tone-danger-bg: #fbe9e9;
+  --ck-tone-danger-fg: #a83434;
+  --ck-tone-muted-bg: #eceef1;
+  --ck-tone-muted-fg: #69717d;
+
+  /* 점검 주기 상태 (08 0.4 DUE·SOON·AHEAD·UNKNOWN). 도래=취소·노쇼 계열, 임박=처리 필요 계열, 미확인=비활성 계열. 여유는 기존 값 */
+  --ck-due-bg: var(--ck-tone-danger-bg);
+  --ck-due-fg: var(--ck-tone-danger-fg);
   --ck-due-dot: #ef4444;
-  --ck-soon-bg: #fff6e5;
-  --ck-soon-fg: #9a5800;
+  --ck-soon-bg: var(--ck-tone-warn-bg);
+  --ck-soon-fg: var(--ck-tone-warn-fg);
   --ck-soon-dot: #f59e0b;
   --ck-ahead-bg: #eff6ff;
   --ck-ahead-fg: #1d4ed8;
   --ck-ahead-dot: #3b82f6;
-  --ck-unknown-bg: #f1f2f3;
-  --ck-unknown-fg: #5f646d;
+  --ck-unknown-bg: var(--ck-tone-muted-bg);
+  --ck-unknown-fg: var(--ck-tone-muted-fg);
   --ck-unknown-dot: #8a8f98;
 
   /* 예약 상태 (08 0.4 RESERVED·IN_PROGRESS·COMPLETED·CANCELED·NO_SHOW). 주기 상태와 합치지 않는다(B03) */
-  --ck-rsv-reserved-bg: #f0f1ff;
-  --ck-rsv-reserved-fg: #1f2bff;
-  --ck-rsv-progress-bg: #1f2bff;
+  --ck-rsv-reserved-bg: var(--ck-brand-tint);
+  --ck-rsv-reserved-fg: var(--ck-brand);
+  --ck-rsv-progress-bg: var(--ck-brand);
   --ck-rsv-progress-fg: #ffffff;
-  --ck-rsv-done-bg: #ecfdf3;
-  --ck-rsv-done-fg: #067647;
-  --ck-rsv-canceled-bg: #f1f2f3;
-  --ck-rsv-canceled-fg: #5f646d;
-  --ck-rsv-noshow-bg: #feecec;
-  --ck-rsv-noshow-fg: #b42318;
+  --ck-rsv-done-bg: var(--ck-tone-ok-bg);
+  --ck-rsv-done-fg: var(--ck-tone-ok-fg);
+  --ck-rsv-canceled-bg: var(--ck-tone-danger-bg);
+  --ck-rsv-canceled-fg: var(--ck-tone-danger-fg);
+  --ck-rsv-noshow-bg: var(--ck-tone-danger-bg);
+  --ck-rsv-noshow-fg: var(--ck-tone-danger-fg);
+  --ck-needs-action-bg: var(--ck-tone-warn-bg);
+  --ck-needs-action-fg: var(--ck-tone-warn-fg);
 
-  /* 담당 색 (API 36 colorIndex 순서). 상태 색과 다른 계열, 이름과 함께 (09 0장) */
-  --ck-assignee-0: #8b5cf6;
-  --ck-assignee-1: #ec4899;
-  --ck-assignee-2: #0d9488;
-  --ck-assignee-3: #92400e;
+  /* 담당 정비사 파스텔 (API 36 colorIndex 0~7, 8색 순환 — 04 F-RSV-05). 계열은 04 💡 보라·청록·분홍·갈색·연두·남색·올리브·자주:
+     상태 색(회색·파랑·주황·빨강, 완료 초록)과 겹치지 않게 지시서 8절 파스텔 중 라벤더만 그대로 쓰고 나머지는 같은 밝기로 맞췄다.
+     파스텔 바탕 + 진한 글자(대비 4.5:1 이상), 이름 라벨을 항상 함께 보인다(09 0장) */
+  --ck-assignee-0-bg: #eae3f5; --ck-assignee-0-fg: #624982; /* 보라(라벤더) */
+  --ck-assignee-1-bg: #dcefef; --ck-assignee-1-fg: #2d6466; /* 청록 */
+  --ck-assignee-2-bg: #f7e1ea; --ck-assignee-2-fg: #8e3d5c; /* 분홍 */
+  --ck-assignee-3-bg: #efe4dc; --ck-assignee-3-fg: #7a5238; /* 갈색 */
+  --ck-assignee-4-bg: #e8f1d8; --ck-assignee-4-fg: #4f6b23; /* 연두 */
+  --ck-assignee-5-bg: #e1e5f4; --ck-assignee-5-fg: #34407a; /* 남색 */
+  --ck-assignee-6-bg: #eeeed9; --ck-assignee-6-fg: #5f6128; /* 올리브 */
+  --ck-assignee-7-bg: #f1dff0; --ck-assignee-7-fg: #7e3a78; /* 자주 */
+
+  /* 캘린더 요일·공휴일 (지시서 9.5). 공휴일은 요일과 관계없이 빨강, 토요일과 겹치면 공휴일 우선 */
+  --ck-cal-sunday: #b83d3d;
+  --ck-cal-saturday: #386497;
+  --ck-cal-holiday: #b83d3d;
+  --ck-cal-holiday-name: #a83434;
+  --ck-cal-holiday-bg: #fbe9e9;
 
   /* 글자 크기 · 굵기 · 행간 (업무 화면 최소 12px) */
   --ck-fs-caption: 12px;
@@ -158,7 +197,7 @@ body {
 
 /* 초점 링: 키보드 초점만 3px 브랜드 55% + 2px 간격 (COMPONENT_SPEC STEP 06) */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 3px solid rgba(31, 43, 255, 0.55);
+  outline: 3px solid rgba(24, 63, 184, 0.55);
   outline-offset: 2px;
 }
 
@@ -234,7 +273,7 @@ body {
   box-shadow: none;
 }
 .button--secondary:hover {
-  border-color: #c9ccd3;
+  border-color: var(--ck-select-border);
   background: var(--ck-surface);
   color: var(--ck-text-1);
 }

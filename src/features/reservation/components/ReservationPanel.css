@@ -115,9 +115,9 @@
 }
 .rsv-panel__memo { white-space: pre-wrap; overflow-wrap: anywhere; }
 
-.rsv-panel__vehicle { margin: 0 0 var(--ck-space-2); display: flex; align-items: baseline; gap: var(--ck-space-2); }
-.rsv-panel__vehicle strong { font-size: var(--ck-fs-card-title); font-weight: var(--ck-fw-bold); }
-.rsv-panel__vehicle span { color: var(--ck-text-3); font-size: var(--ck-fs-small); }
+.rsv-panel__vehicle { margin: 0 0 var(--ck-space-2); display: flex; align-items: center; gap: var(--ck-space-2); }
+.rsv-panel__vehicle .license-plate { font-size: var(--ck-fs-body-lg); }
+.rsv-panel__vehicle span:not(.license-plate) { color: var(--ck-text-3); font-size: var(--ck-fs-small); }
 .rsv-panel__meta {
   margin: 0;
   display: flex;

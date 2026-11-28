@@ -198,7 +198,9 @@ describe('S-02 예약 상세 패널', () => {
     expect(text).toContain('97,000 km')
 
     const rows = Array.from(panel().querySelectorAll('.item-status-list__row'))
-    expect(rows.map((r) => r.querySelector('.item-status-list__name').firstChild.textContent)).toEqual(['엔진오일', '배터리'])
+    // 이름 칸에는 항목 아이콘(svg, #110)이 앞에 있어 글자 노드만 본다
+    const nameText = (r) => Array.from(r.querySelector('.item-status-list__name').childNodes).find((n) => n.nodeType === 3).textContent
+    expect(rows.map(nameText)).toEqual(['엔진오일', '배터리'])
     expect(rows[0].classList.contains('is-highlighted')).toBe(false)
     expect(rows[1].classList.contains('is-highlighted')).toBe(true)
     expect(rows[1].textContent).toContain('예약 목적')

@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import LicensePlate from '@/shared/ui/LicensePlate.jsx'
 import './customer.css'
 
 // S-05 결과 줄 하나: 고객명 · 연락처 · 동의 · 차량번호들 (09 S-05, 08 05 items[]).
@@ -40,9 +41,7 @@ export default function CustomerRow({ customer, link }) {
         ) : (
           <span className="customer-row__plates">
             {vehicles.map((vehicle) => (
-              <span key={vehicle.vehicleId} className="customer-plate">
-                {vehicle.plateNumber}
-              </span>
+              <LicensePlate key={vehicle.vehicleId} number={vehicle.plateNumber} compact />
             ))}
             {vehicles.length > 1 && <span className="customer-row__count">{vehicles.length}대</span>}
           </span>

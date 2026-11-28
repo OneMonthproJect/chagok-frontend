@@ -55,7 +55,7 @@ describe('VehiclePicker', () => {
     const onChange = vi.fn()
     render(<VehiclePicker value={null} onChange={onChange} />)
     await wait()
-    expect(options().map((o) => o.querySelector('b').textContent)).toEqual(['55차0010', '66카0011'])
+    expect(options().map((o) => o.querySelector('.license-plate').textContent)).toEqual(['55차0010', '66카0011'])
     click(options()[1])
     expect(onChange).toHaveBeenCalledWith({ vehicleId: 11, plateNumber: '66카0011', customerId: 10, customerName: '오세훈', phone: '010-0000-0010' })
   })

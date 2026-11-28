@@ -21,8 +21,8 @@
   background: var(--ck-brand-tint);
   font-size: var(--ck-fs-small);
 }
-.rsv-form__vehicle b { color: var(--ck-text-1); font-size: var(--ck-fs-body); }
-.rsv-form__vehicle span { color: var(--ck-text-3); }
+.rsv-form__vehicle .license-plate { font-size: var(--ck-fs-body); }
+.rsv-form__vehicle span:not(.license-plate) { color: var(--ck-text-3); }
 .rsv-form__error {
   margin: 0;
   color: var(--ck-due-fg);
@@ -40,7 +40,7 @@
   font-size: var(--ck-fs-small);
 }
 .rsv-form__notice p { margin: 0; }
-.rsv-form__notice--warn { border: 1px solid #f59e0b66; background: #fff9ec; color: #9a5800; }
+.rsv-form__notice--warn { border: 1px solid #f3d9a8; background: var(--ck-tone-warn-bg); color: var(--ck-tone-warn-fg); }
 .rsv-form__link {
   flex: none;
   padding: 0;

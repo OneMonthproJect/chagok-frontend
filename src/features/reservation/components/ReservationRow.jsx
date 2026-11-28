@@ -1,4 +1,5 @@
 import { formatTime } from '../dates'
+import LicensePlate from '@/shared/ui/LicensePlate.jsx'
 import AssigneeLabel from './AssigneeLabel.jsx'
 import ReservationStatusBadge from './ReservationStatusBadge.jsx'
 import './ReservationList.css'
@@ -19,7 +20,7 @@ export default function ReservationRow({ reservation, selected = false, onSelect
       >
         <span className="rsv-row__primary">
           <strong>{formatTime(r.reservedAt)}</strong>
-          <b>{r.plateNumber}</b>
+          <LicensePlate number={r.plateNumber} compact />
           <span>{r.customerName}</span>
           <span>{r.phone}</span>
         </span>

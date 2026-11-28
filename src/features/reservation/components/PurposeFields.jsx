@@ -1,3 +1,4 @@
+import ItemIcon from '@/shared/ui/ItemIcon.jsx'
 import { MEMO_MAX } from '../reservationForm'
 
 // 예약 목적 (09 M-02: 6개 항목 체크(여러 개)·기타·메모, 모두 선택 입력, 07 3.9).
@@ -15,6 +16,7 @@ export default function PurposeFields({ idPrefix, items, itemIds, other, memo, o
         {items.map((item) => (
           <label key={item.itemId} className={`purpose-chip${itemIds.includes(item.itemId) ? ' is-checked' : ''}`}>
             <input type="checkbox" checked={itemIds.includes(item.itemId)} onChange={() => toggle(item.itemId)} />
+            <ItemIcon code={item.code} name={item.name} />
             {item.name}
           </label>
         ))}

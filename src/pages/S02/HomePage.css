@@ -141,5 +141,5 @@
   cursor: pointer;
 }
 .home-view-switch button + button { border-left: 1px solid #e2e4e8; }
-.home-view-switch button[aria-pressed='true'] { background: var(--ck-brand, #1f2bff); color: #fff; }
+.home-view-switch button[aria-pressed='true'] { background: var(--ck-tab-active); color: var(--ck-text-inverse); }
 .home-view-switch button:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: -3px; }
