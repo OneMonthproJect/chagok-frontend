@@ -7,7 +7,7 @@ import MenuIcon from '@/app/menuIcons.jsx'
 // 공통 머리 (09 0장): 정비소명·이름·역할(API 03) + 로그아웃 (chagok-frontend#17).
 // 디자인 v3.0은 머리 줄이 따로 없고, 넓은 화면은 사이드바 아래쪽, 좁은 화면은 위쪽 줄 오른쪽에 둔다(variant).
 // 로그아웃 = 토큰 삭제 후 로그인 화면, "로그아웃했습니다." 안내 (05 POL-12, 디자인 S-01 상태 07).
-// TODO(S-08 #23): 작성 중인 기록이 있으면 로그아웃 전에 이탈 확인.
+// 작성 중 로그아웃·이탈 확인은 09에 없어 넣지 않는다(S-08 #23도 넣지 않음, VisitRecordPage 주석). 넣으려면 09 변경이 먼저다.
 export default function AppHeader({ variant = 'sidebar' }) {
   const navigate = useNavigate()
   const { me } = useMe()

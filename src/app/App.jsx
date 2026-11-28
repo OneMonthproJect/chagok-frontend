@@ -6,7 +6,7 @@ import NotFoundPage from '@/app/NotFoundPage.jsx'
 import { appRoutes, publicRoutes } from '@/app/routes'
 
 // 라우팅 (chagok-frontend#17, FRONTEND_STRUCTURE 2장·11-1).
-// - data router(createBrowserRouter): S-08 이탈 확인(useBlocker)·스크롤 복원을 쓰기 위해 (설계 Q3).
+// - data router(createBrowserRouter): 이탈 확인(useBlocker)·스크롤 복원을 쓸 수 있게 골랐다 (설계 Q3). 둘 다 09에 없어 지금은 쓰지 않는다.
 // - 화면은 pages/Sxx/route.jsx 를 routes.js가 모은다. 화면 이슈는 이 파일을 고치지 않는다.
 //
 //   Root (UnauthorizedRedirect: 401 → /login, from·reason)
