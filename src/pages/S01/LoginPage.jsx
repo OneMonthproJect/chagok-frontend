@@ -11,7 +11,7 @@ import './LoginPage.css'
 // - 성공: state.from(로그인 가드·401 처리가 넘긴 원래 화면)이 있으면 그곳, 없으면 홈(S-02).
 // - 이미 토큰이 있으면 from 또는 홈으로 바로 간다. (S-02 화면이 생기기 전에는 AppLayout의 404가 보인다, #17)
 // - 안내: 401 만료(reason='expired'), 로그아웃(reason='logout', 앱 골격 #17이 넘김)
-// - 이미지: docs/design/improved-v3.0/prototype/의 정비소 사진·마스코트(렌치)를 이 화면 전용으로 복사해 쓴다.
+// - 이미지: design/improved-v3.0/prototype/의 정비소 사진·마스코트(렌치)를 이 화면 전용으로 복사해 쓴다.
 //   글꼴 Pretendard는 공통 토큰(#18)이 정할 때까지 설치된 경우에만 쓰이고, 없으면 시스템 글꼴.
 export default function LoginPage() {
   const location = useLocation()
