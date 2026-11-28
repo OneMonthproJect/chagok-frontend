@@ -5,6 +5,7 @@
 // - 409 CONCURRENT_MODIFICATION이면 화면이 11을 다시 불러 최신 값·version을 보이고 입력은 지우지 않는다(POL-124, shared/lib/useEditForm).
 
 import { isValidDate } from '@/shared/lib/date'
+import { MILEAGE_MAX } from '@/shared/lib/mileage'
 import { INSPECT_RESULT_LABELS, RECORD_TYPE_LABELS } from './maintenanceFlow'
 import type {
   InspectResult,
@@ -62,7 +63,6 @@ export const EDIT_DISABLED_REASON = {
 export const MECHANIC_EDIT_DAYS = 3
 
 export const TEXT_MAX = 200
-export const MILEAGE_MAX = 2_000_000
 
 export interface EditPermission {
   enabled: boolean
