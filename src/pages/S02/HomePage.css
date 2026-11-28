@@ -145,7 +145,7 @@
 .home-view-switch button:focus-visible { outline: 3px solid var(--ck-brand-ring, #1f2bff52); outline-offset: -3px; }
 
 /* 머리 가운데 정비소명 (#110 4절): 카드·배경 없이 글자만. 좁으면 줄을 바꿔 겹치지 않는다 */
-.page-header { flex-wrap: wrap; }
+.home-page .page-header { flex-wrap: wrap; }
 .home-shop {
   min-width: 0;
   margin: 0 auto;

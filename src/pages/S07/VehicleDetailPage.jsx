@@ -92,7 +92,10 @@ export default function VehicleDetailPage() {
   const editTarget = latestEdit ?? recordEdit
   const recordActions = {
     permissionOf: (record) => editPermission(record, me, today, meError != null),
-    onEdit: (record, visit) => setRecordEdit({ record, visit }),
+    onEdit: (record, visit) => {
+      setSavedNotice(false) // 다른 저장 작업을 시작하면 앞 저장 안내는 닫는다(리뷰 지적, #110)
+      setRecordEdit({ record, visit })
+    },
     onShowRevisions: (record) => setRevisionRecord(record),
   }
 
@@ -113,11 +116,11 @@ export default function VehicleDetailPage() {
         {loaded && (
           <div className="s07__actions">
             {!editing && (
-              <Button variant="secondary" onClick={() => setEditing(true)}>
+              <Button variant="secondary" onClick={() => { setSavedNotice(false); setEditing(true) }}>
                 {EDIT_LABEL}
               </Button>
             )}
-            <Button variant="secondary" onClick={() => setReserving(true)}>
+            <Button variant="secondary" onClick={() => { setSavedNotice(false); setReserving(true) }}>
               예약
             </Button>
             <Button onClick={recordVisit}>{RECORD_VISIT_LABEL}</Button>

@@ -222,6 +222,10 @@ describe('S-07 차량 상세', () => {
     const notice = document.querySelector('.error-notice--success')
     expect(notice.textContent).toContain('정비 기록을 저장했습니다.')
     expect(notice.getAttribute('role')).toBe('status')
+    // 다른 작업(차량 수정)을 시작하면 앞 저장 안내는 닫힌다
+    click(Array.from(document.querySelectorAll('.s07__actions button')).find((b) => b.textContent.trim() === '수정'))
+    await settle()
+    expect(document.querySelector('.error-notice--success')).toBeNull()
     cleanup()
 
     serve()
