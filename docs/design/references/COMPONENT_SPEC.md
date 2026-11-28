@@ -16,7 +16,7 @@
 | 상태 보조 색 | `--ck-tone-ok/warn/danger/muted-bg·fg` | 완료·정상 #E3EFE8/#38644E · 처리 필요·임박 #F7ECD7/#896522 · 취소·노쇼·도래 #FBE9E9/#A83434 · 미확인·비활성 #ECEEF1/#69717D | 아래 점검 주기·예약 상태 토큰이 이 값을 가리킨다 |
 | 점검 주기 | `--ck-due-*` `--ck-soon-*` `--ck-ahead-*` `--ck-unknown-*` (bg·fg·dot) | 도래 #FBE9E9/#A83434 · 임박 #F7ECD7/#896522 · 여유 #EFF6FF/#1D4ED8(그대로) · 미확인 #ECEEF1/#69717D | 의미·글자 표기는 그대로(09 0장). 글자 대비 4.5:1 이상 |
 | 예약 상태 | `--ck-rsv-reserved/progress/done/canceled/noshow-*` · `--ck-needs-action-*` | 예약 #E6EFFF/#152E8B · 진행중 #152E8B/#FFF · 방문 완료 #E3EFE8/#38644E · 취소·노쇼 #FBE9E9/#A83434 · 처리 필요 #F7ECD7/#896522 | 08 0.4 RESERVED·IN_PROGRESS·COMPLETED·CANCELED·NO_SHOW |
-| 담당 | `--ck-assignee-0~5-bg/fg` | 블루 #DFEAF7/#345778 · 민트 #DFEEE6/#34634D · 라벤더 #EAE3F5/#624982 · 피치 #F5E3DB/#925B45 · 옐로우 #F5EED9/#806A35 · 그레이블루 #E3E8EF/#495B72 | API 36 `colorIndex`를 6으로 나눈 나머지. 이름 라벨에만 칠하고 항상 이름과 함께(09 0장) |
+| 담당 | `--ck-assignee-0~7-bg/fg` | 보라 #EAE3F5/#624982 · 청록 #DCEFEF/#2D6466 · 분홍 #F7E1EA/#8E3D5C · 갈색 #EFE4DC/#7A5238 · 연두 #E8F1D8/#4F6B23 · 남색 #E1E5F4/#34407A · 올리브 #EEEED9/#5F6128 · 자주 #F1DFF0/#7E3A78 | API 36 `colorIndex` 8색 순환(04 F-RSV-05), 상태 색과 다른 계열. 이름 라벨에만 칠하고 항상 이름과 함께(09 0장) |
 | 캘린더 | `--ck-cal-sunday/saturday/holiday/holiday-name/holiday-bg` | #B83D3D · #386497 · #B83D3D · #A83434 · #FBE9E9 | 공휴일은 요일과 관계없이 빨강(토요일보다 우선). 데이터는 `shared/lib/holidays.kr.json` |
 | 글자 크기 | `--ck-fs-caption/meta/small/body/body-lg/card-title/section/page/number` | 12 · 13 · 14 · 15 · 16 · 18 · 20 · 26 · 32 px | 업무 화면 최소 12px |
 | 굵기 · 행간 | `--ck-fw-*` `--ck-lh-tight/body` | 400·500·600·700 / 1.25·1.5 | |
