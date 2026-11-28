@@ -156,6 +156,52 @@ describe('S-05 고객·차량 목록', () => {
     expect(fetchMock.mock.calls.at(-1)[0]).toBe(`/api/customers?q=${encodeURIComponent('김')}&page=2`)
   })
 
+  it('검색 중 메뉴로 /customers 를 다시 열면 검색창도 비고 전체 목록 (#122)', async () => {
+    fetchMock.mockImplementation((url) => Promise.resolve(jsonResponse(200, url.includes('q=') ? listBody([]) : listBody([KIM, OH]))))
+    renderPage('/customers?q=abc')
+    await waitSearch()
+    expect(document.querySelector('input[type="search"]').value).toBe('abc')
+
+    // 사이드바 NavLink(to="/customers")와 같은 이동 — 같은 라우트라 화면은 다시 마운트되지 않는다
+    act(() => navigate('/customers'))
+    await waitSearch()
+
+    expect(document.querySelector('input[type="search"]').value).toBe('')
+    expect(fetchMock.mock.calls.at(-1)[0]).toBe('/api/customers?page=0')
+    expect(document.querySelector('.s05__count').textContent).toBe('등록 고객 2명')
+    expect(location.search).toBe('') // 비운 검색창이 옛 검색어를 URL로 되돌리지 않는다
+  })
+
+  it('뒤로 가기로 이전 검색 주소에 오면 검색창도 그 검색어 (#122)', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([KIM]))))
+    renderPage('/customers?q=%EA%B9%80')
+    await waitSearch()
+    act(() => navigate('/customers?q=%EC%98%A4'))
+    await waitSearch()
+    expect(document.querySelector('input[type="search"]').value).toBe('오')
+
+    act(() => navigate(-1))
+    await waitSearch()
+    expect(document.querySelector('input[type="search"]').value).toBe('김')
+    expect(fetchMock.mock.calls.at(-1)[0]).toBe(`/api/customers?q=${encodeURIComponent('김')}&page=0`)
+  })
+
+  it('입력이 멈춰 URL로 옮긴 뒤에도 사람이 친 값(끝 공백·더 친 글자)은 그대로 둔다 (#122)', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([KIM]))))
+    renderPage()
+    await waitSearch()
+    typeSearch('김 ')
+    await waitSearch() // 0.3초 멈춤 → URL q=김
+    expect(new URLSearchParams(location.search).get('q')).toBe('김')
+    expect(document.querySelector('input[type="search"]').value).toBe('김 ')
+    typeSearch('김 민')
+    expect(document.querySelector('input[type="search"]').value).toBe('김 민')
+    await waitSearch()
+    await waitSearch()
+    expect(new URLSearchParams(location.search).get('q')).toBe('김 민')
+    expect(document.querySelector('input[type="search"]').value).toBe('김 민')
+  })
+
   it('M-01 같은 연락처 기존 고객 → "이 고객에 차량 추가": M-01을 닫고 S-06으로, 차량 추가를 연 채 (09 M-01 ①, #21)', async () => {
     fetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, listBody([OH]))))
     renderPage('/customers?q=%EC%98%A4')

@@ -13,6 +13,7 @@ import './CustomerListPage.css'
 
 // S-05 고객·차량 목록 (09 S-05, F-CUS-01·02, 08 05·06, 디자인 v3.0 Customer-List-* · Modal-Register-*).
 // - 검색창 하나 → 05. 입력 중 글자는 화면 상태, 멈춘 뒤 0.3초에 URL `?q=&page=`로 옮긴다(replace, FRONTEND_STRUCTURE 2장).
+//   기준은 URL이다: 메뉴·뒤로 가기로 URL q가 바뀌면 검색창도 그 값으로 바뀐다(#122).
 //   URL의 page는 화면 숫자(1부터), 08 page는 0부터. 기본값(검색어 없음·1쪽)이면 URL에서 뺀다.
 // - [신규 고객·차량 등록] → M-01. 빈 상태의 신규 등록은 검색어를 M-01에 채운다. M-01은 URL이 없다.
 // - 등록 뒤: 화면 위에 결과 문구, 목록을 처음(최근 등록순)부터 다시 불러온다(09는 목록에서 연 M-01의 저장 뒤 이동을 정하지 않음).
@@ -40,6 +41,14 @@ export default function CustomerListPage() {
   const [registerQuery, setRegisterQuery] = useState(null) // null이면 M-01 닫힘
   const [notice, setNotice] = useState(null)
   const settledInput = useDebouncedValue(input.trim(), SEARCH_DELAY_MS)
+
+  // URL q가 화면 밖에서 바뀌면(메뉴 「고객·차량」 다시 누름·뒤로 가기 등, 같은 라우트라 다시 마운트되지 않음) 입력 칸을 URL에 맞춘다(#122).
+  // 입력이 멈춰 이 화면이 옮긴 값(settledInput)이면 그대로 둔다 — 그 사이 더 친 글자·끝 공백을 지우지 않는다.
+  const [shownQuery, setShownQuery] = useState(urlQuery)
+  if (shownQuery !== urlQuery) {
+    setShownQuery(urlQuery)
+    if (urlQuery !== settledInput) setInput(urlQuery)
+  }
   const search = useCustomerSearch(urlQuery, page, undefined, 0)
   const range = search.data ? rangeText(search.data) : null
 
