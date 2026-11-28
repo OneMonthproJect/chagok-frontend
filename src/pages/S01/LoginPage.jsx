@@ -3,7 +3,7 @@ import LoginForm from '@/features/auth/components/LoginForm.jsx'
 import { loginNotice, returnPath } from '@/features/auth/loginFlow'
 import { getToken } from '@/shared/lib/tokenStore'
 import { PATHS } from '@/app/paths'
-import repairShopImage from './assets/login-repair-shop.png'
+import repairShopImage from './assets/login-repair-shop.webp'
 import mascotImage from './assets/login-mascot-wrench.png'
 import './LoginPage.css'
 
