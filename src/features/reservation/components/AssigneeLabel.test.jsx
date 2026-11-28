@@ -2,10 +2,10 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import AssigneeLabel, { assigneeColorClass } from './AssigneeLabel.jsx'
 
-// 담당 파스텔 (#110 8절): colorIndex를 6색으로 순환, 이름은 항상 함께
+// 담당 파스텔 (#110 8절): 04 F-RSV-05대로 colorIndex 8색 순환, 이름은 항상 함께
 describe('AssigneeLabel', () => {
   it.each([
-    [0, 'c0'], [1, 'c1'], [5, 'c5'], [6, 'c0'], [7, 'c1'], [-1, 'c5'],
+    [0, 'c0'], [1, 'c1'], [6, 'c6'], [7, 'c7'], [8, 'c0'], [-1, 'c7'],
   ])('colorIndex %s → %s', (colorIndex, color) => {
     expect(assigneeColorClass({ staffId: 1, name: '박사장', colorIndex })).toBe(`assignee-color--${color}`)
   })

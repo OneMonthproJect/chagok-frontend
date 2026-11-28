@@ -1,29 +1,9 @@
-/* 담당 정비사 라벨 (F-RSV-05 담당 색, #30 → #110 8절 파스텔 6색). 색 값은 theme.css --ck-assignee-N-bg/fg 한 곳 */
-/* 색 클래스 .assignee-color--c0~c5는 --assignee-bg·--assignee-fg와 색 띠용 --assignee-color만 정한다 — 라벨과 주 캘린더 카드 색 띠(#36)가 같이 쓴다 */
-.assignee-label {
-  max-width: 100%;
-  padding: 3px 8px 3px 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border: 1px solid transparent;
-  border-radius: var(--ck-radius-pill, 999px);
-  background: var(--assignee-bg, var(--ck-tone-muted-bg));
-  color: var(--assignee-fg, var(--ck-text-1));
-  font-size: var(--ck-fs-caption, 12px);
-  font-weight: 600;
-  white-space: nowrap;
-}
-.assignee-label__dot {
-  width: 8px;
-  height: 8px;
-  flex: none;
-  border-radius: 999px;
-  background: var(--assignee-fg, var(--ck-text-3));
-}
-.assignee-color--c0 { --assignee-bg: var(--ck-assignee-0-bg); --assignee-fg: var(--ck-assignee-0-fg); --assignee-color: var(--ck-assignee-0-fg); } /* 블루 */
-.assignee-color--c1 { --assignee-bg: var(--ck-assignee-1-bg); --assignee-fg: var(--ck-assignee-1-fg); --assignee-color: var(--ck-assignee-1-fg); } /* 민트 */
-.assignee-color--c2 { --assignee-bg: var(--ck-assignee-2-bg); --assignee-fg: var(--ck-assignee-2-fg); --assignee-color: var(--ck-assignee-2-fg); } /* 라벤더 */
-.assignee-color--c3 { --assignee-bg: var(--ck-assignee-3-bg); --assignee-fg: var(--ck-assignee-3-fg); --assignee-color: var(--ck-assignee-3-fg); } /* 피치 */
-.assignee-color--c4 { --assignee-bg: var(--ck-assignee-4-bg); --assignee-fg: var(--ck-assignee-4-fg); --assignee-color: var(--ck-assignee-4-fg); } /* 옐로우 */
-.assignee-color--c5 { --assignee-bg: var(--ck-assignee-5-bg); --assignee-fg: var(--ck-assignee-5-fg); --assignee-color: var(--ck-assignee-5-fg); } /* 그레이블루 */
+/* 담당 정비사 라벨 (F-RSV-05 담당 색 8색, #30 → #110 8절 파스텔). 색 값은 theme.css --ck-assignee-N-bg/fg 한 곳 */
+/* 색 클래스 .assignee-color--c0 { --assignee-bg: var(--ck-assignee-0-bg); --assignee-fg: var(--ck-assignee-0-fg); --assignee-color: var(--ck-assignee-0-fg); } /* 보라 */
+.assignee-color--c1 { --assignee-bg: var(--ck-assignee-1-bg); --assignee-fg: var(--ck-assignee-1-fg); --assignee-color: var(--ck-assignee-1-fg); } /* 청록 */
+.assignee-color--c2 { --assignee-bg: var(--ck-assignee-2-bg); --assignee-fg: var(--ck-assignee-2-fg); --assignee-color: var(--ck-assignee-2-fg); } /* 분홍 */
+.assignee-color--c3 { --assignee-bg: var(--ck-assignee-3-bg); --assignee-fg: var(--ck-assignee-3-fg); --assignee-color: var(--ck-assignee-3-fg); } /* 갈색 */
+.assignee-color--c4 { --assignee-bg: var(--ck-assignee-4-bg); --assignee-fg: var(--ck-assignee-4-fg); --assignee-color: var(--ck-assignee-4-fg); } /* 연두 */
+.assignee-color--c5 { --assignee-bg: var(--ck-assignee-5-bg); --assignee-fg: var(--ck-assignee-5-fg); --assignee-color: var(--ck-assignee-5-fg); } /* 남색 */
+.assignee-color--c6 { --assignee-bg: var(--ck-assignee-6-bg); --assignee-fg: var(--ck-assignee-6-fg); --assignee-color: var(--ck-assignee-6-fg); } /* 올리브 */
+.assignee-color--c7 { --assignee-bg: var(--ck-assignee-7-bg); --assignee-fg: var(--ck-assignee-7-fg); --assignee-color: var(--ck-assignee-7-fg); } /* 자주 */

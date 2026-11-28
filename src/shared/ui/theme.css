@@ -1,6 +1,6 @@
 /*
  * 차곡 공통 스타일 — 디자인 토큰의 단일 기준 (최종 디자인 v3.0, #18 STEP 11-B 보완).
- * 값의 출처: docs/design/references/COMPONENT_SPEC.md 1장 (= docs/design/improved-v2.0/assets/tokens.css, v3도 같은 값).
+ * 값의 출처: design/references/COMPONENT_SPEC.md 1장 (= design/improved-v2.0/assets/tokens.css, v3도 같은 값).
  *   tokens.css는 참조 자료라 import하지 않는다. 값은 이 파일에만 둔다(같은 값을 두 곳에서 관리하지 않음).
  * COMPONENT_SPEC 1장 토큰은 이 파일에만 둔다. 컴포넌트 CSS는 이 변수를 쓰고, 1장에 없는 프로토타입 보조값(알림 테두리·배경 흐림 등)만 각 CSS에 둔다.
  * 상태 색은 09 0장(미확인 회색 / 여유 파랑 / 임박 주황 / 도래 빨강)을 따르고, 글자를 항상 함께 보인다(색만으로 구분하지 않음).
@@ -81,13 +81,17 @@
   --ck-needs-action-bg: var(--ck-tone-warn-bg);
   --ck-needs-action-fg: var(--ck-tone-warn-fg);
 
-  /* 담당 정비사 파스텔 (API 36 colorIndex를 6으로 나눈 나머지 순서). 이름 라벨을 항상 함께 보인다(09 0장) */
-  --ck-assignee-0-bg: #dfeaf7; --ck-assignee-0-fg: #345778; /* 블루 */
-  --ck-assignee-1-bg: #dfeee6; --ck-assignee-1-fg: #34634d; /* 민트 */
-  --ck-assignee-2-bg: #eae3f5; --ck-assignee-2-fg: #624982; /* 라벤더 */
-  --ck-assignee-3-bg: #f5e3db; --ck-assignee-3-fg: #925b45; /* 피치 */
-  --ck-assignee-4-bg: #f5eed9; --ck-assignee-4-fg: #806a35; /* 옐로우 */
-  --ck-assignee-5-bg: #e3e8ef; --ck-assignee-5-fg: #495b72; /* 그레이블루 */
+  /* 담당 정비사 파스텔 (API 36 colorIndex 0~7, 8색 순환 — 04 F-RSV-05). 계열은 04 💡 보라·청록·분홍·갈색·연두·남색·올리브·자주:
+     상태 색(회색·파랑·주황·빨강, 완료 초록)과 겹치지 않게 지시서 8절 파스텔 중 라벤더만 그대로 쓰고 나머지는 같은 밝기로 맞췄다.
+     파스텔 바탕 + 진한 글자(대비 4.5:1 이상), 이름 라벨을 항상 함께 보인다(09 0장) */
+  --ck-assignee-0-bg: #eae3f5; --ck-assignee-0-fg: #624982; /* 보라(라벤더) */
+  --ck-assignee-1-bg: #dcefef; --ck-assignee-1-fg: #2d6466; /* 청록 */
+  --ck-assignee-2-bg: #f7e1ea; --ck-assignee-2-fg: #8e3d5c; /* 분홍 */
+  --ck-assignee-3-bg: #efe4dc; --ck-assignee-3-fg: #7a5238; /* 갈색 */
+  --ck-assignee-4-bg: #e8f1d8; --ck-assignee-4-fg: #4f6b23; /* 연두 */
+  --ck-assignee-5-bg: #e1e5f4; --ck-assignee-5-fg: #34407a; /* 남색 */
+  --ck-assignee-6-bg: #eeeed9; --ck-assignee-6-fg: #5f6128; /* 올리브 */
+  --ck-assignee-7-bg: #f1dff0; --ck-assignee-7-fg: #7e3a78; /* 자주 */
 
   /* 캘린더 요일·공휴일 (지시서 9.5). 공휴일은 요일과 관계없이 빨강, 토요일과 겹치면 공휴일 우선 */
   --ck-cal-sunday: #b83d3d;
