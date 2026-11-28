@@ -4,6 +4,7 @@
 // - 저장 실패(400·500·네트워크)여도 입력값을 바꾸지 않는다. 자동으로 다시 보내지 않는다(POL-125).
 
 import { ApiError, DEFAULT_MESSAGES, type FieldError } from '@/shared/api/client'
+import { MILEAGE_MAX } from '@/shared/lib/mileage'
 import { createCustomer } from './api'
 import type { CustomerCreateRequest, CustomerCreateResponse, CustomerSearchItem } from './types'
 
@@ -36,7 +37,8 @@ export const REGISTER_MESSAGES = {
 } as const
 
 export const MIN_MODEL_YEAR = 1980
-export const MAX_MILEAGE = 2_000_000
+/** 주행거리 상한 (08 0.1). 값은 shared/lib/mileage 한 곳에서 온다(이 이름은 고객 Mock이 쓴다) */
+export const MAX_MILEAGE = MILEAGE_MAX
 
 /** 연식 범위 문구 (08 0.1: 1980 ~ 현재 연도 + 1) */
 export function modelYearRangeMessage(currentYear: number): string {
